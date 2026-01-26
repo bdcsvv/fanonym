@@ -32,12 +32,12 @@ export default function SenderDashboard() {
         .eq('user_id', user.id)
         .single()
 
-      // Get active chat sessions
+      // Get active chat sessions with creator info
       const { data: chatsData } = await supabase
-  .from('chat_sessions')
-  .select('*')
-  .eq('sender_id', user.id)
-  .order('created_at', { ascending: false })
+        .from('chat_sessions')
+        .select('*, creator:creator_id(id, username, full_name)')
+        .eq('sender_id', profileData?.id)
+        .order('started_at', { ascending: false })
 
       setProfile(profileData)
       setCredits(creditsData)
@@ -130,8 +130,8 @@ export default function SenderDashboard() {
                       {chat.creator?.full_name?.[0] || chat.creator?.username?.[0] || '?'}
                     </div>
                     <div>
-                      <p className="font-semibold">{chat.creator?.full_name || chat.creator?.username}</p>
-                      <p className="text-gray-400 text-sm">@{chat.creator?.username}</p>
+                      <p className="font-semibold">{chat.creator?.full_name || chat.creator?.username || 'Creator'}</p>
+                      <p className="text-gray-400 text-sm">@{chat.creator?.username || 'unknown'}</p>
                     </div>
                   </div>
                   <div className={`text-sm px-3 py-1 rounded-full ${
