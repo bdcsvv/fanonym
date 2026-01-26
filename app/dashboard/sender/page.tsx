@@ -34,14 +34,10 @@ export default function SenderDashboard() {
 
       // Get active chat sessions
       const { data: chatsData } = await supabase
-        .from('chat_sessions')
-        .select(`
-          *,
-          creator:creator_id(id, username, full_name)
-        `)
-        .eq('sender_id', user.id)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
+  .from('chat_sessions')
+  .select('*')
+  .eq('sender_id', user.id)
+  .order('created_at', { ascending: false })
 
       setProfile(profileData)
       setCredits(creditsData)
