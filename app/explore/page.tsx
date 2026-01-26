@@ -14,7 +14,7 @@ export default function ExplorePage() {
       const { data } = await supabase
         .from('profiles')
         .select('*')
-        .eq('role', 'creator')
+        .eq('user_type', 'creator')
         .eq('is_verified', true)
 
       setCreators(data || [])

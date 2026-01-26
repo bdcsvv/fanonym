@@ -44,8 +44,7 @@ export default function TopupPage() {
   const handleTopup = async (option: typeof TOPUP_OPTIONS[0]) => {
     setProcessing(true)
 
-    // Create topup request
-    const { data: request, error } = await supabase
+    const { error } = await supabase
       .from('topup_requests')
       .insert({
         user_id: user.id,
@@ -53,8 +52,6 @@ export default function TopupPage() {
         price_idr: option.price,
         status: 'pending'
       })
-      .select()
-      .single()
 
     if (error) {
       alert('Gagal membuat request topup')
@@ -62,7 +59,6 @@ export default function TopupPage() {
       return
     }
 
-    // For MVP: Show payment instructions
     alert(`Request topup berhasil!\n\nTransfer Rp ${option.price.toLocaleString('id-ID')} ke:\nBank: BCA\nNo Rek: 1234567890\na.n. Fanonym\n\nKirim bukti transfer ke admin untuk konfirmasi.`)
     
     setProcessing(false)
@@ -111,16 +107,6 @@ export default function TopupPage() {
               </button>
             </div>
           ))}
-        </div>
-
-        <div className="mt-8 bg-gray-800/30 border border-gray-700 rounded-xl p-6">
-          <h2 className="font-semibold mb-2">Cara Top Up:</h2>
-          <ol className="text-gray-400 text-sm space-y-2">
-            <li>1. Pilih jumlah kredit yang diinginkan</li>
-            <li>2. Transfer ke rekening yang tertera</li>
-            <li>3. Kirim bukti transfer ke admin</li>
-            <li>4. Kredit akan ditambahkan dalam 1x24 jam</li>
-          </ol>
         </div>
       </main>
     </div>
