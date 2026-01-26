@@ -28,7 +28,6 @@ export default function ChatRoom() {
       }
       setCurrentUser(user)
 
-      // Get session
       const { data: sessionData, error } = await supabase
         .from('chat_sessions')
         .select('*')
@@ -41,7 +40,6 @@ export default function ChatRoom() {
         return
       }
 
-      // Check if user is part of this session
       if (sessionData.sender_id !== user.id && sessionData.creator_id !== user.id) {
         alert('Anda tidak memiliki akses ke chat ini')
         router.push('/dashboard/sender')
@@ -50,7 +48,6 @@ export default function ChatRoom() {
 
       setSession(sessionData)
 
-      // Get other user profile
       const otherId = sessionData.sender_id === user.id ? sessionData.creator_id : sessionData.sender_id
       const { data: otherProfile } = await supabase
         .from('profiles')
@@ -60,7 +57,6 @@ export default function ChatRoom() {
 
       setOtherUser(otherProfile)
 
-      // Get messages
       const { data: messagesData } = await supabase
         .from('messages')
         .select('*')
@@ -74,18 +70,24 @@ export default function ChatRoom() {
     init()
   }, [sessionId, router])
 
-  // Real-time messages subscription
+  // Real-time subscription
   useEffect(() => {
+    if (!sessionId) return
+
     const channel = supabase
-      .channel(`chat-${sessionId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages',
-        filter: `session_id=eq.${sessionId}`
-      }, (payload) => {
-        setMessages(prev => [...prev, payload.new])
-      })
+      .channel(`messages-${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `session_id=eq.${sessionId}`
+        },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new])
+        }
+      )
       .subscribe()
 
     return () => {
@@ -97,28 +99,28 @@ export default function ChatRoom() {
   useEffect(() => {
     if (!session?.expires_at) return
 
-    const interval = setInterval(() => {
+    const updateTimer = () => {
       const now = new Date().getTime()
       const expires = new Date(session.expires_at).getTime()
       const diff = expires - now
 
       if (diff <= 0) {
         setTimeLeft('Expired')
-        clearInterval(interval)
         return
       }
 
       const hours = Math.floor(diff / (1000 * 60 * 60))
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
       const seconds = Math.floor((diff % (1000 * 60)) / 1000)
-
       setTimeLeft(`${hours}j ${minutes}m ${seconds}d`)
-    }, 1000)
+    }
 
+    updateTimer()
+    const interval = setInterval(updateTimer, 1000)
     return () => clearInterval(interval)
   }, [session])
 
-  // Auto scroll to bottom
+  // Auto scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
@@ -127,20 +129,17 @@ export default function ChatRoom() {
     e.preventDefault()
     if (!newMessage.trim() || !currentUser || !session) return
 
-    // Check if session expired
     if (new Date(session.expires_at) < new Date()) {
       alert('Chat session sudah expired!')
       return
     }
 
-    const { error } = await supabase
-      .from('messages')
-      .insert({
-        session_id: sessionId,
-        sender_id: currentUser.id,
-        content: newMessage.trim(),
-        is_read: false
-      })
+    const { error } = await supabase.from('messages').insert({
+      session_id: sessionId,
+      sender_id: currentUser.id,
+      content: newMessage.trim(),
+      is_read: false
+    })
 
     if (!error) {
       setNewMessage('')
@@ -159,7 +158,6 @@ export default function ChatRoom() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white flex flex-col">
-      {/* Header */}
       <nav className="border-b border-gray-800 p-4">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -178,9 +176,11 @@ export default function ChatRoom() {
         </div>
       </nav>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 max-w-4xl mx-auto w-full">
         <div className="space-y-4">
+          {messages.length === 0 && (
+            <p className="text-center text-gray-500 mt-10">Belum ada pesan. Mulai chat!</p>
+          )}
           {messages.map((msg) => (
             <div
               key={msg.id}
@@ -204,7 +204,6 @@ export default function ChatRoom() {
         </div>
       </div>
 
-      {/* Input */}
       <div className="border-t border-gray-800 p-4">
         <form onSubmit={sendMessage} className="max-w-4xl mx-auto flex gap-2">
           <input
