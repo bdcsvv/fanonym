@@ -96,7 +96,7 @@ export default function CreatorProfile() {
         pending_balance: pricingOption.price_credits * 0.7
       }, { onConflict: 'creator_id' })
 
-    router.push(`/chat/${session.id}`)
+    window.location.href = `/chat/${session.id}`
   }
 
   const sendFreeMessage = () => {

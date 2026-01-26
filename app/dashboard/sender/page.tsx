@@ -9,12 +9,12 @@ export default function SenderDashboard() {
   const router = useRouter()
   const [profile, setProfile] = useState<any>(null)
   const [credits, setCredits] = useState<any>(null)
+  const [activeChats, setActiveChats] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const getProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      
       if (!user) {
         router.push('/auth/login')
         return
@@ -32,8 +32,20 @@ export default function SenderDashboard() {
         .eq('user_id', user.id)
         .single()
 
+      // Get active chat sessions
+      const { data: chatsData } = await supabase
+        .from('chat_sessions')
+        .select(`
+          *,
+          creator:creator_id(id, username, full_name)
+        `)
+        .eq('sender_id', user.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+
       setProfile(profileData)
       setCredits(creditsData)
+      setActiveChats(chatsData || [])
       setLoading(false)
     }
 
@@ -43,6 +55,18 @@ export default function SenderDashboard() {
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/auth/login')
+  }
+
+  const getTimeLeft = (expiresAt: string) => {
+    const now = new Date().getTime()
+    const expires = new Date(expiresAt).getTime()
+    const diff = expires - now
+
+    if (diff <= 0) return 'Expired'
+
+    const hours = Math.floor(diff / (1000 * 60 * 60))
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    return `${hours}j ${minutes}m`
   }
 
   if (loading) {
@@ -66,12 +90,11 @@ export default function SenderDashboard() {
 
       <main className="max-w-6xl mx-auto p-6">
         <h2 className="text-2xl font-bold mb-6">Halo, {profile?.full_name || profile?.username}! 👋</h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
             <p className="text-gray-400 text-sm mb-1">Saldo Kredit</p>
             <p className="text-3xl font-bold text-teal-400">{credits?.balance || 0} Kredit</p>
-            <p className="text-gray-500 text-sm mt-1">= Rp {((credits?.balance || 0) * 10000).toLocaleString('id-ID')}</p>
           </div>
           <div className="bg-gradient-to-r from-teal-500/20 to-purple-500/20 border border-teal-500/50 rounded-xl p-6 flex items-center justify-between">
             <div>
@@ -86,7 +109,7 @@ export default function SenderDashboard() {
 
         <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 mb-6">
           <h3 className="text-lg font-semibold mb-4">Cari Creator</h3>
-          <Link 
+          <Link
             href="/explore"
             className="block w-full p-4 bg-gray-900 border border-gray-600 rounded-lg text-gray-400 hover:border-teal-500 transition-colors"
           >
@@ -96,7 +119,36 @@ export default function SenderDashboard() {
 
         <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
           <h3 className="text-lg font-semibold mb-4">Chat Aktif</h3>
-          <p className="text-gray-400">Belum ada chat aktif.</p>
+          {activeChats.length === 0 ? (
+            <p className="text-gray-400">Belum ada chat aktif.</p>
+          ) : (
+            <div className="space-y-3">
+              {activeChats.map((chat) => (
+                <Link
+                  key={chat.id}
+                  href={`/chat/${chat.id}`}
+                  className="flex items-center justify-between p-4 bg-gray-900 border border-gray-700 rounded-lg hover:border-teal-500 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center font-bold">
+                      {chat.creator?.full_name?.[0] || chat.creator?.username?.[0] || '?'}
+                    </div>
+                    <div>
+                      <p className="font-semibold">{chat.creator?.full_name || chat.creator?.username}</p>
+                      <p className="text-gray-400 text-sm">@{chat.creator?.username}</p>
+                    </div>
+                  </div>
+                  <div className={`text-sm px-3 py-1 rounded-full ${
+                    new Date(chat.expires_at) < new Date() 
+                      ? 'bg-red-500/20 text-red-400' 
+                      : 'bg-teal-500/20 text-teal-400'
+                  }`}>
+                    ⏱ {getTimeLeft(chat.expires_at)}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>
