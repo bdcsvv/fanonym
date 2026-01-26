@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
 
 export default function ChatRoom() {
   const params = useParams()
@@ -36,13 +35,13 @@ export default function ChatRoom() {
 
       if (error || !sessionData) {
         alert('Chat session tidak ditemukan')
-        router.push('/dashboard/sender')
+        router.back()
         return
       }
 
       if (sessionData.sender_id !== user.id && sessionData.creator_id !== user.id) {
         alert('Anda tidak memiliki akses ke chat ini')
-        router.push('/dashboard/sender')
+        router.back()
         return
       }
 
@@ -161,7 +160,7 @@ export default function ChatRoom() {
       <nav className="border-b border-gray-800 p-4">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <Link href="/dashboard/sender" className="text-gray-400 hover:text-white">←</Link>
+            <button onClick={() => router.back()} className="text-gray-400 hover:text-white">←</button>
             <div className="w-10 h-10 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center font-bold">
               {otherUser?.full_name?.[0] || otherUser?.username?.[0] || '?'}
             </div>
