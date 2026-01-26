@@ -66,15 +66,15 @@ export default function CreatorProfile() {
     }
 
     const { data: session, error } = await supabase
-      .from('chat_sessions')
-      .insert({
-        sender_id: currentUser.id,
-        creator_id: creator.id,
-        duration_hours: pricingOption.duration_hours,
-        price_paid: pricingOption.price_credits,
-        expires_at: new Date(Date.now() + pricingOption.duration_hours * 60 * 60 * 1000).toISOString(),
-        status: 'active'
-      })
+  .from('chat_sessions')
+  .insert({
+    sender_id: currentUser.id,
+    creator_id: creator.id,
+    duration_hours: pricingOption.duration_hours,
+    credits_paid: pricingOption.price_credits,
+    expires_at: new Date(Date.now() + pricingOption.duration_hours * 60 * 60 * 1000).toISOString(),
+    is_active: true
+  })
       .select()
       .single()
 
