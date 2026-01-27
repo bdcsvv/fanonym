@@ -14,9 +14,14 @@ export default function ChatRoom() {
   const [messages, setMessages] = useState<any[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [currentUser, setCurrentUser] = useState<any>(null)
+  const [currentProfile, setCurrentProfile] = useState<any>(null)
   const [otherUser, setOtherUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [timeLeft, setTimeLeft] = useState<string>('')
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [paymentAmount, setPaymentAmount] = useState('')
+  const [paymentDesc, setPaymentDesc] = useState('')
+  const [isCreator, setIsCreator] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -26,6 +31,13 @@ export default function ChatRoom() {
         return
       }
       setCurrentUser(user)
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+      setCurrentProfile(profileData)
 
       const { data: sessionData, error } = await supabase
         .from('chat_sessions')
@@ -46,6 +58,7 @@ export default function ChatRoom() {
       }
 
       setSession(sessionData)
+      setIsCreator(sessionData.creator_id === user.id)
 
       const otherId = sessionData.sender_id === user.id ? sessionData.creator_id : sessionData.sender_id
       const { data: otherProfile } = await supabase
@@ -69,7 +82,6 @@ export default function ChatRoom() {
     init()
   }, [sessionId, router])
 
-  // Real-time subscription
   useEffect(() => {
     if (!sessionId) return
 
@@ -87,6 +99,18 @@ export default function ChatRoom() {
           setMessages((prev) => [...prev, payload.new])
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `session_id=eq.${sessionId}`
+        },
+        (payload) => {
+          setMessages((prev) => prev.map(m => m.id === payload.new.id ? payload.new : m))
+        }
+      )
       .subscribe()
 
     return () => {
@@ -94,7 +118,6 @@ export default function ChatRoom() {
     }
   }, [sessionId])
 
-  // Timer countdown
   useEffect(() => {
     if (!session?.expires_at) return
 
@@ -119,7 +142,6 @@ export default function ChatRoom() {
     return () => clearInterval(interval)
   }, [session])
 
-  // Auto scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
@@ -143,6 +165,176 @@ export default function ChatRoom() {
     if (!error) {
       setNewMessage('')
     }
+  }
+
+  const sendPaymentRequest = async () => {
+    const amount = parseInt(paymentAmount)
+    if (!amount || amount < 1) {
+      alert('Masukkan jumlah kredit yang valid!')
+      return
+    }
+
+    const paymentData = {
+      type: 'payment_request',
+      amount: amount,
+      description: paymentDesc || 'Custom payment',
+      status: 'pending'
+    }
+
+    const { error } = await supabase.from('messages').insert({
+      session_id: sessionId,
+      sender_id: currentUser.id,
+      content: JSON.stringify(paymentData),
+      is_read: false
+    })
+
+    if (!error) {
+      setShowPaymentModal(false)
+      setPaymentAmount('')
+      setPaymentDesc('')
+    }
+  }
+
+  const handlePayment = async (messageId: string, amount: number) => {
+    // Check sender credits
+    const { data: credits } = await supabase
+      .from('credits')
+      .select('balance')
+      .eq('user_id', currentUser.id)
+      .single()
+
+    if (!credits || credits.balance < amount) {
+      alert('Kredit tidak cukup! Silakan top up dulu.')
+      return
+    }
+
+    // Deduct credits from sender
+    await supabase
+      .from('credits')
+      .update({ balance: credits.balance - amount })
+      .eq('user_id', currentUser.id)
+
+    // Add to creator earnings
+    const { data: existingEarnings } = await supabase
+      .from('earnings')
+      .select('*')
+      .eq('creator_id', session.creator_id)
+      .single()
+
+    if (existingEarnings) {
+      await supabase
+        .from('earnings')
+        .update({
+          total_earned: existingEarnings.total_earned + amount,
+          pending_balance: existingEarnings.pending_balance + (amount * 0.7)
+        })
+        .eq('creator_id', session.creator_id)
+    } else {
+      await supabase
+        .from('earnings')
+        .insert({
+          creator_id: session.creator_id,
+          total_earned: amount,
+          pending_balance: amount * 0.7,
+          available_balance: 0
+        })
+    }
+
+    // Update message status to paid
+    const { data: msgData } = await supabase
+      .from('messages')
+      .select('content')
+      .eq('id', messageId)
+      .single()
+
+    if (msgData) {
+      const content = JSON.parse(msgData.content)
+      content.status = 'paid'
+      await supabase
+        .from('messages')
+        .update({ content: JSON.stringify(content) })
+        .eq('id', messageId)
+    }
+
+    alert('Pembayaran berhasil!')
+  }
+
+  const renderMessage = (msg: any) => {
+    // Check if it's a payment request
+    let isPaymentRequest = false
+    let paymentData = null
+
+    try {
+      const parsed = JSON.parse(msg.content)
+      if (parsed.type === 'payment_request') {
+        isPaymentRequest = true
+        paymentData = parsed
+      }
+    } catch {
+      // Not JSON, regular message
+    }
+
+    if (isPaymentRequest && paymentData) {
+      const isPaid = paymentData.status === 'paid'
+      const isFromMe = msg.sender_id === currentUser?.id
+
+      return (
+        <div
+          key={msg.id}
+          className={`flex ${isFromMe ? 'justify-end' : 'justify-start'}`}
+        >
+          <div className={`max-w-[70%] px-4 py-3 rounded-2xl ${
+            isFromMe ? 'bg-purple-600' : 'bg-purple-900'
+          }`}>
+            <p className="text-xs text-purple-300 mb-1">💰 Payment Request</p>
+            <p className="text-2xl font-bold text-white">{paymentData.amount} Kredit</p>
+            <p className="text-sm text-purple-200 mb-2">{paymentData.description}</p>
+            
+            {isPaid ? (
+              <div className="px-3 py-2 bg-green-500/30 rounded-lg text-green-300 text-center text-sm">
+                ✅ Sudah Dibayar
+              </div>
+            ) : !isFromMe ? (
+              <button
+                onClick={() => handlePayment(msg.id, paymentData.amount)}
+                className="w-full px-4 py-2 bg-teal-500 rounded-lg font-semibold hover:bg-teal-600"
+              >
+                Bayar Sekarang
+              </button>
+            ) : (
+              <div className="px-3 py-2 bg-yellow-500/30 rounded-lg text-yellow-300 text-center text-sm">
+                ⏳ Menunggu Pembayaran
+              </div>
+            )}
+
+            <p className={`text-xs mt-2 ${isFromMe ? 'text-purple-300' : 'text-purple-400'}`}>
+              {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+            </p>
+          </div>
+        </div>
+      )
+    }
+
+    // Regular message
+    return (
+      <div
+        key={msg.id}
+        className={`flex ${msg.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}
+      >
+        <div
+          className={`max-w-[70%] px-4 py-2 rounded-2xl ${
+            msg.sender_id === currentUser?.id
+              ? 'bg-teal-500 text-white'
+              : 'bg-gray-800 text-white'
+          }`}
+        >
+          <p>{msg.content}</p>
+          <p className={`text-xs mt-1 ${msg.sender_id === currentUser?.id ? 'text-teal-200' : 'text-gray-500'}`}>
+            {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+          </p>
+        </div>
+      </div>
+    )
   }
 
   if (loading) {
@@ -180,48 +372,91 @@ export default function ChatRoom() {
           {messages.length === 0 && (
             <p className="text-center text-gray-500 mt-10">Belum ada pesan. Mulai chat!</p>
           )}
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex ${msg.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-[70%] px-4 py-2 rounded-2xl ${
-                  msg.sender_id === currentUser?.id
-                    ? 'bg-teal-500 text-white'
-                    : 'bg-gray-800 text-white'
-                }`}
-              >
-                <p>{msg.content}</p>
-                <p className={`text-xs mt-1 ${msg.sender_id === currentUser?.id ? 'text-teal-200' : 'text-gray-500'}`}>
-                  {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                </p>
-              </div>
-            </div>
-          ))}
+          {messages.map(renderMessage)}
           <div ref={messagesEndRef} />
         </div>
       </div>
 
       <div className="border-t border-gray-800 p-4">
-        <form onSubmit={sendMessage} className="max-w-4xl mx-auto flex gap-2">
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder={isExpired ? 'Chat sudah expired' : 'Ketik pesan...'}
-            disabled={isExpired}
-            className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-teal-500 outline-none disabled:opacity-50"
-          />
-          <button
-            type="submit"
-            disabled={isExpired || !newMessage.trim()}
-            className="px-6 py-3 bg-teal-500 rounded-xl font-semibold hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Kirim
-          </button>
-        </form>
+        <div className="max-w-4xl mx-auto">
+          {/* Creator Payment Request Button */}
+          {isCreator && !isExpired && (
+            <div className="mb-3">
+              <button
+                onClick={() => setShowPaymentModal(true)}
+                className="px-4 py-2 bg-purple-600 rounded-lg text-sm hover:bg-purple-700"
+              >
+                💰 Request Payment
+              </button>
+            </div>
+          )}
+
+          <form onSubmit={sendMessage} className="flex gap-2">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder={isExpired ? 'Chat sudah expired' : 'Ketik pesan...'}
+              disabled={isExpired}
+              className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-teal-500 outline-none disabled:opacity-50"
+            />
+            <button
+              type="submit"
+              disabled={isExpired || !newMessage.trim()}
+              className="px-6 py-3 bg-teal-500 rounded-xl font-semibold hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Kirim
+            </button>
+          </form>
+        </div>
       </div>
+
+      {/* Payment Request Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">💰 Request Payment</h3>
+            
+            <div className="mb-4">
+              <label className="text-sm text-gray-400 block mb-1">Jumlah Kredit</label>
+              <input
+                type="number"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                placeholder="10"
+                min="1"
+                className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="text-sm text-gray-400 block mb-1">Deskripsi (opsional)</label>
+              <input
+                type="text"
+                value={paymentDesc}
+                onChange={(e) => setPaymentDesc(e.target.value)}
+                placeholder="Nomor WA / Link / dll"
+                className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="flex-1 px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600"
+              >
+                Batal
+              </button>
+              <button
+                onClick={sendPaymentRequest}
+                className="flex-1 px-4 py-2 bg-purple-600 rounded-lg hover:bg-purple-700 font-semibold"
+              >
+                Kirim Request
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
