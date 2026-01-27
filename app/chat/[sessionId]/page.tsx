@@ -222,23 +222,23 @@ export default function ChatRoom() {
     .single()
 
   if (existingEarnings) {
-    await supabase
-      .from('earnings')
-      .update({
-        total_earned: existingEarnings.total_earned + amount,
-        pending_balance: existingEarnings.pending_balance + (amount * 0.7)
-      })
-      .eq('creator_id', session.creator_id)
-  } else {
-    await supabase
-      .from('earnings')
-      .insert({
-        creator_id: session.creator_id,
-        total_earned: amount,
-        pending_balance: amount * 0.7,
-        available_balance: 0
-      })
-  }
+  await supabase
+    .from('earnings')
+    .update({
+      total_earned: existingEarnings.total_earned + amount,
+      available_balance: (existingEarnings.available_balance || 0) + (amount * 0.8)
+    })
+    .eq('creator_id', session.creator_id)
+} else {
+  await supabase
+    .from('earnings')
+    .insert({
+      creator_id: session.creator_id,
+      total_earned: amount,
+      pending_balance: 0,
+      available_balance: amount * 0.8
+    })
+}
 
   // Update message status to paid
   const { data: msgData } = await supabase

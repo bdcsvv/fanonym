@@ -88,52 +88,31 @@ export default function CreatorProfile() {
       .update({ balance: credits.balance - pricingOption.price_credits })
       .eq('user_id', currentUser.id)
 
-    // Add to creator earnings
-    console.log('=== EARNINGS DEBUG ===')
-    console.log('Creator ID:', creator.id)
-    console.log('Amount to add:', pricingOption.price_credits)
-
-    const { data: existingEarnings, error: earningsError } = await supabase
+    // Add to creator earnings (80% ke creator, 20% platform fee)
+    const { data: existingEarnings } = await supabase
       .from('earnings')
       .select('*')
       .eq('creator_id', creator.id)
       .single()
 
-    console.log('Existing earnings:', existingEarnings)
-    console.log('Earnings fetch error:', earningsError)
-
     if (existingEarnings) {
-      const newTotal = (existingEarnings.total_earned || 0) + pricingOption.price_credits
-      const newPending = (existingEarnings.pending_balance || 0) + (pricingOption.price_credits * 0.7)
-      
-      console.log('New total:', newTotal)
-      console.log('New pending:', newPending)
-
-      const { error: updateError } = await supabase
+      await supabase
         .from('earnings')
         .update({
-          total_earned: newTotal,
-          pending_balance: newPending
+          total_earned: existingEarnings.total_earned + pricingOption.price_credits,
+          available_balance: (existingEarnings.available_balance || 0) + (pricingOption.price_credits * 0.8)
         })
         .eq('creator_id', creator.id)
-
-      console.log('Update error:', updateError)
     } else {
-      console.log('No existing earnings, inserting new...')
-      
-      const { error: insertError } = await supabase
+      await supabase
         .from('earnings')
         .insert({
           creator_id: creator.id,
           total_earned: pricingOption.price_credits,
-          pending_balance: pricingOption.price_credits * 0.7,
-          available_balance: 0
+          pending_balance: 0,
+          available_balance: pricingOption.price_credits * 0.8
         })
-
-      console.log('Insert error:', insertError)
     }
-
-    console.log('=== END DEBUG ===')
 
     window.location.href = `/chat/${session.id}`
   }
