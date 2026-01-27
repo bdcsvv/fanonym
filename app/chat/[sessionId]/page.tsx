@@ -214,7 +214,7 @@ export default function ChatRoom() {
     .update({ balance: credits.balance - amount })
     .eq('user_id', currentUser.id)
 
-  // Add to creator earnings - FIXED VERSION
+  // Add to creator earnings
   const { data: existingEarnings } = await supabase
     .from('earnings')
     .select('*')
@@ -260,7 +260,6 @@ export default function ChatRoom() {
 }
 
   const renderMessage = (msg: any) => {
-    // Check if it's a payment request
     let isPaymentRequest = false
     let paymentData = null
 
@@ -315,7 +314,6 @@ export default function ChatRoom() {
       )
     }
 
-    // Regular message
     return (
       <div
         key={msg.id}
@@ -379,7 +377,6 @@ export default function ChatRoom() {
 
       <div className="border-t border-gray-800 p-4">
         <div className="max-w-4xl mx-auto">
-          {/* Creator Payment Request Button */}
           {isCreator && !isExpired && (
             <div className="mb-3">
               <button
@@ -411,7 +408,6 @@ export default function ChatRoom() {
         </div>
       </div>
 
-      {/* Payment Request Modal */}
       {showPaymentModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
           <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-md">
