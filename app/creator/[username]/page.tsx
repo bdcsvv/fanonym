@@ -66,15 +66,15 @@ export default function CreatorProfile() {
     }
 
     const { data: session, error } = await supabase
-  .from('chat_sessions')
-  .insert({
-    sender_id: currentUser.id,
-    creator_id: creator.id,
-    duration_hours: pricingOption.duration_hours,
-    credits_paid: pricingOption.price_credits,
-    expires_at: new Date(Date.now() + pricingOption.duration_hours * 60 * 60 * 1000).toISOString(),
-    is_active: true
-  })
+      .from('chat_sessions')
+      .insert({
+        sender_id: currentUser.id,
+        creator_id: creator.id,
+        duration_hours: pricingOption.duration_hours,
+        credits_paid: pricingOption.price_credits,
+        expires_at: new Date(Date.now() + pricingOption.duration_hours * 60 * 60 * 1000).toISOString(),
+        is_active: true
+      })
       .select()
       .single()
 
@@ -89,30 +89,51 @@ export default function CreatorProfile() {
       .eq('user_id', currentUser.id)
 
     // Add to creator earnings
-const { data: existingEarnings } = await supabase
-  .from('earnings')
-  .select('*')
-  .eq('creator_id', creator.id)
-  .single()
+    console.log('=== EARNINGS DEBUG ===')
+    console.log('Creator ID:', creator.id)
+    console.log('Amount to add:', pricingOption.price_credits)
 
-if (existingEarnings) {
-  await supabase
-    .from('earnings')
-    .update({
-      total_earned: existingEarnings.total_earned + pricingOption.price_credits,
-      pending_balance: existingEarnings.pending_balance + (pricingOption.price_credits * 0.7)
-    })
-    .eq('creator_id', creator.id)
-} else {
-  await supabase
-    .from('earnings')
-    .insert({
-      creator_id: creator.id,
-      total_earned: pricingOption.price_credits,
-      pending_balance: pricingOption.price_credits * 0.7,
-      available_balance: 0
-    })
-}
+    const { data: existingEarnings, error: earningsError } = await supabase
+      .from('earnings')
+      .select('*')
+      .eq('creator_id', creator.id)
+      .single()
+
+    console.log('Existing earnings:', existingEarnings)
+    console.log('Earnings fetch error:', earningsError)
+
+    if (existingEarnings) {
+      const newTotal = (existingEarnings.total_earned || 0) + pricingOption.price_credits
+      const newPending = (existingEarnings.pending_balance || 0) + (pricingOption.price_credits * 0.7)
+      
+      console.log('New total:', newTotal)
+      console.log('New pending:', newPending)
+
+      const { error: updateError } = await supabase
+        .from('earnings')
+        .update({
+          total_earned: newTotal,
+          pending_balance: newPending
+        })
+        .eq('creator_id', creator.id)
+
+      console.log('Update error:', updateError)
+    } else {
+      console.log('No existing earnings, inserting new...')
+      
+      const { error: insertError } = await supabase
+        .from('earnings')
+        .insert({
+          creator_id: creator.id,
+          total_earned: pricingOption.price_credits,
+          pending_balance: pricingOption.price_credits * 0.7,
+          available_balance: 0
+        })
+
+      console.log('Insert error:', insertError)
+    }
+
+    console.log('=== END DEBUG ===')
 
     window.location.href = `/chat/${session.id}`
   }

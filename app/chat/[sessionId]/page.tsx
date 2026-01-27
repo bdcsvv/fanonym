@@ -196,68 +196,68 @@ export default function ChatRoom() {
   }
 
   const handlePayment = async (messageId: string, amount: number) => {
-    // Check sender credits
-    const { data: credits } = await supabase
-      .from('credits')
-      .select('balance')
-      .eq('user_id', currentUser.id)
-      .single()
+  // Check sender credits
+  const { data: credits } = await supabase
+    .from('credits')
+    .select('balance')
+    .eq('user_id', currentUser.id)
+    .single()
 
-    if (!credits || credits.balance < amount) {
-      alert('Kredit tidak cukup! Silakan top up dulu.')
-      return
-    }
-
-    // Deduct credits from sender
-    await supabase
-      .from('credits')
-      .update({ balance: credits.balance - amount })
-      .eq('user_id', currentUser.id)
-
-    // Add to creator earnings
-    const { data: existingEarnings } = await supabase
-      .from('earnings')
-      .select('*')
-      .eq('creator_id', session.creator_id)
-      .single()
-
-    if (existingEarnings) {
-      await supabase
-        .from('earnings')
-        .update({
-          total_earned: existingEarnings.total_earned + amount,
-          pending_balance: existingEarnings.pending_balance + (amount * 0.7)
-        })
-        .eq('creator_id', session.creator_id)
-    } else {
-      await supabase
-        .from('earnings')
-        .insert({
-          creator_id: session.creator_id,
-          total_earned: amount,
-          pending_balance: amount * 0.7,
-          available_balance: 0
-        })
-    }
-
-    // Update message status to paid
-    const { data: msgData } = await supabase
-      .from('messages')
-      .select('content')
-      .eq('id', messageId)
-      .single()
-
-    if (msgData) {
-      const content = JSON.parse(msgData.content)
-      content.status = 'paid'
-      await supabase
-        .from('messages')
-        .update({ content: JSON.stringify(content) })
-        .eq('id', messageId)
-    }
-
-    alert('Pembayaran berhasil!')
+  if (!credits || credits.balance < amount) {
+    alert('Kredit tidak cukup! Silakan top up dulu.')
+    return
   }
+
+  // Deduct credits from sender
+  await supabase
+    .from('credits')
+    .update({ balance: credits.balance - amount })
+    .eq('user_id', currentUser.id)
+
+  // Add to creator earnings - FIXED VERSION
+  const { data: existingEarnings } = await supabase
+    .from('earnings')
+    .select('*')
+    .eq('creator_id', session.creator_id)
+    .single()
+
+  if (existingEarnings) {
+    await supabase
+      .from('earnings')
+      .update({
+        total_earned: existingEarnings.total_earned + amount,
+        pending_balance: existingEarnings.pending_balance + (amount * 0.7)
+      })
+      .eq('creator_id', session.creator_id)
+  } else {
+    await supabase
+      .from('earnings')
+      .insert({
+        creator_id: session.creator_id,
+        total_earned: amount,
+        pending_balance: amount * 0.7,
+        available_balance: 0
+      })
+  }
+
+  // Update message status to paid
+  const { data: msgData } = await supabase
+    .from('messages')
+    .select('content')
+    .eq('id', messageId)
+    .single()
+
+  if (msgData) {
+    const content = JSON.parse(msgData.content)
+    content.status = 'paid'
+    await supabase
+      .from('messages')
+      .update({ content: JSON.stringify(content) })
+      .eq('id', messageId)
+  }
+
+  alert('Pembayaran berhasil!')
+}
 
   const renderMessage = (msg: any) => {
     // Check if it's a payment request
