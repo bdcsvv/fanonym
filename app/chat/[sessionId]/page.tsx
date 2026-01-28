@@ -226,7 +226,7 @@ export default function ChatRoom() {
     .from('earnings')
     .update({
       total_earned: existingEarnings.total_earned + amount,
-      available_balance: (existingEarnings.available_balance || 0) + (amount * 0.8)
+      available_balance: (existingEarnings.available_balance || 0) + amount
     })
     .eq('creator_id', session.creator_id)
 } else {
@@ -236,7 +236,7 @@ export default function ChatRoom() {
       creator_id: session.creator_id,
       total_earned: amount,
       pending_balance: 0,
-      available_balance: amount * 0.8
+      available_balance: amount
     })
 }
 

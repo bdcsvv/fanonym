@@ -95,24 +95,24 @@ export default function CreatorProfile() {
       .eq('creator_id', creator.id)
       .single()
 
-    if (existingEarnings) {
-      await supabase
-        .from('earnings')
-        .update({
-          total_earned: existingEarnings.total_earned + pricingOption.price_credits,
-          available_balance: (existingEarnings.available_balance || 0) + (pricingOption.price_credits * 0.8)
-        })
-        .eq('creator_id', creator.id)
-    } else {
-      await supabase
-        .from('earnings')
-        .insert({
-          creator_id: creator.id,
-          total_earned: pricingOption.price_credits,
-          pending_balance: 0,
-          available_balance: pricingOption.price_credits * 0.8
-        })
-    }
+   if (existingEarnings) {
+  await supabase
+    .from('earnings')
+    .update({
+      total_earned: existingEarnings.total_earned + pricingOption.price_credits,
+      available_balance: (existingEarnings.available_balance || 0) + pricingOption.price_credits
+    })
+    .eq('creator_id', creator.id)
+} else {
+  await supabase
+    .from('earnings')
+    .insert({
+      creator_id: creator.id,
+      total_earned: pricingOption.price_credits,
+      pending_balance: 0,
+      available_balance: pricingOption.price_credits
+    })
+}
 
     window.location.href = `/chat/${session.id}`
   }
