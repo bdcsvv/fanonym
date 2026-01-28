@@ -37,18 +37,18 @@ export default function AdminPanel() {
 
   const loadData = async () => {
     // Pending topups
-    const { data: topups } = await supabase
-      .from('topup_requests')
-      .select('*, user:user_id(id, username, email, full_name)')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false })
+const { data: topups } = await supabase
+  .from('topup_requests')
+  .select('*, user:user_id(id, username, full_name)')
+  .eq('status', 'pending')
+  .order('created_at', { ascending: false })
 
     // Pending withdraws
-    const { data: withdraws } = await supabase
-      .from('withdrawals')
-      .select('*, creator:creator_id(id, username, email, full_name)')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false })
+const { data: withdraws } = await supabase
+  .from('withdrawals')
+  .select('*, creator:creator_id(id, username, full_name)')
+  .eq('status', 'pending')
+  .order('created_at', { ascending: false })
 
     // All users
     const { data: usersData } = await supabase
@@ -89,33 +89,38 @@ export default function AdminPanel() {
   }
 
   const approveTopup = async (topupId: string, userId: string, amount: number) => {
-    // Update topup status
-    await supabase
-      .from('topup_requests')
-      .update({ status: 'approved', approved_at: new Date().toISOString() })
-      .eq('id', topupId)
+  // Update topup status
+  const { error: updateError } = await supabase
+    .from('topup_requests')
+    .update({ status: 'approved', verified_at: new Date().toISOString() })
+    .eq('id', topupId)
 
-    // Add credits to user
-    const { data: credits } = await supabase
-      .from('credits')
-      .select('balance')
-      .eq('user_id', userId)
-      .single()
-
-    if (credits) {
-      await supabase
-        .from('credits')
-        .update({ balance: credits.balance + amount })
-        .eq('user_id', userId)
-    } else {
-      await supabase
-        .from('credits')
-        .insert({ user_id: userId, balance: amount })
-    }
-
-    alert('Topup approved!')
-    loadData()
+  if (updateError) {
+    alert('Error update status: ' + updateError.message)
+    return
   }
+
+  // Add credits to user
+  const { data: credits } = await supabase
+    .from('credits')
+    .select('balance')
+    .eq('user_id', userId)
+    .single()
+
+  if (credits) {
+    await supabase
+      .from('credits')
+      .update({ balance: credits.balance + amount })
+      .eq('user_id', userId)
+  } else {
+    await supabase
+      .from('credits')
+      .insert({ user_id: userId, balance: amount })
+  }
+
+  alert('Topup approved!')
+  loadData()
+}
 
   const rejectTopup = async (topupId: string) => {
     await supabase
@@ -263,50 +268,50 @@ export default function AdminPanel() {
         </div>
 
         {/* Topup Tab */}
-        {activeTab === 'topup' && (
-          <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
-            <h3 className="text-lg font-semibold mb-4">Pending Topup Requests</h3>
-            {pendingTopups.length === 0 ? (
-              <p className="text-gray-400">Tidak ada topup pending.</p>
-            ) : (
-              <div className="space-y-4">
-                {pendingTopups.map((topup) => (
-                  <div key={topup.id} className="p-4 bg-gray-900 border border-gray-700 rounded-lg">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <p className="font-semibold">{topup.user?.full_name || topup.user?.username}</p>
-                        <p className="text-gray-400 text-sm">{topup.user?.email}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xl font-bold text-green-400">{topup.credits_amount} Kredit</p>
-                        <p className="text-gray-400 text-sm">Rp {topup.amount?.toLocaleString('id-ID')}</p>
-                      </div>
-                    </div>
-                    <div className="text-sm text-gray-400 mb-3">
-                      <p>Payment: {topup.payment_method}</p>
-                      <p>Bukti: {topup.proof_url || 'No proof'}</p>
-                      <p>Waktu: {new Date(topup.created_at).toLocaleString('id-ID')}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => approveTopup(topup.id, topup.user_id, topup.credits_amount)}
-                        className="px-4 py-2 bg-green-500 rounded-lg hover:bg-green-600 font-semibold"
-                      >
-                        ✓ Approve
-                      </button>
-                      <button
-                        onClick={() => rejectTopup(topup.id)}
-                        className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"
-                      >
-                        ✗ Reject
-                      </button>
-                    </div>
-                  </div>
-                ))}
+{activeTab === 'topup' && (
+  <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
+    <h3 className="text-lg font-semibold mb-4">Pending Topup Requests</h3>
+    {pendingTopups.length === 0 ? (
+      <p className="text-gray-400">Tidak ada topup pending.</p>
+    ) : (
+      <div className="space-y-4">
+        {pendingTopups.map((topup) => (
+          <div key={topup.id} className="p-4 bg-gray-900 border border-gray-700 rounded-lg">
+            <div className="flex justify-between items-start mb-3">
+              <div>
+                <p className="font-semibold">{topup.user?.full_name || topup.user?.username}</p>
+                <p className="text-gray-400 text-sm">@{topup.user?.username}</p>
               </div>
-            )}
+              <div className="text-right">
+                <p className="text-xl font-bold text-green-400">{topup.amount_credits} Kredit</p>
+                <p className="text-gray-400 text-sm">Rp {topup.amount_rupiah?.toLocaleString('id-ID')}</p>
+              </div>
+            </div>
+            <div className="text-sm text-gray-400 mb-3">
+              <p>Payment: {topup.payment_code}</p>
+              <p>Bukti: {topup.payment_proof_url || 'No proof'}</p>
+              <p>Waktu: {new Date(topup.created_at).toLocaleString('id-ID')}</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => approveTopup(topup.id, topup.user_id, topup.amount_credits)}
+                className="px-4 py-2 bg-green-500 rounded-lg hover:bg-green-600 font-semibold"
+              >
+                ✓ Approve
+              </button>
+              <button
+                onClick={() => rejectTopup(topup.id)}
+                className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"
+              >
+                ✗ Reject
+              </button>
+            </div>
           </div>
-        )}
+        ))}
+      </div>
+    )}
+  </div>
+)}
 
         {/* Withdraw Tab */}
         {activeTab === 'withdraw' && (
@@ -323,7 +328,7 @@ export default function AdminPanel() {
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <p className="font-semibold">{withdraw.creator?.full_name || withdraw.creator?.username}</p>
-                          <p className="text-gray-400 text-sm">{withdraw.creator?.email}</p>
+                          <p className="text-gray-400 text-sm">@{withdraw.creator?.username}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-xl font-bold text-orange-400">{withdraw.amount} Kredit</p>
