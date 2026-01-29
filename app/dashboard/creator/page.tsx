@@ -25,11 +25,11 @@ export default function CreatorDashboard() {
   const [accountName, setAccountName] = useState('')
   const [withdrawLoading, setWithdrawLoading] = useState(false)
 
-  const KREDIT_TO_IDR = 10000 // 1 kredit = Rp 10.000
-  const PLATFORM_FEE = 0.2 // 20% potongan platform
-  const TRANSFER_FEE = 30000 // Fee transfer di bawah 1 juta
-  const FREE_TRANSFER_MIN = 1000000 // Minimal untuk free transfer
-  const MIN_WITHDRAW = 10 // Minimal withdraw 10 kredit
+  const KREDIT_TO_IDR = 10000
+  const PLATFORM_FEE = 0.2
+  const TRANSFER_FEE = 30000
+  const FREE_TRANSFER_MIN = 1000000
+  const MIN_WITHDRAW = 10
 
   useEffect(() => {
     const getData = async () => {
@@ -144,17 +144,58 @@ export default function CreatorDashboard() {
     setPricing(pricing.filter(p => p.id !== id))
   }
 
-  const handleSpamAction = async (messageId: string, action: 'accept' | 'reject') => {
+  const handleSpamAction = async (messageId: string, senderId: string, action: 'accept' | 'reject') => {
+    if (action === 'accept') {
+      // Bikin chat session 10 menit gratis
+      const { data: session, error } = await supabase
+        .from('chat_sessions')
+        .insert({
+          sender_id: senderId,
+          creator_id: profile?.id,
+          duration_hours: 0,
+          credits_paid: 0,
+          expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+          is_active: true
+        })
+        .select()
+        .single()
+
+      if (!error && session) {
+        // Copy pesan spam ke chat room
+        const spamMsg = spamMessages.find(m => m.id === messageId)
+        if (spamMsg) {
+          await supabase.from('messages').insert({
+            session_id: session.id,
+            sender_id: senderId,
+            content: spamMsg.content,
+            is_read: false
+          })
+        }
+      }
+    }
+
+    // Update status spam message
     await supabase
       .from('spam_messages')
       .update({ status: action === 'accept' ? 'accepted' : 'rejected' })
       .eq('id', messageId)
-    
+
     setSpamMessages(spamMessages.filter(m => m.id !== messageId))
+
+    if (action === 'accept') {
+      alert('Pesan diterima! Chat 10 menit telah dibuat.')
+      // Refresh active chats
+      const { data: chatsData } = await supabase
+        .from('chat_sessions')
+        .select('*, sender:sender_id(id, username, full_name)')
+        .eq('creator_id', profile?.id)
+        .order('started_at', { ascending: false })
+      setActiveChats(chatsData || [])
+    }
   }
 
   const calculateWithdraw = (kredits: number) => {
-    const grossAmount = kredits * KREDIT_TO_IDR * (1 - PLATFORM_FEE) // Setelah potongan 20%
+    const grossAmount = kredits * KREDIT_TO_IDR * (1 - PLATFORM_FEE)
     const fee = grossAmount < FREE_TRANSFER_MIN ? TRANSFER_FEE : 0
     const netAmount = grossAmount - fee
     return { grossAmount, fee, netAmount }
@@ -183,7 +224,6 @@ export default function CreatorDashboard() {
 
     const { grossAmount, fee, netAmount } = calculateWithdraw(amount)
 
-    // Create withdrawal request
     const { data: withdrawal, error: withdrawError } = await supabase
       .from('withdrawals')
       .insert({
@@ -203,7 +243,6 @@ export default function CreatorDashboard() {
       return
     }
 
-    // Deduct from available balance
     await supabase
       .from('earnings')
       .update({
@@ -211,11 +250,9 @@ export default function CreatorDashboard() {
       })
       .eq('creator_id', profile?.id)
 
-    // Update local state
     setEarnings({ ...earnings, available_balance: availableBalance - amount })
     setWithdrawals([withdrawal, ...withdrawals])
     
-    // Reset form
     setWithdrawAmount('')
     setBankName('')
     setAccountNumber('')
@@ -355,7 +392,9 @@ export default function CreatorDashboard() {
                       </div>
                       <div>
                         <p className="font-semibold">{chat.sender?.full_name || chat.sender?.username || 'Anonymous'}</p>
-                        <p className="text-gray-400 text-sm">Bayar {chat.credits_paid} kredit</p>
+                        <p className="text-gray-400 text-sm">
+                          {chat.credits_paid === 0 ? '🆓 Free chat' : `Bayar ${chat.credits_paid} kredit`}
+                        </p>
                       </div>
                     </div>
                     <div className={`text-sm px-3 py-1 rounded-full ${
@@ -376,6 +415,7 @@ export default function CreatorDashboard() {
         {activeTab === 'spam' && (
           <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
             <h3 className="text-lg font-semibold mb-4">Pesan Gratis (Spam)</h3>
+            <p className="text-gray-500 text-sm mb-4">Jika diterima, chat 10 menit akan dibuat otomatis.</p>
             {spamMessages.length === 0 ? (
               <p className="text-gray-400">Tidak ada pesan spam.</p>
             ) : (
@@ -394,16 +434,16 @@ export default function CreatorDashboard() {
                     <p className="text-gray-300 mb-4">{msg.content}</p>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleSpamAction(msg.id, 'accept')}
+                        onClick={() => handleSpamAction(msg.id, msg.sender_id, 'accept')}
                         className="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30"
                       >
-                        Terima
+                        ✓ Terima (10 menit chat)
                       </button>
                       <button
-                        onClick={() => handleSpamAction(msg.id, 'reject')}
+                        onClick={() => handleSpamAction(msg.id, msg.sender_id, 'reject')}
                         className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"
                       >
-                        Tolak
+                        ✗ Tolak
                       </button>
                     </div>
                   </div>
@@ -487,7 +527,6 @@ export default function CreatorDashboard() {
         {/* Withdraw Tab */}
         {activeTab === 'withdraw' && (
           <div className="space-y-6">
-            {/* Withdraw Form */}
             <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
               <h3 className="text-lg font-semibold mb-4">💰 Tarik Saldo</h3>
               
@@ -587,7 +626,6 @@ export default function CreatorDashboard() {
               </button>
             </div>
 
-            {/* Withdrawal History */}
             <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
               <h3 className="text-lg font-semibold mb-4">Riwayat Withdraw</h3>
               
