@@ -169,12 +169,21 @@ export default function CreatorProfile() {
             {creator.full_name?.[0] || creator.username?.[0] || '?'}
           </div>
           
-          <h1 className="text-2xl font-bold">{creator.full_name || creator.username}</h1>
-          <p className="text-gray-400">@{creator.username}</p>
-          
-          {creator.bio && (
-            <p className="text-gray-300 mt-4 max-w-md mx-auto">{creator.bio}</p>
-          )}
+          <h1 className="text-2xl font-bold flex items-center justify-center gap-2">
+  {creator.full_name || creator.username}
+  {creator?.is_verified && <span className="text-teal-400">✓</span>}
+</h1>
+<p className="text-gray-400">@{creator.username}</p>
+
+{creator?.bio && (
+  <p className="text-gray-300 mt-4 max-w-md mx-auto">{creator.bio}</p>
+)}
+
+{creator?.is_verified && (
+  <span className="inline-block mt-3 px-3 py-1 bg-teal-500/20 text-teal-400 rounded-full text-sm">
+    ✓ Verified Creator
+  </span>
+)}
         </div>
 
         <div className="mb-8">

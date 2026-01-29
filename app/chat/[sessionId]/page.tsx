@@ -41,7 +41,7 @@ export default function ChatRoom() {
 
       const { data: sessionData, error } = await supabase
         .from('chat_sessions')
-        .select('*')
+        .select('*, creator:creator_id(id, username, full_name, avatar_url), sender:sender_id(id, username, full_name, avatar_url)')
         .eq('id', sessionId)
         .single()
 
@@ -351,9 +351,13 @@ export default function ChatRoom() {
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
             <button onClick={() => router.back()} className="text-gray-400 hover:text-white">←</button>
-            <div className="w-10 h-10 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center font-bold">
-              {otherUser?.full_name?.[0] || otherUser?.username?.[0] || '?'}
-            </div>
+            {session?.creator?.avatar_url ? (
+  <img src={session.creator.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover"/>
+) : (
+  <div className="w-10 h-10 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center font-bold">
+    {session?.creator?.full_name?.[0] || '?'}
+  </div>
+)}
             <div>
               <p className="font-semibold">{otherUser?.full_name || otherUser?.username}</p>
               <p className="text-xs text-gray-400">@{otherUser?.username}</p>

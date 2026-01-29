@@ -32,10 +32,9 @@ export default function SenderDashboard() {
         .eq('user_id', user.id)
         .single()
 
-      // Get active chat sessions with creator info
       const { data: chatsData } = await supabase
         .from('chat_sessions')
-        .select('*, creator:creator_id(id, username, full_name)')
+        .select('*, creator:creator_id(id, username, full_name, avatar_url)')
         .eq('sender_id', profileData?.id)
         .order('started_at', { ascending: false })
 
@@ -57,9 +56,7 @@ export default function SenderDashboard() {
     const now = new Date().getTime()
     const expires = new Date(expiresAt).getTime()
     const diff = expires - now
-
     if (diff <= 0) return 'Expired'
-
     const hours = Math.floor(diff / (1000 * 60 * 60))
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
     return `${hours}j ${minutes}m`
@@ -78,14 +75,28 @@ export default function SenderDashboard() {
       <nav className="border-b border-gray-800 p-4">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <h1 className="text-xl font-bold text-teal-400">Fanonym</h1>
-          <button onClick={handleLogout} className="text-gray-400 hover:text-white">
-            Logout
-          </button>
+          <div className="flex items-center gap-4">
+            <Link href="/settings" className="text-gray-400 hover:text-white">⚙️ Settings</Link>
+            <button onClick={handleLogout} className="text-gray-400 hover:text-white">Logout</button>
+          </div>
         </div>
       </nav>
 
       <main className="max-w-6xl mx-auto p-6">
-        <h2 className="text-2xl font-bold mb-6">Halo, {profile?.full_name || profile?.username}! 👋</h2>
+        {/* Profile Header */}
+        <div className="flex items-center gap-4 mb-6">
+          {profile?.avatar_url ? (
+            <img src={profile.avatar_url} alt="Avatar" className="w-16 h-16 rounded-full object-cover border-2 border-purple-500"/>
+          ) : (
+            <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-2xl font-bold">
+              {profile?.full_name?.[0] || profile?.username?.[0] || '?'}
+            </div>
+          )}
+          <div>
+            <h2 className="text-2xl font-bold">Halo, {profile?.full_name || profile?.username}! 👋</h2>
+            {profile?.bio && <p className="text-gray-400 text-sm">{profile.bio}</p>}
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
@@ -97,18 +108,13 @@ export default function SenderDashboard() {
               <p className="text-white font-semibold">Butuh lebih banyak kredit?</p>
               <p className="text-gray-400 text-sm">Top up sekarang!</p>
             </div>
-            <Link href="/topup" className="px-4 py-2 bg-teal-500 rounded-lg hover:bg-teal-600 font-semibold">
-              Top Up
-            </Link>
+            <Link href="/topup" className="px-4 py-2 bg-teal-500 rounded-lg hover:bg-teal-600 font-semibold">Top Up</Link>
           </div>
         </div>
 
         <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 mb-6">
           <h3 className="text-lg font-semibold mb-4">Cari Creator</h3>
-          <Link
-            href="/explore"
-            className="block w-full p-4 bg-gray-900 border border-gray-600 rounded-lg text-gray-400 hover:border-teal-500 transition-colors"
-          >
+          <Link href="/explore" className="block w-full p-4 bg-gray-900 border border-gray-600 rounded-lg text-gray-400 hover:border-teal-500 transition-colors">
             🔍 Cari creator favorit kamu...
           </Link>
         </div>
@@ -120,25 +126,21 @@ export default function SenderDashboard() {
           ) : (
             <div className="space-y-3">
               {activeChats.map((chat) => (
-                <Link
-                  key={chat.id}
-                  href={`/chat/${chat.id}`}
-                  className="flex items-center justify-between p-4 bg-gray-900 border border-gray-700 rounded-lg hover:border-teal-500 transition-colors"
-                >
+                <Link key={chat.id} href={`/chat/${chat.id}`} className="flex items-center justify-between p-4 bg-gray-900 border border-gray-700 rounded-lg hover:border-teal-500 transition-colors">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center font-bold">
-                      {chat.creator?.full_name?.[0] || chat.creator?.username?.[0] || '?'}
-                    </div>
+                    {chat.creator?.avatar_url ? (
+                      <img src={chat.creator.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover"/>
+                    ) : (
+                      <div className="w-10 h-10 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center font-bold">
+                        {chat.creator?.full_name?.[0] || chat.creator?.username?.[0] || '?'}
+                      </div>
+                    )}
                     <div>
                       <p className="font-semibold">{chat.creator?.full_name || chat.creator?.username || 'Creator'}</p>
                       <p className="text-gray-400 text-sm">@{chat.creator?.username || 'unknown'}</p>
                     </div>
                   </div>
-                  <div className={`text-sm px-3 py-1 rounded-full ${
-                    new Date(chat.expires_at) < new Date() 
-                      ? 'bg-red-500/20 text-red-400' 
-                      : 'bg-teal-500/20 text-teal-400'
-                  }`}>
+                  <div className={`text-sm px-3 py-1 rounded-full ${new Date(chat.expires_at) < new Date() ? 'bg-red-500/20 text-red-400' : 'bg-teal-500/20 text-teal-400'}`}>
                     ⏱ {getTimeLeft(chat.expires_at)}
                   </div>
                 </Link>

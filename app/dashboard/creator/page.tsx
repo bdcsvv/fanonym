@@ -290,14 +290,38 @@ export default function CreatorDashboard() {
       <nav className="border-b border-gray-800 p-4">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <h1 className="text-xl font-bold text-teal-400">Fanonym</h1>
-          <button onClick={handleLogout} className="text-gray-400 hover:text-white">
-            Logout
-          </button>
+          <div className="flex items-center gap-4">
+  <Link href="/settings" className="text-gray-400 hover:text-white">
+    ⚙️ Settings
+  </Link>
+  <button onClick={handleLogout} className="text-gray-400 hover:text-white">
+    Logout
+  </button>
+</div>
         </div>
       </nav>
 
       <main className="max-w-6xl mx-auto p-6">
-        <h2 className="text-2xl font-bold mb-6">Halo, {profile?.full_name || profile?.username}! 👋</h2>
+        <div className="flex items-center gap-4 mb-6">
+  {profile?.avatar_url ? (
+    <img 
+      src={profile.avatar_url} 
+      alt="Avatar" 
+      className="w-16 h-16 rounded-full object-cover border-2 border-teal-500"
+    />
+  ) : (
+    <div className="w-16 h-16 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center text-2xl font-bold">
+      {profile?.full_name?.[0] || profile?.username?.[0] || '?'}
+    </div>
+  )}
+  <div>
+    <h2 className="text-2xl font-bold flex items-center gap-2">
+      Halo, {profile?.full_name || profile?.username}! 👋
+      {profile?.is_verified && <span className="text-teal-400 text-lg">✓</span>}
+    </h2>
+    {profile?.bio && <p className="text-gray-400 text-sm">{profile.bio}</p>}
+  </div>
+</div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
