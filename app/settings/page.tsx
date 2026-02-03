@@ -25,6 +25,8 @@ export default function SettingsPage() {
   const [bio, setBio] = useState('')
   const [phone, setPhone] = useState('')
   const [avatarUrl, setAvatarUrl] = useState('')
+  const [coverPhotoUrl, setCoverPhotoUrl] = useState('')
+  const [coverUploading, setCoverUploading] = useState(false)
 
   // Verification (creator only)
   const [ktpUploading, setKtpUploading] = useState(false)
@@ -51,6 +53,7 @@ export default function SettingsPage() {
         setBio(profileData.bio || '')
         setPhone(profileData.phone || '')
         setAvatarUrl(profileData.avatar_url || '')
+        setCoverPhotoUrl(profileData.cover_photo_url || '')
       }
       setLoading(false)
     }
@@ -126,6 +129,33 @@ export default function SettingsPage() {
     setUploading(false)
   }
 
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setCoverUploading(true)
+
+    const fileExt = file.name.split('.').pop()
+    const fileName = `cover-${user.id}-${Date.now()}.${fileExt}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(fileName, file)
+
+    if (uploadError) {
+      alert('Gagal upload cover: ' + uploadError.message)
+      setCoverUploading(false)
+      return
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(fileName)
+
+    setCoverPhotoUrl(publicUrl)
+    setCoverUploading(false)
+  }
+
   const handleKtpUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -174,6 +204,7 @@ export default function SettingsPage() {
         bio: bio,
         phone: phone,
         avatar_url: avatarUrl,
+        cover_photo_url: coverPhotoUrl,
         updated_at: new Date().toISOString()
       })
       .eq('id', user.id)
@@ -182,7 +213,7 @@ export default function SettingsPage() {
       alert('Gagal menyimpan: ' + error.message)
     } else {
       alert('Profil berhasil disimpan!')
-      setProfile({ ...profile, full_name: fullName, username, bio, phone, avatar_url: avatarUrl })
+      setProfile({ ...profile, full_name: fullName, username, bio, phone, avatar_url: avatarUrl, cover_photo_url: coverPhotoUrl })
     }
     setSaving(false)
   }
@@ -276,6 +307,37 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+
+        {/* Cover Photo Upload - Creator Only */}
+        {profile?.user_type === 'creator' && (
+          <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 mb-6">
+            <h3 className="text-lg font-semibold mb-4">Cover Photo</h3>
+            <div className="space-y-4">
+              {coverPhotoUrl ? (
+                <img 
+                  src={coverPhotoUrl} 
+                  alt="Cover" 
+                  className="w-full h-32 object-cover rounded-lg border border-gray-600"
+                />
+              ) : (
+                <div className="w-full h-32 bg-gradient-to-r from-purple-600/30 to-violet-600/30 rounded-lg flex items-center justify-center text-gray-500">
+                  Belum ada cover photo
+                </div>
+              )}
+              <label className="px-4 py-2 bg-purple-500 rounded-lg cursor-pointer hover:bg-purple-600 inline-block">
+                {coverUploading ? 'Uploading...' : 'Upload Cover'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCoverUpload}
+                  className="hidden"
+                  disabled={coverUploading}
+                />
+              </label>
+              <p className="text-gray-500 text-xs">Recommended: 1200x400px</p>
+            </div>
+          </div>
+        )}
 
         {/* Basic Info */}
         <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 mb-6">

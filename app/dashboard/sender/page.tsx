@@ -84,6 +84,7 @@ export default function SenderDashboard() {
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <Logo variant="mask" size="md" linkTo="/" />
           <div className="flex items-center gap-4">
+            <Link href={`/sender/${profile?.username}`} className="text-gray-400 hover:text-white">👤 Profile</Link>
             <Link href="/settings" className="text-gray-400 hover:text-white">⚙️ Settings</Link>
             <button onClick={handleLogout} className="text-gray-400 hover:text-white">Logout</button>
           </div>
