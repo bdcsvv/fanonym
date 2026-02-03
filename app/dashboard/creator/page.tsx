@@ -297,7 +297,7 @@ export default function CreatorDashboard() {
 
       <nav className="border-b border-gray-800/50 p-4 relative z-10 bg-[#0a0a0f]/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <Logo size="md" linkTo="/" />
+          <Logo variant="mask" size="md" linkTo="/" />
           <div className="flex items-center gap-4">
   <Link href="/settings" className="text-gray-400 hover:text-white">
     ⚙️ Settings

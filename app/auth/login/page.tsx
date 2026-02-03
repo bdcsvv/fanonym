@@ -70,7 +70,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="flex items-center justify-center mb-8">
-          <Logo size="lg" linkTo="/" />
+          <Logo variant="mask" size="lg" linkTo="/" />
         </div>
 
         {/* Header */}

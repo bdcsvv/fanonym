@@ -205,7 +205,7 @@ export default function SettingsPage() {
 
       <nav className="border-b border-gray-800/50 p-4 relative z-10 bg-[#0a0a0f]/80 backdrop-blur-md">
         <div className="max-w-2xl mx-auto flex justify-between items-center">
-          <Logo size="md" linkTo="/" />
+          <Logo variant="mask" size="md" linkTo="/" />
           <Link 
             href={profile?.user_type === 'creator' ? '/dashboard/creator' : '/dashboard/sender'} 
             className="text-gray-400 hover:text-white"

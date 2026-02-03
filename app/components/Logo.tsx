@@ -3,26 +3,29 @@
 import Link from 'next/link'
 
 interface LogoProps {
+  variant?: 'text' | 'mask'  // text = homepage, mask = dashboard etc
   size?: 'sm' | 'md' | 'lg'
   linkTo?: string
 }
 
-export default function Logo({ size = 'md', linkTo = '/' }: LogoProps) {
+export default function Logo({ variant = 'text', size = 'md', linkTo = '/' }: LogoProps) {
   const sizes = {
-    sm: 'text-lg',
-    md: 'text-xl',
-    lg: 'text-2xl',
+    sm: 'h-6',
+    md: 'h-8',
+    lg: 'h-10',
   }
 
   const LogoContent = () => (
-    <span className={`${sizes[size]} font-bold bg-gradient-to-r from-purple-400 via-violet-400 to-purple-500 bg-clip-text text-transparent`}>
-      fanonym
-    </span>
+    <img 
+      src={variant === 'text' ? '/logo-text.png' : '/logo-mask.png'}
+      alt="Fanonym"
+      className={`${sizes[size]} w-auto object-contain`}
+    />
   )
 
   if (linkTo) {
     return (
-      <Link href={linkTo}>
+      <Link href={linkTo} className="flex items-center">
         <LogoContent />
       </Link>
     )

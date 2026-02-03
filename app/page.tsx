@@ -7,7 +7,7 @@ export default function Home() {
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#0a0a0f]/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Logo size="md" />
+          <Logo variant="text" size="md" linkTo="/" />
           <div className="flex items-center gap-4">
             <Link
               href="/auth/login"
@@ -230,7 +230,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-white/5 px-6 py-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
-          <Logo size="sm" linkTo="/" />
+          <Logo variant="text" size="sm" linkTo="/" />
           <p className="text-sm text-zinc-500">
             &copy; {new Date().getFullYear()} Fanonym. Semua hak dilindungi.
           </p>
