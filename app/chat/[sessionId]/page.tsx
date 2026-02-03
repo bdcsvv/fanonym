@@ -189,13 +189,11 @@ export default function ChatRoom() {
       return
     }
 
-    // Check file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       alert('File terlalu besar! Maksimal 10MB')
       return
     }
 
-    // Check file type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/quicktime']
     if (!allowedTypes.includes(file.type)) {
       alert('Format file tidak didukung! Gunakan JPG, PNG, GIF, WEBP, atau MP4')
@@ -221,7 +219,6 @@ export default function ChatRoom() {
       .from('media')
       .getPublicUrl(fileName)
 
-    // Determine media type
     const isVideo = file.type.startsWith('video/')
     const mediaData = {
       type: 'media',
@@ -424,31 +421,16 @@ export default function ChatRoom() {
       // Not JSON, regular message
     }
 
-    // Media message
     if (isMedia && mediaData) {
       const isFromMe = msg.sender_id === currentUser?.id
-
       return (
-        <div
-          key={msg.id}
-          className={`flex ${isFromMe ? 'justify-end' : 'justify-start'}`}
-        >
-          <div className={`max-w-[70%] rounded-2xl overflow-hidden ${
-            isFromMe ? 'bg-teal-500' : 'bg-gray-800'
-          }`}>
+        <div key={msg.id} className={`flex ${isFromMe ? 'justify-end' : 'justify-start'}`}>
+          <div className={`max-w-[70%] rounded-2xl overflow-hidden ${isFromMe ? 'bg-teal-500' : 'bg-gray-800'}`}>
             {mediaData.media_type === 'video' ? (
-              <video 
-                src={mediaData.url} 
-                controls 
-                className="max-w-full max-h-80 rounded-lg"
-              />
+              <video src={mediaData.url} controls className="max-w-full max-h-80 rounded-lg"/>
             ) : (
               <a href={mediaData.url} target="_blank" rel="noopener noreferrer">
-                <img 
-                  src={mediaData.url} 
-                  alt="Media" 
-                  className="max-w-full max-h-80 object-cover"
-                />
+                <img src={mediaData.url} alt="Media" className="max-w-full max-h-80 object-cover"/>
               </a>
             )}
             <p className={`text-xs p-2 ${isFromMe ? 'text-teal-200' : 'text-gray-500'}`}>
@@ -459,40 +441,22 @@ export default function ChatRoom() {
       )
     }
 
-    // Payment request message
     if (isPaymentRequest && paymentData) {
       const isPaid = paymentData.status === 'paid'
       const isFromMe = msg.sender_id === currentUser?.id
-
       return (
-        <div
-          key={msg.id}
-          className={`flex ${isFromMe ? 'justify-end' : 'justify-start'}`}
-        >
-          <div className={`max-w-[70%] px-4 py-3 rounded-2xl ${
-            isFromMe ? 'bg-purple-600' : 'bg-purple-900'
-          }`}>
+        <div key={msg.id} className={`flex ${isFromMe ? 'justify-end' : 'justify-start'}`}>
+          <div className={`max-w-[70%] px-4 py-3 rounded-2xl ${isFromMe ? 'bg-purple-600' : 'bg-purple-900'}`}>
             <p className="text-xs text-purple-300 mb-1">💰 Payment Request</p>
             <p className="text-2xl font-bold text-white">{paymentData.amount} Kredit</p>
             <p className="text-sm text-purple-200 mb-2">{paymentData.description}</p>
-            
             {isPaid ? (
-              <div className="px-3 py-2 bg-green-500/30 rounded-lg text-green-300 text-center text-sm">
-                ✅ Sudah Dibayar
-              </div>
+              <div className="px-3 py-2 bg-green-500/30 rounded-lg text-green-300 text-center text-sm">✅ Sudah Dibayar</div>
             ) : !isFromMe ? (
-              <button
-                onClick={() => handlePayment(msg.id, paymentData.amount)}
-                className="w-full px-4 py-2 bg-teal-500 rounded-lg font-semibold hover:bg-teal-600"
-              >
-                Bayar Sekarang
-              </button>
+              <button onClick={() => handlePayment(msg.id, paymentData.amount)} className="w-full px-4 py-2 bg-teal-500 rounded-lg font-semibold hover:bg-teal-600">Bayar Sekarang</button>
             ) : (
-              <div className="px-3 py-2 bg-yellow-500/30 rounded-lg text-yellow-300 text-center text-sm">
-                ⏳ Menunggu Pembayaran
-              </div>
+              <div className="px-3 py-2 bg-yellow-500/30 rounded-lg text-yellow-300 text-center text-sm">⏳ Menunggu Pembayaran</div>
             )}
-
             <p className={`text-xs mt-2 ${isFromMe ? 'text-purple-300' : 'text-purple-400'}`}>
               {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
             </p>
@@ -501,30 +465,17 @@ export default function ChatRoom() {
       )
     }
 
-    // System message
     if (msg.content.startsWith('🔄')) {
       return (
         <div key={msg.id} className="flex justify-center">
-          <div className="px-4 py-2 bg-gray-800/50 rounded-full text-gray-400 text-sm">
-            {msg.content}
-          </div>
+          <div className="px-4 py-2 bg-gray-800/50 rounded-full text-gray-400 text-sm">{msg.content}</div>
         </div>
       )
     }
 
-    // Regular text message
     return (
-      <div
-        key={msg.id}
-        className={`flex ${msg.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}
-      >
-        <div
-          className={`max-w-[70%] px-4 py-2 rounded-2xl ${
-            msg.sender_id === currentUser?.id
-              ? 'bg-teal-500 text-white'
-              : 'bg-gray-800 text-white'
-          }`}
-        >
+      <div key={msg.id} className={`flex ${msg.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}>
+        <div className={`max-w-[70%] px-4 py-2 rounded-2xl ${msg.sender_id === currentUser?.id ? 'bg-teal-500 text-white' : 'bg-gray-800 text-white'}`}>
           <p>{msg.content}</p>
           <p className={`text-xs mt-1 ${msg.sender_id === currentUser?.id ? 'text-teal-200' : 'text-gray-500'}`}>
             {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
@@ -570,144 +521,70 @@ export default function ChatRoom() {
 
       <div className="flex-1 overflow-y-auto p-4 max-w-4xl mx-auto w-full">
         <div className="space-y-4">
-          {messages.length === 0 && (
-            <p className="text-center text-gray-500 mt-10">Belum ada pesan. Mulai chat!</p>
-          )}
+          {messages.length === 0 && <p className="text-center text-gray-500 mt-10">Belum ada pesan. Mulai chat!</p>}
           {messages.map(renderMessage)}
           <div ref={messagesEndRef} />
         </div>
       </div>
 
-      {/* Expired Banner & Extend Button */}
       {isExpired && !isCreator && (
         <div className="border-t border-gray-800 p-4 bg-red-500/10">
           <div className="max-w-4xl mx-auto text-center">
             <p className="text-red-400 mb-3">⏰ Chat sudah expired. Perpanjang untuk lanjut chat!</p>
-            <button
-              onClick={() => setShowExtendModal(true)}
-              className="px-6 py-3 bg-teal-500 rounded-xl font-semibold hover:bg-teal-600"
-            >
-              🔄 Perpanjang Chat
-            </button>
+            <button onClick={() => setShowExtendModal(true)} className="px-6 py-3 bg-teal-500 rounded-xl font-semibold hover:bg-teal-600">🔄 Perpanjang Chat</button>
           </div>
         </div>
       )}
 
-      {/* Normal Chat Input */}
       {!isExpired && (
         <div className="border-t border-gray-800 p-4">
           <div className="max-w-4xl mx-auto">
             {isCreator && (
               <div className="mb-3">
-                <button
-                  onClick={() => setShowPaymentModal(true)}
-                  className="px-4 py-2 bg-purple-600 rounded-lg text-sm hover:bg-purple-700"
-                >
-                  💰 Request Payment
-                </button>
+                <button onClick={() => setShowPaymentModal(true)} className="px-4 py-2 bg-purple-600 rounded-lg text-sm hover:bg-purple-700">💰 Request Payment</button>
               </div>
             )}
-
             <form onSubmit={sendMessage} className="flex gap-2">
-              {/* File Upload Button */}
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-                accept="image/*,video/mp4,video/quicktime"
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl hover:bg-gray-700 disabled:opacity-50"
-              >
+              <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*,video/mp4,video/quicktime" style={{ display: 'none' }}/>
+              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl hover:bg-gray-700 disabled:opacity-50">
                 {uploading ? '⏳' : '📎'}
               </button>
-
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Ketik pesan..."
-                className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-teal-500 outline-none"
-              />
-              <button
-                type="submit"
-                disabled={!newMessage.trim()}
-                className="px-6 py-3 bg-teal-500 rounded-xl font-semibold hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Kirim
-              </button>
+              <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Ketik pesan..." className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-teal-500 outline-none"/>
+              <button type="submit" disabled={!newMessage.trim()} className="px-6 py-3 bg-teal-500 rounded-xl font-semibold hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed">Kirim</button>
             </form>
           </div>
         </div>
       )}
 
-      {/* Payment Request Modal */}
       {showPaymentModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
           <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold mb-4">💰 Request Payment</h3>
-            
             <div className="mb-4">
               <label className="text-sm text-gray-400 block mb-1">Jumlah Kredit</label>
-              <input
-                type="number"
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                placeholder="10"
-                min="1"
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg"
-              />
+              <input type="number" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} placeholder="10" min="1" className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg"/>
             </div>
-
             <div className="mb-4">
               <label className="text-sm text-gray-400 block mb-1">Deskripsi (opsional)</label>
-              <input
-                type="text"
-                value={paymentDesc}
-                onChange={(e) => setPaymentDesc(e.target.value)}
-                placeholder="Nomor WA / Link / dll"
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg"
-              />
+              <input type="text" value={paymentDesc} onChange={(e) => setPaymentDesc(e.target.value)} placeholder="Nomor WA / Link / dll" className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg"/>
             </div>
-
             <div className="flex gap-3">
-              <button
-                onClick={() => setShowPaymentModal(false)}
-                className="flex-1 px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600"
-              >
-                Batal
-              </button>
-              <button
-                onClick={sendPaymentRequest}
-                className="flex-1 px-4 py-2 bg-purple-600 rounded-lg hover:bg-purple-700 font-semibold"
-              >
-                Kirim Request
-              </button>
+              <button onClick={() => setShowPaymentModal(false)} className="flex-1 px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600">Batal</button>
+              <button onClick={sendPaymentRequest} className="flex-1 px-4 py-2 bg-purple-600 rounded-lg hover:bg-purple-700 font-semibold">Kirim Request</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Extend Chat Modal */}
       {showExtendModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
           <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold mb-4">🔄 Perpanjang Chat</h3>
             <p className="text-gray-400 text-sm mb-4">Pilih durasi perpanjangan:</p>
-            
             {creatorPricing.length > 0 ? (
               <div className="space-y-3 mb-4">
                 {creatorPricing.map((pricing) => (
-                  <button
-                    key={pricing.id}
-                    onClick={() => handleExtendChat(pricing)}
-                    disabled={extendLoading}
-                    className="w-full p-4 bg-gray-800 border border-gray-700 rounded-xl hover:border-teal-500 transition-colors flex justify-between items-center disabled:opacity-50"
-                  >
+                  <button key={pricing.id} onClick={() => handleExtendChat(pricing)} disabled={extendLoading} className="w-full p-4 bg-gray-800 border border-gray-700 rounded-xl hover:border-teal-500 transition-colors flex justify-between items-center disabled:opacity-50">
                     <span className="font-semibold">{pricing.duration_hours} Jam</span>
                     <span className="text-teal-400 font-bold">{pricing.price_credits} Kredit</span>
                   </button>
@@ -716,13 +593,7 @@ export default function ChatRoom() {
             ) : (
               <p className="text-gray-500 text-center mb-4">Creator belum set harga.</p>
             )}
-
-            <button
-              onClick={() => setShowExtendModal(false)}
-              className="w-full px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600"
-            >
-              Batal
-            </button>
+            <button onClick={() => setShowExtendModal(false)} className="w-full px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600">Batal</button>
           </div>
         </div>
       )}
