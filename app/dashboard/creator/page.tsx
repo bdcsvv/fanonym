@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Logo from '@/app/components/Logo'
 
 export default function CreatorDashboard() {
   const router = useRouter()
@@ -286,10 +287,17 @@ export default function CreatorDashboard() {
   const withdrawCalc = withdrawAmount ? calculateWithdraw(parseFloat(withdrawAmount)) : null
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
-      <nav className="border-b border-gray-800 p-4">
+    <div className="min-h-screen bg-[#0a0a0f] text-white relative">
+      {/* Background gradient orbs - same as landing page */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[120px]" />
+        <div className="absolute bottom-1/4 right-1/4 h-[300px] w-[300px] rounded-full bg-violet-500/10 blur-[100px]" />
+        <div className="absolute top-3/4 left-1/4 h-[250px] w-[250px] rounded-full bg-purple-500/10 blur-[100px]" />
+      </div>
+
+      <nav className="border-b border-gray-800/50 p-4 relative z-10 bg-[#0a0a0f]/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <h1 className="text-xl font-bold text-teal-400">Fanonym</h1>
+          <Logo size="md" linkTo="/" />
           <div className="flex items-center gap-4">
   <Link href="/settings" className="text-gray-400 hover:text-white">
     ⚙️ Settings
@@ -301,7 +309,7 @@ export default function CreatorDashboard() {
         </div>
       </nav>
 
-      <main className="max-w-6xl mx-auto p-6">
+      <main className="max-w-6xl mx-auto p-6 relative z-10">
         <div className="flex items-center gap-4 mb-6">
   {profile?.avatar_url ? (
     <img 

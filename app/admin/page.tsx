@@ -8,12 +8,13 @@ export default function AdminPanel() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [activeTab, setActiveTab] = useState<'topup' | 'withdraw' | 'verify' | 'users'>('topup')
+  const [activeTab, setActiveTab] = useState<'topup' | 'withdraw' | 'verify' | 'users' | 'reports'>('topup')
   
   const [pendingTopups, setPendingTopups] = useState<any[]>([])
   const [pendingWithdraws, setPendingWithdraws] = useState<any[]>([])
   const [pendingVerify, setPendingVerify] = useState<any[]>([])
   const [users, setUsers] = useState<any[]>([])
+  const [reports, setReports] = useState<any[]>([])
   const [stats, setStats] = useState<any>({})
 
   const ADMIN_EMAILS = ['rizkinurulloh1124@gmail.com']
@@ -90,10 +91,21 @@ export default function AdminPanel() {
       .eq('user_type', 'creator')
       .eq('is_verified', true)
 
+    // Reports
+    const { data: reportsData } = await supabase
+      .from('reports')
+      .select(`
+        *,
+        reporter:reporter_id(id, username, full_name, avatar_url),
+        reported_user:reported_user_id(id, username, full_name, avatar_url)
+      `)
+      .order('created_at', { ascending: false })
+
     setPendingTopups(topups || [])
     setPendingWithdraws(withdraws || [])
     setPendingVerify(pendingVerification || [])
     setUsers(usersData || [])
+    setReports(reportsData || [])
     setStats({
       totalUsers,
       totalCreators,
@@ -102,7 +114,8 @@ export default function AdminPanel() {
       verifiedCreators,
       pendingTopups: topups?.length || 0,
       pendingWithdraws: withdraws?.length || 0,
-      pendingVerify: pendingVerification?.length || 0
+      pendingVerify: pendingVerification?.length || 0,
+      pendingReports: reportsData?.filter((r: any) => r.status === 'pending').length || 0
     })
   }
 
@@ -209,6 +222,42 @@ export default function AdminPanel() {
     loadData()
   }
 
+  // Report handling functions
+  const updateReportStatus = async (reportId: string, newStatus: string) => {
+    await supabase
+      .from('reports')
+      .update({ 
+        status: newStatus,
+        reviewed_at: new Date().toISOString()
+      })
+      .eq('id', reportId)
+    
+    alert(`Report ${newStatus}!`)
+    loadData()
+  }
+
+  const banUser = async (userId: string, reportId: string) => {
+    if (!confirm('Yakin ingin ban pengguna ini?')) return
+    
+    await supabase
+      .from('profiles')
+      .update({ is_banned: true, banned_at: new Date().toISOString() })
+      .eq('id', userId)
+    
+    await updateReportStatus(reportId, 'resolved')
+  }
+
+  const REPORT_REASONS: Record<string, { label: string; icon: string }> = {
+    harassment: { label: 'Harassment', icon: '😤' },
+    spam: { label: 'Spam', icon: '📧' },
+    inappropriate: { label: 'Konten tidak pantas', icon: '🚫' },
+    impersonation: { label: 'Impersonation', icon: '🎭' },
+    scam: { label: 'Scam', icon: '💰' },
+    threats: { label: 'Ancaman', icon: '⚠️' },
+    underage: { label: 'Underage', icon: '👶' },
+    other: { label: 'Lainnya', icon: '📝' },
+  }
+
   const KREDIT_TO_IDR = 10000
   const PLATFORM_FEE = 0.2
   const TRANSFER_FEE = 30000
@@ -289,6 +338,11 @@ export default function AdminPanel() {
               ⚠️ {stats.pendingVerify} Verifikasi pending
             </div>
           )}
+          {stats.pendingReports > 0 && (
+            <div className="px-4 py-2 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400">
+              🚩 {stats.pendingReports} Report pending
+            </div>
+          )}
         </div>
 
         {/* Tabs */}
@@ -324,6 +378,14 @@ export default function AdminPanel() {
             }`}
           >
             Users ({users.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('reports')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+              activeTab === 'reports' ? 'bg-red-500 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'
+            }`}
+          >
+            🚩 Reports ({reports.filter(r => r.status === 'pending').length})
           </button>
         </div>
 
@@ -551,6 +613,133 @@ export default function AdminPanel() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {/* Reports Tab */}
+        {activeTab === 'reports' && (
+          <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
+            <h3 className="text-lg font-semibold mb-4">🚩 User Reports</h3>
+            
+            {reports.length === 0 ? (
+              <p className="text-gray-400">Tidak ada report.</p>
+            ) : (
+              <div className="space-y-4">
+                {reports.map((report) => {
+                  const reasonInfo = REPORT_REASONS[report.reason] || REPORT_REASONS.other
+                  return (
+                    <div key={report.id} className="p-4 bg-gray-900 border border-gray-700 rounded-lg">
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">{reasonInfo.icon}</span>
+                          <div>
+                            <p className="font-semibold text-red-400">{reasonInfo.label}</p>
+                            <p className="text-gray-500 text-xs">
+                              {new Date(report.created_at).toLocaleString('id-ID')}
+                            </p>
+                          </div>
+                        </div>
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          report.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                          report.status === 'reviewed' ? 'bg-blue-500/20 text-blue-400' :
+                          report.status === 'resolved' ? 'bg-green-500/20 text-green-400' :
+                          'bg-gray-500/20 text-gray-400'
+                        }`}>
+                          {report.status}
+                        </span>
+                      </div>
+
+                      {/* Users */}
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="p-3 bg-gray-800 rounded-lg">
+                          <p className="text-xs text-gray-500 mb-2">Pelapor</p>
+                          <div className="flex items-center gap-2">
+                            {report.reporter?.avatar_url ? (
+                              <img src={report.reporter.avatar_url} alt="" className="w-8 h-8 rounded-full"/>
+                            ) : (
+                              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-xs font-bold">
+                                {report.reporter?.username?.[0]?.toUpperCase()}
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-semibold text-sm">{report.reporter?.full_name || report.reporter?.username}</p>
+                              <p className="text-gray-500 text-xs">@{report.reporter?.username}</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                          <p className="text-xs text-red-400 mb-2">Dilaporkan</p>
+                          <div className="flex items-center gap-2">
+                            {report.reported_user?.avatar_url ? (
+                              <img src={report.reported_user.avatar_url} alt="" className="w-8 h-8 rounded-full"/>
+                            ) : (
+                              <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center text-xs font-bold">
+                                {report.reported_user?.username?.[0]?.toUpperCase()}
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-semibold text-sm">{report.reported_user?.full_name || report.reported_user?.username}</p>
+                              <p className="text-gray-500 text-xs">@{report.reported_user?.username}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Description */}
+                      {report.description && (
+                        <div className="p-3 bg-gray-800 rounded-lg mb-4">
+                          <p className="text-xs text-gray-500 mb-1">Detail:</p>
+                          <p className="text-gray-300 text-sm">{report.description}</p>
+                        </div>
+                      )}
+
+                      {/* Session Link */}
+                      {report.session_id && (
+                        <a 
+                          href={`/chat/${report.session_id}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-block mb-4 px-3 py-2 bg-purple-500/20 border border-purple-500/30 rounded-lg text-purple-300 text-sm hover:bg-purple-500/30"
+                        >
+                          💬 Lihat Chat Session →
+                        </a>
+                      )}
+
+                      {/* Actions */}
+                      {report.status === 'pending' && (
+                        <div className="flex gap-2 flex-wrap">
+                          <button
+                            onClick={() => updateReportStatus(report.id, 'reviewed')}
+                            className="px-3 py-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 text-sm"
+                          >
+                            👁️ Tandai Ditinjau
+                          </button>
+                          <button
+                            onClick={() => updateReportStatus(report.id, 'resolved')}
+                            className="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm font-semibold"
+                          >
+                            ✓ Selesaikan
+                          </button>
+                          <button
+                            onClick={() => updateReportStatus(report.id, 'dismissed')}
+                            className="px-3 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 text-sm"
+                          >
+                            ✗ Tolak
+                          </button>
+                          <button
+                            onClick={() => banUser(report.reported_user_id, report.id)}
+                            className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm font-semibold"
+                          >
+                            🚫 Ban User
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
       </main>

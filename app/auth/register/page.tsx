@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import Link from 'next/link'
+import Logo from '@/app/components/Logo'
 
 export default function RegisterPage() {
   const [userType, setUserType] = useState<'sender' | 'creator'>('sender')
@@ -80,7 +81,11 @@ export default function RegisterPage() {
   if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0a0a0f] via-[#0f0a1a] to-[#0a0a0f] flex items-center justify-center p-4">
-        <div className="w-full max-w-md text-center">
+        {/* Background glow */}
+        <div className="pointer-events-none fixed inset-0 overflow-hidden">
+          <div className="absolute left-1/2 top-1/3 h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[120px]" />
+        </div>
+        <div className="w-full max-w-md text-center relative z-10">
           <div className="text-6xl mb-4">✅</div>
           <h1 className="text-2xl font-bold text-white mb-2">
             Registrasi Berhasil!
@@ -101,15 +106,16 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a0a0f] via-[#0f0a1a] to-[#0a0a0f] flex items-center justify-center p-4 py-12">
-      <div className="w-full max-w-xl">
+      {/* Background glow */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute left-1/2 top-1/4 h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[120px]" />
+        <div className="absolute bottom-1/4 right-1/4 h-[250px] w-[250px] rounded-full bg-violet-500/10 blur-[100px]" />
+      </div>
+
+      <div className="w-full max-w-xl relative z-10">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center">
-            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
-            </svg>
-          </div>
-          <span className="text-xl font-bold text-white">fanonym</span>
+        <div className="flex items-center justify-center mb-8">
+          <Logo size="lg" linkTo="/" />
         </div>
 
         {/* Header */}

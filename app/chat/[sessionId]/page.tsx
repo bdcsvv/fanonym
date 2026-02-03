@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
+import ReportBlockModal from '@/app/components/ReportBlockModal'
 
 export default function ChatRoom() {
   const params = useParams()
@@ -27,6 +28,7 @@ export default function ChatRoom() {
   const [creatorPricing, setCreatorPricing] = useState<any[]>([])
   const [extendLoading, setExtendLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [showReportModal, setShowReportModal] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -497,30 +499,40 @@ export default function ChatRoom() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white flex flex-col">
-      <nav className="border-b border-gray-800 p-4">
-        <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <button onClick={() => router.back()} className="text-gray-400 hover:text-white">←</button>
+      <nav className="border-b border-gray-800 p-3 sm:p-4 sticky top-0 bg-[#0a0a0f]/95 backdrop-blur-sm z-10">
+        <div className="max-w-4xl mx-auto flex justify-between items-center gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <button onClick={() => router.back()} className="text-gray-400 hover:text-white text-xl flex-shrink-0">←</button>
             {otherUser?.avatar_url ? (
-              <img src={otherUser.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover"/>
+              <img src={otherUser.avatar_url} alt="" className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover flex-shrink-0"/>
             ) : (
-              <div className="w-10 h-10 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center font-bold">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center font-bold flex-shrink-0 text-sm sm:text-base">
                 {otherUser?.full_name?.[0] || '?'}
               </div>
             )}
-            <div>
-              <p className="font-semibold">{otherUser?.full_name || otherUser?.username}</p>
-              <p className="text-xs text-gray-400">@{otherUser?.username}</p>
+            <div className="min-w-0">
+              <p className="font-semibold truncate text-sm sm:text-base">{otherUser?.full_name || otherUser?.username}</p>
+              <p className="text-xs text-gray-400 truncate">@{otherUser?.username}</p>
             </div>
           </div>
-          <div className={`text-sm px-3 py-1 rounded-full ${isExpired ? 'bg-red-500/20 text-red-400' : 'bg-teal-500/20 text-teal-400'}`}>
-            {isExpired ? 'Expired' : `⏱ ${timeLeft}`}
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            <div className={`text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full whitespace-nowrap ${isExpired ? 'bg-red-500/20 text-red-400' : 'bg-teal-500/20 text-teal-400'}`}>
+              {isExpired ? 'Expired' : `⏱ ${timeLeft}`}
+            </div>
+            {/* Report/Block Button */}
+            <button
+              onClick={() => setShowReportModal(true)}
+              className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-red-400 transition-colors"
+              title="Laporkan / Blokir"
+            >
+              🚩
+            </button>
           </div>
         </div>
       </nav>
 
-      <div className="flex-1 overflow-y-auto p-4 max-w-4xl mx-auto w-full">
-        <div className="space-y-4">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 max-w-4xl mx-auto w-full">
+        <div className="space-y-3 sm:space-y-4">
           {messages.length === 0 && <p className="text-center text-gray-500 mt-10">Belum ada pesan. Mulai chat!</p>}
           {messages.map(renderMessage)}
           <div ref={messagesEndRef} />
@@ -528,29 +540,32 @@ export default function ChatRoom() {
       </div>
 
       {isExpired && !isCreator && (
-        <div className="border-t border-gray-800 p-4 bg-red-500/10">
+        <div className="border-t border-gray-800 p-3 sm:p-4 bg-red-500/10">
           <div className="max-w-4xl mx-auto text-center">
-            <p className="text-red-400 mb-3">⏰ Chat sudah expired. Perpanjang untuk lanjut chat!</p>
+            <p className="text-red-400 mb-3 text-sm sm:text-base">⏰ Chat sudah expired. Perpanjang untuk lanjut chat!</p>
             <button onClick={() => setShowExtendModal(true)} className="px-6 py-3 bg-teal-500 rounded-xl font-semibold hover:bg-teal-600">🔄 Perpanjang Chat</button>
           </div>
         </div>
       )}
 
       {!isExpired && (
-        <div className="border-t border-gray-800 p-4">
+        <div className="border-t border-gray-800 p-3 sm:p-4 bg-[#0a0a0f]/95 backdrop-blur-sm">
           <div className="max-w-4xl mx-auto">
             {isCreator && (
               <div className="mb-3">
-                <button onClick={() => setShowPaymentModal(true)} className="px-4 py-2 bg-purple-600 rounded-lg text-sm hover:bg-purple-700">💰 Request Payment</button>
+                <button onClick={() => setShowPaymentModal(true)} className="px-3 sm:px-4 py-2 bg-purple-600 rounded-lg text-sm hover:bg-purple-700">💰 Request Payment</button>
               </div>
             )}
             <form onSubmit={sendMessage} className="flex gap-2">
               <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*,video/mp4,video/quicktime" style={{ display: 'none' }}/>
-              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl hover:bg-gray-700 disabled:opacity-50">
+              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="px-3 sm:px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl hover:bg-gray-700 disabled:opacity-50 flex-shrink-0">
                 {uploading ? '⏳' : '📎'}
               </button>
-              <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Ketik pesan..." className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-teal-500 outline-none"/>
-              <button type="submit" disabled={!newMessage.trim()} className="px-6 py-3 bg-teal-500 rounded-xl font-semibold hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed">Kirim</button>
+              <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Ketik pesan..." className="flex-1 min-w-0 px-3 sm:px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-teal-500 outline-none text-sm sm:text-base"/>
+              <button type="submit" disabled={!newMessage.trim()} className="px-4 sm:px-6 py-3 bg-teal-500 rounded-xl font-semibold hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 text-sm sm:text-base">
+                <span className="hidden sm:inline">Kirim</span>
+                <span className="sm:hidden">→</span>
+              </button>
             </form>
           </div>
         </div>
@@ -597,6 +612,17 @@ export default function ChatRoom() {
           </div>
         </div>
       )}
+
+      {/* Report/Block Modal */}
+      <ReportBlockModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        targetUserId={otherUser?.id || ''}
+        targetUsername={otherUser?.username || ''}
+        sessionId={sessionId}
+        currentUserId={currentUser?.id || ''}
+        mode="both"
+      />
     </div>
   )
 }

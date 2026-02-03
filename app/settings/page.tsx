@@ -12,6 +12,11 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [activeTab, setActiveTab] = useState<'profile' | 'blocked'>('profile')
+
+  // Blocked users state
+  const [blockedUsers, setBlockedUsers] = useState<any[]>([])
+  const [loadingBlocked, setLoadingBlocked] = useState(false)
 
   // Form state
   const [fullName, setFullName] = useState('')
@@ -51,6 +56,47 @@ export default function SettingsPage() {
 
     init()
   }, [router])
+
+  // Fetch blocked users
+  const fetchBlockedUsers = async () => {
+    if (!user) return
+    setLoadingBlocked(true)
+    
+    const { data, error } = await supabase
+      .from('blocks')
+      .select(`
+        id,
+        blocked_id,
+        created_at,
+        blocked_user:blocked_id(id, username, full_name, avatar_url)
+      `)
+      .eq('blocker_id', user.id)
+      .order('created_at', { ascending: false })
+
+    if (!error && data) {
+      setBlockedUsers(data)
+    }
+    setLoadingBlocked(false)
+  }
+
+  useEffect(() => {
+    if (activeTab === 'blocked' && user) {
+      fetchBlockedUsers()
+    }
+  }, [activeTab, user])
+
+  const handleUnblock = async (blockId: string, username: string) => {
+    if (!confirm(`Yakin ingin membuka blokir @${username}?`)) return
+    
+    const { error } = await supabase
+      .from('blocks')
+      .delete()
+      .eq('id', blockId)
+
+    if (!error) {
+      setBlockedUsers(blockedUsers.filter(b => b.id !== blockId))
+    }
+  }
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -163,8 +209,34 @@ export default function SettingsPage() {
       </nav>
 
       <main className="max-w-2xl mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-6">⚙️ Pengaturan Profil</h1>
+        <h1 className="text-2xl font-bold mb-6">⚙️ Pengaturan</h1>
 
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab('profile')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+              activeTab === 'profile'
+                ? 'bg-teal-500 text-white'
+                : 'bg-gray-800 text-gray-400 hover:text-white'
+            }`}
+          >
+            👤 Profil
+          </button>
+          <button
+            onClick={() => setActiveTab('blocked')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+              activeTab === 'blocked'
+                ? 'bg-teal-500 text-white'
+                : 'bg-gray-800 text-gray-400 hover:text-white'
+            }`}
+          >
+            🚫 Diblokir {blockedUsers.length > 0 && `(${blockedUsers.length})`}
+          </button>
+        </div>
+
+        {activeTab === 'profile' && (
+          <>
         {/* Avatar Upload */}
         <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 mb-6">
           <h3 className="text-lg font-semibold mb-4">Foto Profil</h3>
@@ -328,6 +400,98 @@ export default function SettingsPage() {
         >
           {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
         </button>
+          </>
+        )}
+
+        {/* Blocked Users Tab */}
+        {activeTab === 'blocked' && (
+          <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center text-2xl">
+                🚫
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Pengguna Diblokir</h3>
+                <p className="text-sm text-gray-400">{blockedUsers.length} pengguna diblokir</p>
+              </div>
+            </div>
+
+            {loadingBlocked ? (
+              <div className="text-center py-8 text-gray-400">Loading...</div>
+            ) : blockedUsers.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-700/50 flex items-center justify-center text-4xl">
+                  👤
+                </div>
+                <h4 className="text-lg font-semibold text-white mb-2">Tidak Ada Pengguna Diblokir</h4>
+                <p className="text-gray-400 text-sm">Pengguna yang kamu blokir akan muncul di sini</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {blockedUsers.map((blocked) => (
+                  <div
+                    key={blocked.id}
+                    className="flex items-center gap-4 p-4 bg-gray-900 border border-gray-700 rounded-xl"
+                  >
+                    {/* Avatar */}
+                    <div className="relative">
+                      {blocked.blocked_user?.avatar_url ? (
+                        <img
+                          src={blocked.blocked_user.avatar_url}
+                          alt={blocked.blocked_user.username}
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-teal-500 flex items-center justify-center text-white font-bold text-lg">
+                          {blocked.blocked_user?.username?.[0]?.toUpperCase() || '?'}
+                        </div>
+                      )}
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center text-xs">
+                        🚫
+                      </div>
+                    </div>
+
+                    {/* User Info */}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-white truncate">
+                        {blocked.blocked_user?.full_name || blocked.blocked_user?.username}
+                      </h4>
+                      <p className="text-sm text-gray-400 truncate">
+                        @{blocked.blocked_user?.username}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Diblokir {new Date(blocked.created_at).toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </p>
+                    </div>
+
+                    {/* Unblock Button */}
+                    <button
+                      onClick={() => handleUnblock(blocked.id, blocked.blocked_user?.username)}
+                      className="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-green-400 text-sm font-medium transition-colors"
+                    >
+                      🔓 Buka
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Info Notice */}
+            {blockedUsers.length > 0 && (
+              <div className="mt-6 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30">
+                <p className="text-yellow-400 text-sm font-medium mb-1">ℹ️ Tentang Pemblokiran</p>
+                <p className="text-gray-400 text-sm">
+                  Pengguna yang diblokir tidak akan bisa mengirim pesan atau melihat profilmu.
+                  Mereka tidak akan diberi tahu bahwa kamu memblokirnya.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </main>
     </div>
   )

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Logo from "./components/Logo";
 
 export default function Home() {
   return (
@@ -6,9 +7,7 @@ export default function Home() {
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#0a0a0f]/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <span className="bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-xl font-bold text-transparent">
-            Fanonym
-          </span>
+          <Logo size="md" />
           <div className="flex items-center gap-4">
             <Link
               href="/auth/login"
@@ -231,9 +230,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-white/5 px-6 py-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
-          <span className="bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-lg font-bold text-transparent">
-            Fanonym
-          </span>
+          <Logo size="sm" linkTo="/" />
           <p className="text-sm text-zinc-500">
             &copy; {new Date().getFullYear()} Fanonym. Semua hak dilindungi.
           </p>
