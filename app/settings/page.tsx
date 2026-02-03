@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Logo from '@/app/components/Logo'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -195,10 +196,16 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
-      <nav className="border-b border-gray-800 p-4">
+    <div className="min-h-screen bg-[#0a0a0f] text-white relative">
+      {/* Background gradient orbs */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[120px]" />
+        <div className="absolute bottom-1/4 right-1/4 h-[300px] w-[300px] rounded-full bg-violet-500/10 blur-[100px]" />
+      </div>
+
+      <nav className="border-b border-gray-800/50 p-4 relative z-10 bg-[#0a0a0f]/80 backdrop-blur-md">
         <div className="max-w-2xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold text-teal-400">Fanonym</Link>
+          <Logo size="md" linkTo="/" />
           <Link 
             href={profile?.user_type === 'creator' ? '/dashboard/creator' : '/dashboard/sender'} 
             className="text-gray-400 hover:text-white"
@@ -208,7 +215,7 @@ export default function SettingsPage() {
         </div>
       </nav>
 
-      <main className="max-w-2xl mx-auto p-6">
+      <main className="max-w-2xl mx-auto p-6 relative z-10">
         <h1 className="text-2xl font-bold mb-6">⚙️ Pengaturan</h1>
 
         {/* Tabs */}
@@ -217,7 +224,7 @@ export default function SettingsPage() {
             onClick={() => setActiveTab('profile')}
             className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
               activeTab === 'profile'
-                ? 'bg-teal-500 text-white'
+                ? 'bg-purple-500 text-white'
                 : 'bg-gray-800 text-gray-400 hover:text-white'
             }`}
           >
@@ -227,7 +234,7 @@ export default function SettingsPage() {
             onClick={() => setActiveTab('blocked')}
             className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
               activeTab === 'blocked'
-                ? 'bg-teal-500 text-white'
+                ? 'bg-purple-500 text-white'
                 : 'bg-gray-800 text-gray-400 hover:text-white'
             }`}
           >
@@ -246,7 +253,7 @@ export default function SettingsPage() {
                 <img 
                   src={avatarUrl} 
                   alt="Avatar" 
-                  className="w-24 h-24 rounded-full object-cover border-2 border-teal-500"
+                  className="w-24 h-24 rounded-full object-cover border-2 border-purple-500"
                 />
               ) : (
                 <div className="w-24 h-24 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center text-3xl font-bold">
@@ -255,7 +262,7 @@ export default function SettingsPage() {
               )}
             </div>
             <div>
-              <label className="px-4 py-2 bg-teal-500 rounded-lg cursor-pointer hover:bg-teal-600 inline-block">
+              <label className="px-4 py-2 bg-purple-500 rounded-lg cursor-pointer hover:bg-purple-600 inline-block">
                 {uploading ? 'Uploading...' : 'Upload Foto'}
                 <input
                   type="file"
@@ -281,7 +288,7 @@ export default function SettingsPage() {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Nama lengkap"
-                className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg focus:border-teal-500 outline-none"
+                className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg focus:border-purple-500 outline-none"
               />
             </div>
             <div>
@@ -291,7 +298,7 @@ export default function SettingsPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                 placeholder="username"
-                className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg focus:border-teal-500 outline-none"
+                className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg focus:border-purple-500 outline-none"
               />
               <p className="text-gray-500 text-xs mt-1">fanonym.vercel.app/creator/{username || 'username'}</p>
             </div>
@@ -303,7 +310,7 @@ export default function SettingsPage() {
                 placeholder="Ceritakan tentang dirimu..."
                 rows={3}
                 maxLength={200}
-                className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg focus:border-teal-500 outline-none resize-none"
+                className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg focus:border-purple-500 outline-none resize-none"
               />
               <p className="text-gray-500 text-xs mt-1">{bio.length}/200 karakter</p>
             </div>
@@ -314,7 +321,7 @@ export default function SettingsPage() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="08xxxxxxxxxx"
-                className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg focus:border-teal-500 outline-none"
+                className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg focus:border-purple-500 outline-none"
               />
             </div>
           </div>
@@ -338,7 +345,7 @@ export default function SettingsPage() {
               <label className="text-sm text-gray-400 block mb-1">Tipe Akun</label>
               <div className={`inline-block px-3 py-1 rounded-full text-sm ${
                 profile?.user_type === 'creator' 
-                  ? 'bg-teal-500/20 text-teal-400' 
+                  ? 'bg-purple-500/20 text-purple-400' 
                   : 'bg-purple-500/20 text-purple-400'
               }`}>
                 {profile?.user_type === 'creator' ? '✨ Creator' : '👤 Sender'}
@@ -396,7 +403,7 @@ export default function SettingsPage() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full py-3 bg-teal-500 rounded-lg font-semibold hover:bg-teal-600 disabled:opacity-50"
+          className="w-full py-3 bg-purple-500 rounded-lg font-semibold hover:bg-purple-600 disabled:opacity-50"
         >
           {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
         </button>
