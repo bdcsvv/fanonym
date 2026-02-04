@@ -12,7 +12,7 @@ export default function CreatorProfilePage() {
   const username = params.username as string
 
   const [creator, setCreator] = useState<any>(null)
-  const [ratings, setRatings] = useState<{ average: number; count: number }>({ average: 0, count: 0 })
+  const [totalAnons, setTotalAnons] = useState(0)
   const [pricing, setPricing] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<any>(null)
@@ -66,18 +66,15 @@ export default function CreatorProfilePage() {
 
       setPricing(pricingData || [])
 
-      // Get ratings
-      const { data: ratingsData } = await supabase
-        .from('ratings')
-        .select('rating')
+      // Get total unique anons (senders who chatted with this creator)
+      const { data: chatsData } = await supabase
+        .from('chat_sessions')
+        .select('sender_id')
         .eq('creator_id', creatorData.id)
 
-      if (ratingsData && ratingsData.length > 0) {
-        const total = ratingsData.reduce((sum, r) => sum + r.rating, 0)
-        setRatings({
-          average: Math.round((total / ratingsData.length) * 10) / 10,
-          count: ratingsData.length
-        })
+      if (chatsData) {
+        const uniqueSenders = new Set(chatsData.map(c => c.sender_id))
+        setTotalAnons(uniqueSenders.size)
       }
 
       setLoading(false)
@@ -251,15 +248,11 @@ export default function CreatorProfilePage() {
                   </span>
                 )}
                 
-                {/* Rating */}
+                {/* Total Anons */}
                 <div className="flex items-center gap-2 mt-2">
-                  <div className="flex items-center gap-1">
-                    <span className="text-yellow-400">⭐</span>
-                    <span className="font-semibold">{ratings.average || '-'}</span>
-                  </div>
-                  <span className="text-gray-500">
-                    ({ratings.count} {ratings.count === 1 ? 'rating' : 'ratings'})
-                  </span>
+                  <span className="text-purple-400">👥</span>
+                  <span className="font-semibold">{totalAnons}</span>
+                  <span className="text-gray-500">total anon</span>
                 </div>
               </div>
 
@@ -285,35 +278,29 @@ export default function CreatorProfilePage() {
           )}
 
           {/* Stats */}
-          <div className="grid grid-cols-2 gap-4 mb-8">
-            <div className="bg-gray-800/30 border border-gray-700/50 rounded-2xl p-6 text-center">
-              <p className="text-3xl font-bold text-purple-400">⭐ {ratings.average || '-'}</p>
-              <p className="text-gray-400 text-sm mt-1">Rating</p>
-            </div>
-            <div className="bg-gray-800/30 border border-gray-700/50 rounded-2xl p-6 text-center">
-              <p className="text-3xl font-bold text-purple-400">{ratings.count}</p>
-              <p className="text-gray-400 text-sm mt-1">Reviews</p>
-            </div>
+          <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-6 text-center mb-8">
+            <p className="text-4xl font-bold text-purple-400">👥 {totalAnons}</p>
+            <p className="text-gray-400 text-sm mt-1">Total Anon yang udah chat</p>
           </div>
 
           {/* Unlock Chat Section - Only show if not own profile */}
           {!isOwnProfile && (
             <div className="mb-8">
-              <h2 className="text-xl font-bold mb-4 text-center">💬 Mulai Chat dengan {creator.full_name || creator.username}</h2>
+              <h2 className="text-lg font-bold mb-4 text-center">💬 Mulai Chat dengan {creator.full_name || creator.username}</h2>
               
               {pricing.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {pricing.map((price) => (
-                    <div key={price.id} className="bg-gray-800/50 border border-gray-700 rounded-2xl p-6">
+                    <div key={price.id} className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
                       <div className="flex justify-between items-start mb-2">
-                        <h3 className="text-xl font-bold">{price.duration_hours} Jam</h3>
+                        <h3 className="text-lg font-bold">{price.duration_hours} Jam</h3>
                         <span className="text-purple-400 font-bold">{price.price} Kredit</span>
                       </div>
-                      <p className="text-gray-400 text-sm mb-4">Unlimited chat selama {price.duration_hours} jam</p>
+                      <p className="text-gray-500 text-sm mb-4">Unlimited chat selama {price.duration_hours} jam</p>
                       <button
                         onClick={() => handleUnlockChat(price)}
                         disabled={unlocking}
-                        className="w-full py-3 bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 rounded-xl font-semibold transition-all disabled:opacity-50"
+                        className="w-full py-3 bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 rounded-xl font-semibold transition-all disabled:opacity-50 text-sm"
                       >
                         {unlocking ? 'Processing...' : 'Unlock Chat'}
                       </button>

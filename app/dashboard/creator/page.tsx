@@ -12,10 +12,12 @@ export default function CreatorDashboard() {
   const [earnings, setEarnings] = useState<any>(null)
   const [pricing, setPricing] = useState<any[]>([])
   const [activeChats, setActiveChats] = useState<any[]>([])
+  const [expiredChats, setExpiredChats] = useState<any[]>([])
   const [spamMessages, setSpamMessages] = useState<any[]>([])
   const [withdrawals, setWithdrawals] = useState<any[]>([])
+  const [totalAnons, setTotalAnons] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'inbox' | 'spam' | 'pricing' | 'withdraw'>('inbox')
+  const [activeTab, setActiveTab] = useState<'inbox' | 'expired' | 'spam' | 'pricing' | 'withdraw'>('inbox')
   const [newDuration, setNewDuration] = useState('')
   const [newPrice, setNewPrice] = useState('')
   
@@ -60,13 +62,21 @@ export default function CreatorDashboard() {
 
       const { data: chatsData } = await supabase
         .from('chat_sessions')
-        .select('*, sender:sender_id(id, username, full_name)')
+        .select('*, sender:sender_id(id, username, full_name, avatar_url)')
         .eq('creator_id', profileData?.id)
         .order('started_at', { ascending: false })
 
+      // Separate active and expired chats
+      const now = new Date()
+      const active = (chatsData || []).filter(c => new Date(c.expires_at) > now)
+      const expired = (chatsData || []).filter(c => new Date(c.expires_at) <= now)
+
+      // Count unique senders (total anons)
+      const uniqueSenders = new Set((chatsData || []).map(c => c.sender_id))
+
       const { data: spamData } = await supabase
         .from('spam_messages')
-        .select('*, sender:sender_id(id, username, full_name)')
+        .select('*, sender:sender_id(id, username, full_name, avatar_url)')
         .eq('creator_id', profileData?.id)
         .eq('status', 'pending')
         .order('created_at', { ascending: false })
@@ -80,7 +90,9 @@ export default function CreatorDashboard() {
       setProfile(profileData)
       setEarnings(earningsData)
       setPricing(pricingData || [])
-      setActiveChats(chatsData || [])
+      setActiveChats(active)
+      setExpiredChats(expired)
+      setTotalAnons(uniqueSenders.size)
       setSpamMessages(spamData || [])
       setWithdrawals(withdrawalsData || [])
       setLoading(false)
@@ -318,53 +330,59 @@ export default function CreatorDashboard() {
     <img 
       src={profile.avatar_url} 
       alt="Avatar" 
-      className="w-16 h-16 rounded-full object-cover border-2 border-teal-500"
+      className="w-16 h-16 rounded-full object-cover border-2 border-purple-500"
     />
   ) : (
-    <div className="w-16 h-16 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center text-2xl font-bold">
+    <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-500 rounded-full flex items-center justify-center text-2xl font-bold">
       {profile?.full_name?.[0] || profile?.username?.[0] || '?'}
     </div>
   )}
   <div>
     <h2 className="text-2xl font-bold flex items-center gap-2">
       Halo, {profile?.full_name || profile?.username}! 👋
-      {profile?.is_verified && <span className="text-teal-400 text-lg">✓</span>}
+      {profile?.is_verified && <span className="text-purple-400 text-lg">✓</span>}
     </h2>
     {profile?.bio && <p className="text-gray-400 text-sm">{profile.bio}</p>}
   </div>
 </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
-            <p className="text-gray-400 text-sm mb-1">Total Pendapatan</p>
-            <p className="text-2xl font-bold text-teal-400">{earnings?.total_earned || 0} Kredit</p>
-            <p className="text-gray-500 text-xs">Sepanjang waktu</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
+            <p className="text-gray-400 text-xs mb-1">Total Pendapatan</p>
+            <p className="text-2xl font-bold text-purple-400">{earnings?.total_earned || 0}</p>
+            <p className="text-gray-500 text-xs">Kredit</p>
           </div>
-          <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
-            <p className="text-gray-400 text-sm mb-1">Saldo</p>
-            <p className="text-2xl font-bold text-green-400">{earnings?.available_balance || 0} Kredit</p>
+          <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
+            <p className="text-gray-400 text-xs mb-1">Saldo</p>
+            <p className="text-2xl font-bold text-green-400">{earnings?.available_balance || 0}</p>
             <p className="text-gray-500 text-xs">≈ Rp {((earnings?.available_balance || 0) * KREDIT_TO_IDR * (1 - PLATFORM_FEE)).toLocaleString('id-ID')}</p>
           </div>
-          <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
-            <p className="text-gray-400 text-sm mb-1">Chat Aktif</p>
-            <p className="text-2xl font-bold text-purple-400">{activeChats.filter(c => new Date(c.expires_at) > new Date()).length}</p>
+          <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
+            <p className="text-gray-400 text-xs mb-1">Chat Aktif</p>
+            <p className="text-2xl font-bold text-purple-400">{activeChats.length}</p>
+            <p className="text-gray-500 text-xs">Sessions</p>
+          </div>
+          <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
+            <p className="text-gray-400 text-xs mb-1">Total Anon</p>
+            <p className="text-2xl font-bold text-violet-400">{totalAnons}</p>
+            <p className="text-gray-500 text-xs">Unique senders</p>
           </div>
         </div>
 
         {/* Profile Link */}
-        <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 mb-6">
-          <h3 className="text-lg font-semibold mb-4">Link Profil Kamu</h3>
+        <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5 mb-6">
+          <h3 className="text-sm font-semibold mb-3 text-gray-300">🔗 Link Profil Kamu</h3>
           <div className="flex items-center gap-2">
             <input
               type="text"
               readOnly
-              value={`fanonym.vercel.app/creator/${profile?.username}`}
-              className="flex-1 px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300"
+              value={`fanonym.vercel.app/profile/${profile?.username}`}
+              className="flex-1 px-4 py-2.5 bg-gray-900/50 border border-gray-700 rounded-xl text-gray-300 text-sm"
             />
             <button 
-              onClick={() => navigator.clipboard.writeText(`fanonym.vercel.app/creator/${profile?.username}`)}
-              className="px-4 py-2 bg-teal-500 rounded-lg hover:bg-teal-600"
+              onClick={() => navigator.clipboard.writeText(`fanonym.vercel.app/profile/${profile?.username}`)}
+              className="px-4 py-2.5 bg-purple-500 rounded-xl hover:bg-purple-600 text-sm font-medium"
             >
               Copy
             </button>
@@ -375,32 +393,40 @@ export default function CreatorDashboard() {
         <div className="flex gap-2 mb-6 flex-wrap">
           <button
             onClick={() => setActiveTab('inbox')}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-              activeTab === 'inbox' ? 'bg-teal-500 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'
+            className={`px-4 py-2 rounded-xl font-medium transition-colors text-sm ${
+              activeTab === 'inbox' ? 'bg-purple-500 text-white' : 'bg-gray-800/50 text-gray-400 hover:text-white'
             }`}
           >
-            Inbox ({activeChats.length})
+            📥 Inbox ({activeChats.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('expired')}
+            className={`px-4 py-2 rounded-xl font-medium transition-colors text-sm ${
+              activeTab === 'expired' ? 'bg-purple-500 text-white' : 'bg-gray-800/50 text-gray-400 hover:text-white'
+            }`}
+          >
+            ⏰ Expired ({expiredChats.length})
           </button>
           <button
             onClick={() => setActiveTab('spam')}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-              activeTab === 'spam' ? 'bg-teal-500 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'
+            className={`px-4 py-2 rounded-xl font-medium transition-colors text-sm ${
+              activeTab === 'spam' ? 'bg-purple-500 text-white' : 'bg-gray-800/50 text-gray-400 hover:text-white'
             }`}
           >
-            Spam ({spamMessages.length})
+            📭 Spam ({spamMessages.length})
           </button>
           <button
             onClick={() => setActiveTab('pricing')}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-              activeTab === 'pricing' ? 'bg-teal-500 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'
+            className={`px-4 py-2 rounded-xl font-medium transition-colors text-sm ${
+              activeTab === 'pricing' ? 'bg-purple-500 text-white' : 'bg-gray-800/50 text-gray-400 hover:text-white'
             }`}
           >
-            Set Harga
+            💎 Set Harga
           </button>
           <button
             onClick={() => setActiveTab('withdraw')}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-              activeTab === 'withdraw' ? 'bg-green-500 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'
+            className={`px-4 py-2 rounded-xl font-medium transition-colors text-sm ${
+              activeTab === 'withdraw' ? 'bg-green-500 text-white' : 'bg-gray-800/50 text-gray-400 hover:text-white'
             }`}
           >
             💰 Withdraw
@@ -409,17 +435,17 @@ export default function CreatorDashboard() {
 
         {/* Inbox Tab */}
         {activeTab === 'inbox' && (
-          <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
-            <h3 className="text-lg font-semibold mb-4">Chat Masuk</h3>
+          <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
+            <h3 className="text-base font-semibold mb-4 text-gray-200">💬 Chat Aktif</h3>
             {activeChats.length === 0 ? (
-              <p className="text-gray-400">Belum ada chat masuk.</p>
+              <p className="text-gray-500 text-sm">Belum ada chat aktif.</p>
             ) : (
               <div className="space-y-3">
                 {activeChats.map((chat) => (
                   <Link
                     key={chat.id}
                     href={`/chat/${chat.id}`}
-                    className="flex items-center justify-between p-4 bg-gray-900 border border-gray-700 rounded-lg hover:border-teal-500 transition-colors"
+                    className="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl hover:border-purple-500/50 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center font-bold">
@@ -432,12 +458,47 @@ export default function CreatorDashboard() {
                         </p>
                       </div>
                     </div>
-                    <div className={`text-sm px-3 py-1 rounded-full ${
-                      new Date(chat.expires_at) < new Date()
-                        ? 'bg-red-500/20 text-red-400'
-                        : 'bg-teal-500/20 text-teal-400'
-                    }`}>
+                    <div className="text-xs px-3 py-1 rounded-full bg-purple-500/20 text-purple-400">
                       ⏱ {getTimeLeft(chat.expires_at)}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Expired Tab */}
+        {activeTab === 'expired' && (
+          <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
+            <h3 className="text-base font-semibold mb-4 text-gray-200">⏰ Chat Expired</h3>
+            {expiredChats.length === 0 ? (
+              <p className="text-gray-500 text-sm">Tidak ada chat expired.</p>
+            ) : (
+              <div className="space-y-3">
+                {expiredChats.map((chat) => (
+                  <Link
+                    key={chat.id}
+                    href={`/chat/${chat.id}`}
+                    className="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl hover:border-red-500/50 transition-colors opacity-70"
+                  >
+                    <div className="flex items-center gap-3">
+                      {chat.sender?.avatar_url ? (
+                        <img src={chat.sender.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-10 h-10 bg-gradient-to-br from-gray-500 to-gray-600 rounded-full flex items-center justify-center font-bold text-sm">
+                          {chat.sender?.full_name?.[0] || '?'}
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-medium text-sm">{chat.sender?.full_name || chat.sender?.username || 'Anonymous'}</p>
+                        <p className="text-gray-500 text-xs">
+                          Expired: {new Date(chat.expires_at).toLocaleDateString('id-ID')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-xs px-3 py-1 rounded-full bg-red-500/20 text-red-400">
+                      Expired
                     </div>
                   </Link>
                 ))}
@@ -448,35 +509,39 @@ export default function CreatorDashboard() {
 
         {/* Spam Tab */}
         {activeTab === 'spam' && (
-          <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
-            <h3 className="text-lg font-semibold mb-4">Pesan Gratis (Spam)</h3>
-            <p className="text-gray-500 text-sm mb-4">Jika diterima, chat 10 menit akan dibuat otomatis.</p>
+          <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
+            <h3 className="text-base font-semibold mb-2 text-gray-200">📭 Pesan Gratis (Spam)</h3>
+            <p className="text-gray-500 text-xs mb-4">Jika diterima, chat 10 menit akan dibuat otomatis.</p>
             {spamMessages.length === 0 ? (
-              <p className="text-gray-400">Tidak ada pesan spam.</p>
+              <p className="text-gray-500 text-sm">Tidak ada pesan spam.</p>
             ) : (
               <div className="space-y-3">
                 {spamMessages.map((msg) => (
-                  <div key={msg.id} className="p-4 bg-gray-900 border border-gray-700 rounded-lg">
+                  <div key={msg.id} className="p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl">
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-gray-500 to-gray-600 rounded-full flex items-center justify-center font-bold">
-                        {msg.sender?.full_name?.[0] || msg.sender?.username?.[0] || '?'}
-                      </div>
+                      {msg.sender?.avatar_url ? (
+                        <img src={msg.sender.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-10 h-10 bg-gradient-to-br from-gray-500 to-gray-600 rounded-full flex items-center justify-center font-bold text-sm">
+                          {msg.sender?.full_name?.[0] || msg.sender?.username?.[0] || '?'}
+                        </div>
+                      )}
                       <div>
-                        <p className="font-semibold">{msg.sender?.full_name || msg.sender?.username || 'Anonymous'}</p>
+                        <p className="font-medium text-sm">{msg.sender?.full_name || msg.sender?.username || 'Anonymous'}</p>
                         <p className="text-gray-500 text-xs">{new Date(msg.created_at).toLocaleString('id-ID')}</p>
                       </div>
                     </div>
-                    <p className="text-gray-300 mb-4">{msg.content}</p>
+                    <p className="text-gray-300 text-sm mb-4">{msg.content}</p>
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleSpamAction(msg.id, msg.sender_id, 'accept')}
-                        className="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30"
+                        className="px-4 py-2 bg-green-500/20 text-green-400 rounded-xl hover:bg-green-500/30 text-sm"
                       >
-                        ✓ Terima (10 menit chat)
+                        ✓ Terima
                       </button>
                       <button
                         onClick={() => handleSpamAction(msg.id, msg.sender_id, 'reject')}
-                        className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"
+                        className="px-4 py-2 bg-red-500/20 text-red-400 rounded-xl hover:bg-red-500/30 text-sm"
                       >
                         ✗ Tolak
                       </button>
@@ -520,7 +585,7 @@ export default function CreatorDashboard() {
                 </div>
                 <button
                   onClick={addPricing}
-                  className="px-4 py-2 bg-teal-500 rounded-lg hover:bg-teal-600 font-semibold"
+                  className="px-4 py-2 bg-purple-500 rounded-lg hover:bg-purple-600 font-semibold"
                 >
                   Tambah
                 </button>

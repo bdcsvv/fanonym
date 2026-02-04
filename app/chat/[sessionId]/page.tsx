@@ -427,7 +427,7 @@ export default function ChatRoom() {
       const isFromMe = msg.sender_id === currentUser?.id
       return (
         <div key={msg.id} className={`flex ${isFromMe ? 'justify-end' : 'justify-start'}`}>
-          <div className={`max-w-[70%] rounded-2xl overflow-hidden ${isFromMe ? 'bg-teal-500' : 'bg-gray-800'}`}>
+          <div className={`max-w-[70%] rounded-2xl overflow-hidden ${isFromMe ? 'bg-purple-500' : 'bg-gray-800'}`}>
             {mediaData.media_type === 'video' ? (
               <video src={mediaData.url} controls className="max-w-full max-h-80 rounded-lg"/>
             ) : (
@@ -435,7 +435,7 @@ export default function ChatRoom() {
                 <img src={mediaData.url} alt="Media" className="max-w-full max-h-80 object-cover"/>
               </a>
             )}
-            <p className={`text-xs p-2 ${isFromMe ? 'text-teal-200' : 'text-gray-500'}`}>
+            <p className={`text-xs p-2 ${isFromMe ? 'text-purple-200' : 'text-gray-500'}`}>
               {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
             </p>
           </div>
@@ -455,7 +455,7 @@ export default function ChatRoom() {
             {isPaid ? (
               <div className="px-3 py-2 bg-green-500/30 rounded-lg text-green-300 text-center text-sm">✅ Sudah Dibayar</div>
             ) : !isFromMe ? (
-              <button onClick={() => handlePayment(msg.id, paymentData.amount)} className="w-full px-4 py-2 bg-teal-500 rounded-lg font-semibold hover:bg-teal-600">Bayar Sekarang</button>
+              <button onClick={() => handlePayment(msg.id, paymentData.amount)} className="w-full px-4 py-2 bg-purple-500 rounded-lg font-semibold hover:bg-purple-600">Bayar Sekarang</button>
             ) : (
               <div className="px-3 py-2 bg-yellow-500/30 rounded-lg text-yellow-300 text-center text-sm">⏳ Menunggu Pembayaran</div>
             )}
@@ -477,9 +477,9 @@ export default function ChatRoom() {
 
     return (
       <div key={msg.id} className={`flex ${msg.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}>
-        <div className={`max-w-[70%] px-4 py-2 rounded-2xl ${msg.sender_id === currentUser?.id ? 'bg-teal-500 text-white' : 'bg-gray-800 text-white'}`}>
+        <div className={`max-w-[70%] px-4 py-2 rounded-2xl ${msg.sender_id === currentUser?.id ? 'bg-purple-500 text-white' : 'bg-gray-800 text-white'}`}>
           <p>{msg.content}</p>
-          <p className={`text-xs mt-1 ${msg.sender_id === currentUser?.id ? 'text-teal-200' : 'text-gray-500'}`}>
+          <p className={`text-xs mt-1 ${msg.sender_id === currentUser?.id ? 'text-purple-200' : 'text-gray-500'}`}>
             {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
           </p>
         </div>
@@ -497,32 +497,48 @@ export default function ChatRoom() {
 
   const isExpired = session && new Date(session.expires_at) < new Date()
 
+  // Get profile URL based on user type
+  const getProfileUrl = () => {
+    if (!otherUser) return '#'
+    // Check if other user is creator or sender
+    const isOtherCreator = session?.creator_id === otherUser.id
+    if (isOtherCreator) {
+      return `/profile/${otherUser.username}`
+    } else {
+      return `/sender/${otherUser.username}`
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white flex flex-col">
-      <nav className="border-b border-gray-800 p-3 sm:p-4 sticky top-0 bg-[#0a0a0f]/95 backdrop-blur-sm z-10">
+      {/* Header */}
+      <nav className="border-b border-purple-500/20 p-3 sm:p-4 sticky top-0 bg-[#0a0a0f] z-10">
         <div className="max-w-4xl mx-auto flex justify-between items-center gap-2">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <button onClick={() => router.back()} className="text-gray-400 hover:text-white text-xl flex-shrink-0">←</button>
-            {otherUser?.avatar_url ? (
-              <img src={otherUser.avatar_url} alt="" className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover flex-shrink-0"/>
-            ) : (
-              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center font-bold flex-shrink-0 text-sm sm:text-base">
-                {otherUser?.full_name?.[0] || '?'}
+            
+            {/* Clickable Profile */}
+            <a href={getProfileUrl()} className="flex items-center gap-2 sm:gap-3 min-w-0 hover:opacity-80 transition-opacity">
+              {otherUser?.avatar_url ? (
+                <img src={otherUser.avatar_url} alt="" className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover flex-shrink-0 border-2 border-purple-500/50"/>
+              ) : (
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center font-bold flex-shrink-0 text-sm sm:text-base">
+                  {otherUser?.full_name?.[0] || '?'}
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="font-semibold truncate text-sm sm:text-base">{otherUser?.full_name || otherUser?.username}</p>
+                <p className="text-xs text-gray-400 truncate">@{otherUser?.username}</p>
               </div>
-            )}
-            <div className="min-w-0">
-              <p className="font-semibold truncate text-sm sm:text-base">{otherUser?.full_name || otherUser?.username}</p>
-              <p className="text-xs text-gray-400 truncate">@{otherUser?.username}</p>
-            </div>
+            </a>
           </div>
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            <div className={`text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full whitespace-nowrap ${isExpired ? 'bg-red-500/20 text-red-400' : 'bg-teal-500/20 text-teal-400'}`}>
+            <div className={`text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full whitespace-nowrap font-medium ${isExpired ? 'bg-red-500/20 text-red-400' : 'bg-purple-500/20 text-purple-400'}`}>
               {isExpired ? 'Expired' : `⏱ ${timeLeft}`}
             </div>
-            {/* Report/Block Button */}
             <button
               onClick={() => setShowReportModal(true)}
-              className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-red-400 transition-colors"
+              className="p-2 rounded-lg bg-gray-800/50 hover:bg-gray-700 text-gray-400 hover:text-red-400 transition-colors"
               title="Laporkan / Blokir"
             >
               🚩
@@ -540,16 +556,16 @@ export default function ChatRoom() {
       </div>
 
       {isExpired && !isCreator && (
-        <div className="border-t border-gray-800 p-3 sm:p-4 bg-red-500/10">
+        <div className="border-t border-purple-500/20 p-3 sm:p-4 bg-red-500/10">
           <div className="max-w-4xl mx-auto text-center">
             <p className="text-red-400 mb-3 text-sm sm:text-base">⏰ Chat sudah expired. Perpanjang untuk lanjut chat!</p>
-            <button onClick={() => setShowExtendModal(true)} className="px-6 py-3 bg-teal-500 rounded-xl font-semibold hover:bg-teal-600">🔄 Perpanjang Chat</button>
+            <button onClick={() => setShowExtendModal(true)} className="px-6 py-3 bg-gradient-to-r from-purple-500 to-violet-600 rounded-xl font-semibold hover:from-purple-600 hover:to-violet-700">🔄 Perpanjang Chat</button>
           </div>
         </div>
       )}
 
       {!isExpired && (
-        <div className="border-t border-gray-800 p-3 sm:p-4 bg-[#0a0a0f]/95 backdrop-blur-sm">
+        <div className="border-t border-purple-500/20 p-3 sm:p-4 bg-[#0a0a0f]">
           <div className="max-w-4xl mx-auto">
             {isCreator && (
               <div className="mb-3">
@@ -561,8 +577,8 @@ export default function ChatRoom() {
               <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="px-3 sm:px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl hover:bg-gray-700 disabled:opacity-50 flex-shrink-0">
                 {uploading ? '⏳' : '📎'}
               </button>
-              <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Ketik pesan..." className="flex-1 min-w-0 px-3 sm:px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-teal-500 outline-none text-sm sm:text-base"/>
-              <button type="submit" disabled={!newMessage.trim()} className="px-4 sm:px-6 py-3 bg-teal-500 rounded-xl font-semibold hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 text-sm sm:text-base">
+              <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Ketik pesan..." className="flex-1 min-w-0 px-3 sm:px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 outline-none text-sm sm:text-base"/>
+              <button type="submit" disabled={!newMessage.trim()} className="px-4 sm:px-6 py-3 bg-purple-500 rounded-xl font-semibold hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 text-sm sm:text-base">
                 <span className="hidden sm:inline">Kirim</span>
                 <span className="sm:hidden">→</span>
               </button>
@@ -599,9 +615,9 @@ export default function ChatRoom() {
             {creatorPricing.length > 0 ? (
               <div className="space-y-3 mb-4">
                 {creatorPricing.map((pricing) => (
-                  <button key={pricing.id} onClick={() => handleExtendChat(pricing)} disabled={extendLoading} className="w-full p-4 bg-gray-800 border border-gray-700 rounded-xl hover:border-teal-500 transition-colors flex justify-between items-center disabled:opacity-50">
+                  <button key={pricing.id} onClick={() => handleExtendChat(pricing)} disabled={extendLoading} className="w-full p-4 bg-gray-800 border border-gray-700 rounded-xl hover:border-purple-500 transition-colors flex justify-between items-center disabled:opacity-50">
                     <span className="font-semibold">{pricing.duration_hours} Jam</span>
-                    <span className="text-teal-400 font-bold">{pricing.price_credits} Kredit</span>
+                    <span className="text-purple-400 font-bold">{pricing.price_credits} Kredit</span>
                   </button>
                 ))}
               </div>

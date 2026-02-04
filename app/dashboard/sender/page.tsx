@@ -108,48 +108,49 @@ export default function SenderDashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
-            <p className="text-gray-400 text-sm mb-1">Saldo Kredit</p>
-            <p className="text-3xl font-bold text-teal-400">{credits?.balance || 0} Kredit</p>
+          <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
+            <p className="text-gray-400 text-xs mb-1">Saldo Kredit</p>
+            <p className="text-3xl font-bold text-purple-400">{credits?.balance || 0}</p>
+            <p className="text-gray-500 text-xs">Kredit</p>
           </div>
-          <div className="bg-gradient-to-r from-teal-500/20 to-purple-500/20 border border-teal-500/50 rounded-xl p-6 flex items-center justify-between">
+          <div className="bg-gradient-to-r from-purple-500/20 to-violet-500/20 border border-purple-500/30 rounded-2xl p-5 flex items-center justify-between">
             <div>
-              <p className="text-white font-semibold">Butuh lebih banyak kredit?</p>
-              <p className="text-gray-400 text-sm">Top up sekarang!</p>
+              <p className="text-white font-medium text-sm">Butuh lebih banyak kredit?</p>
+              <p className="text-gray-400 text-xs">Top up sekarang!</p>
             </div>
-            <Link href="/topup" className="px-4 py-2 bg-teal-500 rounded-lg hover:bg-teal-600 font-semibold">Top Up</Link>
+            <Link href="/topup" className="px-4 py-2 bg-purple-500 rounded-xl hover:bg-purple-600 font-medium text-sm">Top Up</Link>
           </div>
         </div>
 
-        <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 mb-6">
-          <h3 className="text-lg font-semibold mb-4">Cari Creator</h3>
-          <Link href="/explore" className="block w-full p-4 bg-gray-900 border border-gray-600 rounded-lg text-gray-400 hover:border-teal-500 transition-colors">
-            🔍 Cari creator favorit kamu...
+        <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5 mb-6">
+          <h3 className="text-base font-semibold mb-3 text-gray-200">🔍 Cari Creator</h3>
+          <Link href="/explore" className="block w-full p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl text-gray-400 hover:border-purple-500/50 transition-colors text-sm">
+            Cari creator favorit kamu...
           </Link>
         </div>
 
-        <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
-          <h3 className="text-lg font-semibold mb-4">Chat Aktif</h3>
+        <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
+          <h3 className="text-base font-semibold mb-4 text-gray-200">💬 Chat Aktif</h3>
           {activeChats.length === 0 ? (
-            <p className="text-gray-400">Belum ada chat aktif.</p>
+            <p className="text-gray-500 text-sm">Belum ada chat aktif.</p>
           ) : (
             <div className="space-y-3">
               {activeChats.map((chat) => (
-                <Link key={chat.id} href={`/chat/${chat.id}`} className="flex items-center justify-between p-4 bg-gray-900 border border-gray-700 rounded-lg hover:border-teal-500 transition-colors">
+                <Link key={chat.id} href={`/chat/${chat.id}`} className="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl hover:border-purple-500/50 transition-colors">
                   <div className="flex items-center gap-3">
                     {chat.creator?.avatar_url ? (
-                      <img src={chat.creator.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover"/>
+                      <img src={chat.creator.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover border border-purple-500/30"/>
                     ) : (
-                      <div className="w-10 h-10 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center font-bold">
+                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center font-bold text-sm">
                         {chat.creator?.full_name?.[0] || chat.creator?.username?.[0] || '?'}
                       </div>
                     )}
                     <div>
-                      <p className="font-semibold">{chat.creator?.full_name || chat.creator?.username || 'Creator'}</p>
-                      <p className="text-gray-400 text-sm">@{chat.creator?.username || 'unknown'}</p>
+                      <p className="font-medium text-sm">{chat.creator?.full_name || chat.creator?.username || 'Creator'}</p>
+                      <p className="text-gray-500 text-xs">@{chat.creator?.username || 'unknown'}</p>
                     </div>
                   </div>
-                  <div className={`text-sm px-3 py-1 rounded-full ${new Date(chat.expires_at) < new Date() ? 'bg-red-500/20 text-red-400' : 'bg-teal-500/20 text-teal-400'}`}>
+                  <div className={`text-xs px-3 py-1 rounded-full ${new Date(chat.expires_at) < new Date() ? 'bg-red-500/20 text-red-400' : 'bg-purple-500/20 text-purple-400'}`}>
                     ⏱ {getTimeLeft(chat.expires_at)}
                   </div>
                 </Link>
