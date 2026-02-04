@@ -114,7 +114,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-xl relative z-10">
         {/* Fanonym Title */}
         <div className="text-center mb-8">
-          <Link href="/" className="text-4xl font-black bg-gradient-to-r from-purple-400 via-violet-300 to-white bg-clip-text text-transparent">
+          <Link href="/" className="text-4xl font-black bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(103,0,232,0.5)]">
             fanonym
           </Link>
         </div>

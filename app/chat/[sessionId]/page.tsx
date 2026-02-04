@@ -495,7 +495,8 @@ export default function ChatRoom() {
     )
   }
 
-  const isExpired = session && new Date(session.expires_at) < new Date()
+  const isExpired = session && session.expires_at && new Date(session.expires_at) < new Date()
+  const isPending = session && session.is_accepted === false
 
   // Get profile URL based on user type
   const getProfileUrl = () => {
@@ -507,6 +508,31 @@ export default function ChatRoom() {
     } else {
       return `/sender/${otherUser.username}`
     }
+  }
+
+  // Show pending state for sender
+  if (isPending && !isCreator) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="text-6xl mb-4">⏳</div>
+          <h2 className="text-2xl font-bold text-white mb-2">Menunggu Creator Accept</h2>
+          <p className="text-gray-400 mb-4">
+            Chat kamu sudah dibayar! Menunggu {session?.creator?.full_name || 'creator'} untuk accept chat. 
+            Waktu akan mulai dihitung setelah creator accept.
+          </p>
+          <p className="text-purple-400 text-sm mb-6">
+            💰 {session?.credits_paid} kredit • {session?.duration_hours} jam
+          </p>
+          <button
+            onClick={() => router.back()}
+            className="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-semibold transition-colors"
+          >
+            ← Kembali
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (

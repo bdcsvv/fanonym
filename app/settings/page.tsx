@@ -422,8 +422,8 @@ export default function SettingsPage() {
             <h3 className="text-lg font-semibold mb-4">🔐 Verifikasi Creator</h3>
             
             {profile?.is_verified ? (
-              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
-                <p className="text-green-400 flex items-center gap-2">
+              <div className="bg-[#1da1f2]/10 border border-[#1da1f2]/30 rounded-lg p-4">
+                <p className="text-[#1da1f2] flex items-center gap-2">
                   <span className="text-xl">✓</span>
                   <span>Akun sudah terverifikasi!</span>
                 </p>

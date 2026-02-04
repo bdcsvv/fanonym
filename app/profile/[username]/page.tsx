@@ -83,14 +83,26 @@ export default function CreatorProfilePage() {
     fetchData()
   }, [username])
 
-  const handleUnlockChat = async (price: any) => {
+  const handleUnlockChat = async (priceOption: any) => {
     if (!currentUser) {
       router.push('/auth/login')
       return
     }
 
-    if (credits < price.price) {
-      alert('Kredit tidak cukup! Silakan top up dulu.')
+    // Get the correct credits field - database uses price_credits
+    const creditsCost = priceOption.price_credits ?? priceOption.credits ?? priceOption.price ?? 0
+    
+    console.log('Price option:', priceOption)
+    console.log('Credits cost:', creditsCost)
+
+    // Strict validation - must have credits and enough balance
+    if (creditsCost <= 0) {
+      alert('Error: Harga tidak valid')
+      return
+    }
+
+    if (credits < creditsCost) {
+      alert(`Kredit tidak cukup! Kamu butuh ${creditsCost} kredit, saldo kamu ${credits} kredit.`)
       router.push('/topup')
       return
     }
@@ -99,39 +111,57 @@ export default function CreatorProfilePage() {
 
     try {
       // Deduct credits
-      await supabase
+      const { error: creditError } = await supabase
         .from('credits')
-        .update({ balance: credits - price.price })
+        .update({ balance: credits - creditsCost })
         .eq('user_id', currentUser.id)
 
-      // Create chat session
-      const expiresAt = new Date()
-      expiresAt.setHours(expiresAt.getHours() + price.duration_hours)
+      if (creditError) throw creditError
 
+      // Create chat session with status pending (waiting for creator to accept)
       const { data: session, error } = await supabase
         .from('chat_sessions')
         .insert({
           creator_id: creator.id,
           sender_id: currentUser.id,
-          duration_hours: price.duration_hours,
-          price_paid: price.price,
-          expires_at: expiresAt.toISOString(),
-          status: 'active'
+          duration_hours: priceOption.duration_hours,
+          credits_paid: creditsCost,
+          is_accepted: false,
+          expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
         })
         .select()
         .single()
 
       if (error) throw error
 
-      // Add to creator earnings
-      await supabase
+      // Get current earnings and update
+      const { data: currentEarnings } = await supabase
         .from('earnings')
-        .update({ 
-          total_earned: (creator.total_earned || 0) + price.price,
-          available_balance: (creator.available_balance || 0) + price.price
-        })
+        .select('*')
         .eq('creator_id', creator.id)
+        .single()
 
+      if (currentEarnings) {
+        await supabase
+          .from('earnings')
+          .update({ 
+            total_earned: (currentEarnings.total_earned || 0) + creditsCost,
+            available_balance: (currentEarnings.available_balance || 0) + creditsCost
+          })
+          .eq('creator_id', creator.id)
+      } else {
+        // Create earnings record if not exists
+        await supabase
+          .from('earnings')
+          .insert({
+            creator_id: creator.id,
+            total_earned: creditsCost,
+            available_balance: creditsCost,
+            withdrawn: 0
+          })
+      }
+
+      alert('Chat berhasil di-unlock! Menunggu creator accept.')
       router.push(`/chat/${session.id}`)
     } catch (err: any) {
       alert('Error: ' + err.message)
@@ -173,7 +203,7 @@ export default function CreatorProfilePage() {
       {/* Navbar */}
       <nav className="border-b border-purple-500/20 p-4 relative z-10 bg-[#0a0a0f]">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold bg-gradient-to-r from-purple-400 to-white bg-clip-text text-transparent">
+          <Link href="/" className="text-2xl font-black bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)]">
             fanonym
           </Link>
           <div className="flex items-center gap-4">
@@ -227,7 +257,7 @@ export default function CreatorProfilePage() {
                   </div>
                 )}
                 {creator.is_verified && (
-                  <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 w-8 h-8 sm:w-10 sm:h-10 bg-purple-500 rounded-full flex items-center justify-center border-2 border-[#0a0a0f] shadow-lg">
+                  <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 w-8 h-8 sm:w-10 sm:h-10 bg-[#1da1f2] rounded-full flex items-center justify-center border-2 border-[#0a0a0f] shadow-lg">
                     <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
@@ -245,7 +275,7 @@ export default function CreatorProfilePage() {
                 <p className="text-gray-400">@{creator.username}</p>
                 
                 {creator.is_verified && (
-                  <span className="inline-block mt-2 text-purple-400 text-sm bg-purple-500/20 px-3 py-1 rounded-full">
+                  <span className="inline-block mt-2 text-[#1da1f2] text-sm bg-[#1da1f2]/20 px-3 py-1 rounded-full">
                     ✓ Verified Creator
                   </span>
                 )}
@@ -292,15 +322,15 @@ export default function CreatorProfilePage() {
               
               {pricing.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {pricing.map((price) => (
-                    <div key={price.id} className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
+                  {pricing.map((priceOption) => (
+                    <div key={priceOption.id} className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
                       <div className="flex justify-between items-start mb-2">
-                        <h3 className="text-lg font-bold">{price.duration_hours} Jam</h3>
-                        <span className="text-purple-400 font-bold">{price.price} Kredit</span>
+                        <h3 className="text-lg font-bold">{priceOption.duration_hours} Jam</h3>
+                        <span className="text-purple-400 font-bold">{priceOption.price_credits} Kredit</span>
                       </div>
-                      <p className="text-gray-500 text-sm mb-4">Unlimited chat selama {price.duration_hours} jam</p>
+                      <p className="text-gray-500 text-sm mb-4">Unlimited chat selama {priceOption.duration_hours} jam</p>
                       <button
-                        onClick={() => handleUnlockChat(price)}
+                        onClick={() => handleUnlockChat(priceOption)}
                         disabled={unlocking}
                         className="w-full py-3 bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 rounded-xl font-semibold transition-all disabled:opacity-50 text-sm"
                       >
@@ -312,14 +342,18 @@ export default function CreatorProfilePage() {
               ) : (
                 <div className="bg-gray-800/30 border border-gray-700/50 rounded-2xl p-8 text-center">
                   <p className="text-gray-400">Creator belum mengatur harga chat</p>
-                  <Link
-                    href={`/chat/free/${creator.id}`}
-                    className="inline-block mt-4 px-6 py-3 bg-gradient-to-r from-purple-500 to-violet-600 rounded-xl font-semibold"
-                  >
-                    Kirim Pesan Gratis
-                  </Link>
                 </div>
               )}
+
+              {/* Tombol Pesan Gratis - selalu tampil */}
+              <div className="mt-4">
+                <Link
+                  href={`/chat/free/${creator.id}`}
+                  className="block w-full text-center py-3 bg-gray-700/50 hover:bg-gray-700 border border-gray-600 rounded-xl font-semibold transition-all text-sm"
+                >
+                  💬 Kirim Pesan Gratis (masuk ke Spam)
+                </Link>
+              </div>
 
               {currentUser && credits > 0 && (
                 <p className="text-center text-gray-500 text-sm mt-4">

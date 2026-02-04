@@ -79,7 +79,7 @@ export default function ExplorePage() {
                   <div>
                     <p className="font-semibold flex items-center gap-1">
                       {creator.full_name || creator.username}
-                      {creator.is_verified && <span className="text-purple-400">✓</span>}
+                      {creator.is_verified && <span className="text-[#1da1f2]">✓</span>}
                     </p>
                     <p className="text-gray-400 text-sm">@{creator.username}</p>
                   </div>

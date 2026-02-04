@@ -598,7 +598,7 @@ export default function AdminPanel() {
                       </td>
                       <td className="py-3">
                         {user.is_verified ? (
-                          <span className="px-2 py-1 rounded text-xs bg-green-500/20 text-green-400">✓ Verified</span>
+                          <span className="px-2 py-1 rounded text-xs bg-[#1da1f2]/20 text-[#1da1f2]">✓ Verified</span>
                         ) : user.status === 'pending_verification' ? (
                           <span className="px-2 py-1 rounded text-xs bg-yellow-500/20 text-yellow-400">⏳ Pending</span>
                         ) : (

@@ -94,7 +94,7 @@ export default function SenderDashboard() {
 
       <nav className="border-b border-purple-500/20 p-4 relative z-10 bg-[#0a0a0f]">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold bg-gradient-to-r from-purple-400 to-white bg-clip-text text-transparent">
+          <Link href="/" className="text-2xl font-black bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)]">
             fanonym
           </Link>
           <div className="flex items-center gap-4 text-sm">

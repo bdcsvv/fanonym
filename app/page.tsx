@@ -6,7 +6,7 @@ export default function Home() {
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#0a0a0f]/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="text-xl font-bold bg-gradient-to-r from-purple-400 to-white bg-clip-text text-transparent">
+          <Link href="/" className="text-2xl font-black bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)]">
             fanonym
           </Link>
           <div className="flex items-center gap-4">
@@ -35,9 +35,9 @@ export default function Home() {
           <div className="absolute top-3/4 left-1/4 h-[400px] w-[400px] rounded-full bg-purple-500/10 blur-[100px]" />
         </div>
 
-        <div className="relative z-10 mx-auto max-w-4xl text-center">
+        <div className="relative z-10 mx-auto max-w-4xl text-center -mt-24">
           {/* Fanonym Title */}
-          <h1 className="mb-4 text-5xl sm:text-6xl md:text-7xl font-black tracking-tight bg-gradient-to-r from-purple-400 via-violet-300 to-white bg-clip-text text-transparent">
+          <h1 className="mb-4 text-5xl sm:text-6xl md:text-8xl font-black tracking-tight bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_50px_rgba(103,0,232,0.6)]" style={{lineHeight: '1.1'}}>
             fanonym
           </h1>
           <div className="mb-6 inline-block rounded-full border border-purple-500/30 bg-purple-500/10 px-4 py-1.5 text-sm text-purple-300">

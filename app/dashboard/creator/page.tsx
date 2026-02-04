@@ -11,15 +11,18 @@ export default function CreatorDashboard() {
   const [profile, setProfile] = useState<any>(null)
   const [earnings, setEarnings] = useState<any>(null)
   const [pricing, setPricing] = useState<any[]>([])
+  const [pendingChats, setPendingChats] = useState<any[]>([])
   const [activeChats, setActiveChats] = useState<any[]>([])
   const [expiredChats, setExpiredChats] = useState<any[]>([])
   const [spamMessages, setSpamMessages] = useState<any[]>([])
   const [withdrawals, setWithdrawals] = useState<any[]>([])
   const [totalAnons, setTotalAnons] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'inbox' | 'expired' | 'spam' | 'pricing' | 'withdraw'>('inbox')
+  const [activeTab, setActiveTab] = useState<'pending' | 'inbox' | 'expired' | 'spam' | 'pricing' | 'withdraw'>('pending')
   const [newDuration, setNewDuration] = useState('')
   const [newPrice, setNewPrice] = useState('')
+  const [earningsFilter, setEarningsFilter] = useState<'all' | 'today' | 'week' | 'month'>('all')
+  const [filteredEarnings, setFilteredEarnings] = useState(0)
   
   // Withdraw form
   const [withdrawAmount, setWithdrawAmount] = useState('')
@@ -64,12 +67,20 @@ export default function CreatorDashboard() {
         .from('chat_sessions')
         .select('*, sender:sender_id(id, username, full_name, avatar_url)')
         .eq('creator_id', profileData?.id)
-        .order('started_at', { ascending: false })
+        .order('created_at', { ascending: false })
 
-      // Separate active and expired chats
+      // Separate pending, active and expired chats
       const now = new Date()
-      const active = (chatsData || []).filter(c => new Date(c.expires_at) > now)
-      const expired = (chatsData || []).filter(c => new Date(c.expires_at) <= now)
+      const pending = (chatsData || []).filter(c => (c.is_accepted === false || c.is_accepted === null) && c.credits_paid > 0)
+      const active = (chatsData || []).filter(c => {
+        if (c.is_accepted === false || c.is_accepted === null) return false
+        if (!c.expires_at) return c.is_accepted === true
+        return new Date(c.expires_at) > now
+      })
+      const expired = (chatsData || []).filter(c => {
+        if (!c.expires_at) return false
+        return c.is_accepted === true && new Date(c.expires_at) <= now
+      })
 
       // Count unique senders (total anons)
       const uniqueSenders = new Set((chatsData || []).map(c => c.sender_id))
@@ -90,16 +101,75 @@ export default function CreatorDashboard() {
       setProfile(profileData)
       setEarnings(earningsData)
       setPricing(pricingData || [])
+      setPendingChats(pending)
       setActiveChats(active)
       setExpiredChats(expired)
       setTotalAnons(uniqueSenders.size)
       setSpamMessages(spamData || [])
       setWithdrawals(withdrawalsData || [])
+      setFilteredEarnings(earningsData?.total_earned || 0)
       setLoading(false)
     }
 
     getData()
   }, [router])
+
+  // Calculate filtered earnings
+  const calculateFilteredEarnings = async (filter: 'all' | 'today' | 'week' | 'month') => {
+    if (!profile) return
+    
+    if (filter === 'all') {
+      setFilteredEarnings(earnings?.total_earned || 0)
+      return
+    }
+
+    const now = new Date()
+    let startDate = new Date()
+    
+    if (filter === 'today') {
+      startDate.setHours(0, 0, 0, 0)
+    } else if (filter === 'week') {
+      startDate.setDate(now.getDate() - 7)
+    } else if (filter === 'month') {
+      startDate.setMonth(now.getMonth() - 1)
+    }
+
+    const { data: filteredChats } = await supabase
+      .from('chat_sessions')
+      .select('credits_paid, created_at')
+      .eq('creator_id', profile.id)
+      .gte('created_at', startDate.toISOString())
+
+    const total = (filteredChats || []).reduce((sum, chat) => sum + (chat.credits_paid || 0), 0)
+    setFilteredEarnings(total)
+  }
+
+  useEffect(() => {
+    calculateFilteredEarnings(earningsFilter)
+  }, [earningsFilter, profile, earnings])
+
+  // Handle accept chat
+  const handleAcceptChat = async (chatId: string, durationHours: number) => {
+    const expiresAt = new Date()
+    expiresAt.setHours(expiresAt.getHours() + durationHours)
+
+    const { error } = await supabase
+      .from('chat_sessions')
+      .update({ 
+        is_accepted: true,
+        accepted_at: new Date().toISOString(),
+        expires_at: expiresAt.toISOString()
+      })
+      .eq('id', chatId)
+
+    if (error) {
+      alert('Error accepting chat: ' + error.message)
+      return
+    }
+
+    // Refresh data
+    window.location.reload()
+  }
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -117,12 +187,30 @@ export default function CreatorDashboard() {
   }
 
   const updatePricing = async (id: string, newPriceValue: number) => {
-    await supabase
+    const { error } = await supabase
       .from('creator_pricing')
       .update({ price_credits: newPriceValue })
       .eq('id', id)
     
-    setPricing(pricing.map(p => p.id === id ? { ...p, price_credits: newPriceValue } : p))
+    if (!error) {
+      setPricing(pricing.map(p => p.id === id ? { ...p, price_credits: newPriceValue } : p))
+    }
+  }
+
+  const savePricing = async (id: string) => {
+    const priceItem = pricing.find(p => p.id === id)
+    if (!priceItem) return
+
+    const { error } = await supabase
+      .from('creator_pricing')
+      .update({ price_credits: priceItem.price_credits })
+      .eq('id', id)
+    
+    if (!error) {
+      alert('Harga berhasil disimpan!')
+    } else {
+      alert('Error: ' + error.message)
+    }
   }
 
   const addPricing = async () => {
@@ -314,7 +402,7 @@ export default function CreatorDashboard() {
 
       <nav className="border-b border-purple-500/20 p-4 relative z-10 bg-[#0a0a0f]">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold bg-gradient-to-r from-purple-400 to-white bg-clip-text text-transparent">
+          <Link href="/" className="text-2xl font-black bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)]">
             fanonym
           </Link>
           <div className="flex items-center gap-4 text-sm">
@@ -347,7 +435,7 @@ export default function CreatorDashboard() {
   <div>
     <h2 className="text-xl font-bold flex items-center gap-2">
       Halo, {profile?.full_name || profile?.username}!
-      {profile?.is_verified && <span className="text-purple-400 text-base">✓</span>}
+      {profile?.is_verified && <span className="text-[#1da1f2] text-base">✓</span>}
     </h2>
     {profile?.bio && <p className="text-gray-400 text-sm">{profile.bio}</p>}
   </div>
@@ -356,8 +444,20 @@ export default function CreatorDashboard() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
-            <p className="text-gray-400 text-xs mb-1">Total Pendapatan</p>
-            <p className="text-2xl font-bold text-white">{earnings?.total_earned || 0}</p>
+            <div className="flex justify-between items-start mb-1">
+              <p className="text-gray-400 text-xs">Total Pendapatan</p>
+              <select 
+                value={earningsFilter}
+                onChange={(e) => setEarningsFilter(e.target.value as any)}
+                className="text-xs bg-gray-700 border-none rounded px-1 py-0.5 text-gray-300"
+              >
+                <option value="all">Semua</option>
+                <option value="today">Hari ini</option>
+                <option value="week">Minggu ini</option>
+                <option value="month">Bulan ini</option>
+              </select>
+            </div>
+            <p className="text-2xl font-bold text-white">{filteredEarnings}</p>
             <p className="text-gray-500 text-xs">Kredit</p>
           </div>
           <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
@@ -398,6 +498,14 @@ export default function CreatorDashboard() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">
+          <button
+            onClick={() => setActiveTab('pending')}
+            className={`px-4 py-2 rounded-xl font-medium transition-colors text-sm ${
+              activeTab === 'pending' ? 'bg-yellow-500 text-black' : 'bg-gray-800/50 text-gray-400 hover:text-white'
+            }`}
+          >
+            🔔 Pending ({pendingChats.length})
+          </button>
           <button
             onClick={() => setActiveTab('inbox')}
             className={`px-4 py-2 rounded-xl font-medium transition-colors text-sm ${
@@ -440,6 +548,48 @@ export default function CreatorDashboard() {
           </button>
         </div>
 
+        {/* Pending Tab - Chat yang belum di-accept */}
+        {activeTab === 'pending' && (
+          <div className="bg-gray-800/30 border border-yellow-500/20 rounded-2xl p-5">
+            <h3 className="text-base font-semibold mb-4 text-yellow-400">🔔 Chat Menunggu Accept</h3>
+            <p className="text-gray-400 text-sm mb-4">Accept chat untuk memulai countdown waktu.</p>
+            {pendingChats.length === 0 ? (
+              <p className="text-gray-500 text-sm">Tidak ada chat pending.</p>
+            ) : (
+              <div className="space-y-3">
+                {pendingChats.map((chat) => (
+                  <div
+                    key={chat.id}
+                    className="flex items-center justify-between p-4 bg-gray-900/50 border border-yellow-500/30 rounded-xl"
+                  >
+                    <div className="flex items-center gap-3">
+                      {chat.sender?.avatar_url ? (
+                        <img src={chat.sender.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center font-bold">
+                          {chat.sender?.full_name?.[0] || chat.sender?.username?.[0] || '?'}
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-semibold">{chat.sender?.full_name || chat.sender?.username || 'Anonymous'}</p>
+                        <p className="text-yellow-400 text-sm">
+                          💰 {chat.credits_paid} kredit • {chat.duration_hours} jam
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleAcceptChat(chat.id, chat.duration_hours)}
+                      className="px-4 py-2 bg-green-500 hover:bg-green-600 rounded-xl font-semibold text-sm transition-colors"
+                    >
+                      ✓ Accept
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Inbox Tab */}
         {activeTab === 'inbox' && (
           <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
@@ -455,13 +605,17 @@ export default function CreatorDashboard() {
                     className="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl hover:border-purple-500/50 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center font-bold">
-                        {chat.sender?.full_name?.[0] || chat.sender?.username?.[0] || '?'}
-                      </div>
+                      {chat.sender?.avatar_url ? (
+                        <img src={chat.sender.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center font-bold">
+                          {chat.sender?.full_name?.[0] || chat.sender?.username?.[0] || '?'}
+                        </div>
+                      )}
                       <div>
                         <p className="font-semibold">{chat.sender?.full_name || chat.sender?.username || 'Anonymous'}</p>
-                        <p className="text-gray-400 text-sm">
-                          {chat.credits_paid === 0 ? '🆓 Free chat' : `Bayar ${chat.credits_paid} kredit`}
+                        <p className="text-purple-400 text-sm">
+                          💰 {chat.credits_paid} kredit
                         </p>
                       </div>
                     </div>
@@ -620,8 +774,14 @@ export default function CreatorDashboard() {
                       />
                       <span className="text-gray-400">Kredit</span>
                       <button
+                        onClick={() => savePricing(p.id)}
+                        className="ml-2 px-3 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30"
+                      >
+                        Simpan
+                      </button>
+                      <button
                         onClick={() => deletePricing(p.id)}
-                        className="ml-2 px-3 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"
+                        className="px-3 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"
                       >
                         Hapus
                       </button>

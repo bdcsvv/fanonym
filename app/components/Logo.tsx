@@ -10,17 +10,15 @@ interface LogoProps {
 
 export default function Logo({ variant = 'text', size = 'md', linkTo = '/' }: LogoProps) {
   const sizes = {
-    sm: 'h-6',
-    md: 'h-8',
-    lg: 'h-10',
+    sm: 'text-xl',
+    md: 'text-2xl',
+    lg: 'text-4xl',
   }
 
   const LogoContent = () => (
-    <img 
-      src={variant === 'text' ? '/logo-text.png' : '/logo-mask.png'}
-      alt="Fanonym"
-      className={`${sizes[size]} w-auto object-contain`}
-    />
+    <span className={`${sizes[size]} font-black bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)]`}>
+      fanonym
+    </span>
   )
 
   if (linkTo) {
