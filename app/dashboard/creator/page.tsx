@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Logo from '@/app/components/Logo'
+
 
 export default function CreatorDashboard() {
   const router = useRouter()
@@ -298,19 +298,26 @@ export default function CreatorDashboard() {
 
   const withdrawCalc = withdrawAmount ? calculateWithdraw(parseFloat(withdrawAmount)) : null
 
+  const handleDeleteExpiredChat = async (chatId: string) => {
+    if (!confirm('Hapus chat ini?')) return
+    await supabase.from('chat_sessions').delete().eq('id', chatId)
+    setExpiredChats(prev => prev.filter(c => c.id !== chatId))
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white relative">
-      {/* Background gradient orbs - same as landing page */}
+      {/* Background gradient orbs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[120px]" />
         <div className="absolute bottom-1/4 right-1/4 h-[300px] w-[300px] rounded-full bg-violet-500/10 blur-[100px]" />
-        <div className="absolute top-3/4 left-1/4 h-[250px] w-[250px] rounded-full bg-purple-500/10 blur-[100px]" />
       </div>
 
-      <nav className="border-b border-gray-800/50 p-4 relative z-10 bg-[#0a0a0f]/80 backdrop-blur-md">
+      <nav className="border-b border-purple-500/20 p-4 relative z-10 bg-[#0a0a0f]">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <Logo variant="mask" size="md" linkTo="/" />
-          <div className="flex items-center gap-4">
+          <Link href="/" className="text-xl font-bold bg-gradient-to-r from-purple-400 to-white bg-clip-text text-transparent">
+            fanonym
+          </Link>
+          <div className="flex items-center gap-4 text-sm">
   <Link href={`/profile/${profile?.username}`} className="text-gray-400 hover:text-white">
     👤 Profile
   </Link>
@@ -330,17 +337,17 @@ export default function CreatorDashboard() {
     <img 
       src={profile.avatar_url} 
       alt="Avatar" 
-      className="w-16 h-16 rounded-full object-cover border-2 border-purple-500"
+      className="w-14 h-14 rounded-full object-cover border-2 border-purple-500/50"
     />
   ) : (
-    <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-500 rounded-full flex items-center justify-center text-2xl font-bold">
+    <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center text-xl font-bold">
       {profile?.full_name?.[0] || profile?.username?.[0] || '?'}
     </div>
   )}
   <div>
-    <h2 className="text-2xl font-bold flex items-center gap-2">
-      Halo, {profile?.full_name || profile?.username}! 👋
-      {profile?.is_verified && <span className="text-purple-400 text-lg">✓</span>}
+    <h2 className="text-xl font-bold flex items-center gap-2">
+      Halo, {profile?.full_name || profile?.username}!
+      {profile?.is_verified && <span className="text-purple-400 text-base">✓</span>}
     </h2>
     {profile?.bio && <p className="text-gray-400 text-sm">{profile.bio}</p>}
   </div>
@@ -350,29 +357,29 @@ export default function CreatorDashboard() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
             <p className="text-gray-400 text-xs mb-1">Total Pendapatan</p>
-            <p className="text-2xl font-bold text-purple-400">{earnings?.total_earned || 0}</p>
+            <p className="text-2xl font-bold text-white">{earnings?.total_earned || 0}</p>
             <p className="text-gray-500 text-xs">Kredit</p>
           </div>
           <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
             <p className="text-gray-400 text-xs mb-1">Saldo</p>
-            <p className="text-2xl font-bold text-green-400">{earnings?.available_balance || 0}</p>
+            <p className="text-2xl font-bold text-white">{earnings?.available_balance || 0}</p>
             <p className="text-gray-500 text-xs">≈ Rp {((earnings?.available_balance || 0) * KREDIT_TO_IDR * (1 - PLATFORM_FEE)).toLocaleString('id-ID')}</p>
           </div>
           <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
             <p className="text-gray-400 text-xs mb-1">Chat Aktif</p>
-            <p className="text-2xl font-bold text-purple-400">{activeChats.length}</p>
+            <p className="text-2xl font-bold text-white">{activeChats.length}</p>
             <p className="text-gray-500 text-xs">Sessions</p>
           </div>
           <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
             <p className="text-gray-400 text-xs mb-1">Total Anon</p>
-            <p className="text-2xl font-bold text-violet-400">{totalAnons}</p>
+            <p className="text-2xl font-bold text-white">{totalAnons}</p>
             <p className="text-gray-500 text-xs">Unique senders</p>
           </div>
         </div>
 
         {/* Profile Link */}
         <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5 mb-6">
-          <h3 className="text-sm font-semibold mb-3 text-gray-300">🔗 Link Profil Kamu</h3>
+          <h3 className="text-sm font-semibold mb-3 text-gray-300">Link Profil Kamu</h3>
           <div className="flex items-center gap-2">
             <input
               type="text"
@@ -397,7 +404,7 @@ export default function CreatorDashboard() {
               activeTab === 'inbox' ? 'bg-purple-500 text-white' : 'bg-gray-800/50 text-gray-400 hover:text-white'
             }`}
           >
-            📥 Inbox ({activeChats.length})
+            Inbox ({activeChats.length})
           </button>
           <button
             onClick={() => setActiveTab('expired')}
@@ -405,7 +412,7 @@ export default function CreatorDashboard() {
               activeTab === 'expired' ? 'bg-purple-500 text-white' : 'bg-gray-800/50 text-gray-400 hover:text-white'
             }`}
           >
-            ⏰ Expired ({expiredChats.length})
+            Expired ({expiredChats.length})
           </button>
           <button
             onClick={() => setActiveTab('spam')}
@@ -413,7 +420,7 @@ export default function CreatorDashboard() {
               activeTab === 'spam' ? 'bg-purple-500 text-white' : 'bg-gray-800/50 text-gray-400 hover:text-white'
             }`}
           >
-            📭 Spam ({spamMessages.length})
+            Spam ({spamMessages.length})
           </button>
           <button
             onClick={() => setActiveTab('pricing')}
@@ -421,7 +428,7 @@ export default function CreatorDashboard() {
               activeTab === 'pricing' ? 'bg-purple-500 text-white' : 'bg-gray-800/50 text-gray-400 hover:text-white'
             }`}
           >
-            💎 Set Harga
+            Set Harga
           </button>
           <button
             onClick={() => setActiveTab('withdraw')}
@@ -429,14 +436,14 @@ export default function CreatorDashboard() {
               activeTab === 'withdraw' ? 'bg-green-500 text-white' : 'bg-gray-800/50 text-gray-400 hover:text-white'
             }`}
           >
-            💰 Withdraw
+            Withdraw
           </button>
         </div>
 
         {/* Inbox Tab */}
         {activeTab === 'inbox' && (
           <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
-            <h3 className="text-base font-semibold mb-4 text-gray-200">💬 Chat Aktif</h3>
+            <h3 className="text-base font-semibold mb-4 text-gray-200">Chat Aktif</h3>
             {activeChats.length === 0 ? (
               <p className="text-gray-500 text-sm">Belum ada chat aktif.</p>
             ) : (
@@ -471,18 +478,17 @@ export default function CreatorDashboard() {
         {/* Expired Tab */}
         {activeTab === 'expired' && (
           <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
-            <h3 className="text-base font-semibold mb-4 text-gray-200">⏰ Chat Expired</h3>
+            <h3 className="text-base font-semibold mb-4 text-gray-200">Chat Expired</h3>
             {expiredChats.length === 0 ? (
               <p className="text-gray-500 text-sm">Tidak ada chat expired.</p>
             ) : (
               <div className="space-y-3">
                 {expiredChats.map((chat) => (
-                  <Link
+                  <div
                     key={chat.id}
-                    href={`/chat/${chat.id}`}
-                    className="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl hover:border-red-500/50 transition-colors opacity-70"
+                    className="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl opacity-70"
                   >
-                    <div className="flex items-center gap-3">
+                    <Link href={`/chat/${chat.id}`} className="flex items-center gap-3 flex-1">
                       {chat.sender?.avatar_url ? (
                         <img src={chat.sender.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
                       ) : (
@@ -496,11 +502,14 @@ export default function CreatorDashboard() {
                           Expired: {new Date(chat.expires_at).toLocaleDateString('id-ID')}
                         </p>
                       </div>
-                    </div>
-                    <div className="text-xs px-3 py-1 rounded-full bg-red-500/20 text-red-400">
-                      Expired
-                    </div>
-                  </Link>
+                    </Link>
+                    <button
+                      onClick={() => handleDeleteExpiredChat(chat.id)}
+                      className="text-xs px-3 py-1 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                    >
+                      Hapus
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -510,7 +519,7 @@ export default function CreatorDashboard() {
         {/* Spam Tab */}
         {activeTab === 'spam' && (
           <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
-            <h3 className="text-base font-semibold mb-2 text-gray-200">📭 Pesan Gratis (Spam)</h3>
+            <h3 className="text-base font-semibold mb-2 text-gray-200">Pesan Gratis (Spam)</h3>
             <p className="text-gray-500 text-xs mb-4">Jika diterima, chat 10 menit akan dibuat otomatis.</p>
             {spamMessages.length === 0 ? (
               <p className="text-gray-500 text-sm">Tidak ada pesan spam.</p>

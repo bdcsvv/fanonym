@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Logo from '@/app/components/Logo'
+
 
 export default function CreatorProfilePage() {
   const params = useParams()
@@ -171,9 +171,11 @@ export default function CreatorProfilePage() {
       </div>
 
       {/* Navbar */}
-      <nav className="border-b border-gray-800/50 p-4 relative z-10 bg-[#0a0a0f]/80 backdrop-blur-md">
+      <nav className="border-b border-purple-500/20 p-4 relative z-10 bg-[#0a0a0f]">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <Logo variant="text" size="md" linkTo="/" />
+          <Link href="/" className="text-xl font-bold bg-gradient-to-r from-purple-400 to-white bg-clip-text text-transparent">
+            fanonym
+          </Link>
           <div className="flex items-center gap-4">
             {currentUser ? (
               <Link 
@@ -272,21 +274,21 @@ export default function CreatorProfilePage() {
 
           {/* Bio */}
           {creator.bio && (
-            <div className="bg-gray-800/30 border border-gray-700/50 rounded-2xl p-6 mb-6">
-              <p className="text-gray-200 whitespace-pre-wrap">{creator.bio}</p>
+            <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5 mb-6">
+              <p className="text-gray-200 whitespace-pre-wrap text-sm">{creator.bio}</p>
             </div>
           )}
 
           {/* Stats */}
-          <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-6 text-center mb-8">
-            <p className="text-4xl font-bold text-purple-400">👥 {totalAnons}</p>
-            <p className="text-gray-400 text-sm mt-1">Total Anon yang udah chat</p>
+          <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5 text-center mb-6">
+            <p className="text-3xl font-bold text-white">{totalAnons}</p>
+            <p className="text-gray-400 text-sm mt-1">Total Anon</p>
           </div>
 
           {/* Unlock Chat Section - Only show if not own profile */}
           {!isOwnProfile && (
             <div className="mb-8">
-              <h2 className="text-lg font-bold mb-4 text-center">💬 Mulai Chat dengan {creator.full_name || creator.username}</h2>
+              <h2 className="text-base font-bold mb-4 text-center">Mulai Chat dengan {creator.full_name || creator.username}</h2>
               
               {pricing.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

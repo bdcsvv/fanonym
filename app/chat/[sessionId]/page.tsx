@@ -510,7 +510,13 @@ export default function ChatRoom() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white flex flex-col">
+    <div className="min-h-screen bg-[#0a0a0f] text-white flex flex-col relative">
+      {/* Background gradient */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute left-1/2 top-1/3 h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-purple-600/10 blur-[120px]" />
+        <div className="absolute bottom-1/3 right-1/4 h-[300px] w-[300px] rounded-full bg-violet-500/5 blur-[100px]" />
+      </div>
+
       {/* Header */}
       <nav className="border-b border-purple-500/20 p-3 sm:p-4 sticky top-0 bg-[#0a0a0f] z-10">
         <div className="max-w-4xl mx-auto flex justify-between items-center gap-2">
@@ -547,7 +553,7 @@ export default function ChatRoom() {
         </div>
       </nav>
 
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 max-w-4xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 max-w-4xl mx-auto w-full relative z-10">
         <div className="space-y-3 sm:space-y-4">
           {messages.length === 0 && <p className="text-center text-gray-500 mt-10">Belum ada pesan. Mulai chat!</p>}
           {messages.map(renderMessage)}

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Logo from "./components/Logo";
 
 export default function Home() {
   return (
@@ -7,7 +6,9 @@ export default function Home() {
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#0a0a0f]/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Logo variant="text" size="md" linkTo="/" />
+          <Link href="/" className="text-xl font-bold bg-gradient-to-r from-purple-400 to-white bg-clip-text text-transparent">
+            fanonym
+          </Link>
           <div className="flex items-center gap-4">
             <Link
               href="/auth/login"
@@ -31,18 +32,23 @@ export default function Home() {
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[120px]" />
           <div className="absolute bottom-1/4 right-1/4 h-[300px] w-[300px] rounded-full bg-violet-500/10 blur-[100px]" />
+          <div className="absolute top-3/4 left-1/4 h-[400px] w-[400px] rounded-full bg-purple-500/10 blur-[100px]" />
         </div>
 
         <div className="relative z-10 mx-auto max-w-4xl text-center">
+          {/* Fanonym Title */}
+          <h1 className="mb-4 text-5xl sm:text-6xl md:text-7xl font-black tracking-tight bg-gradient-to-r from-purple-400 via-violet-300 to-white bg-clip-text text-transparent">
+            fanonym
+          </h1>
           <div className="mb-6 inline-block rounded-full border border-purple-500/30 bg-purple-500/10 px-4 py-1.5 text-sm text-purple-300">
             Platform Pesan Anonim #1 di Indonesia
           </div>
-          <h1 className="mb-6 text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-6xl">
+          <h2 className="mb-6 text-3xl font-bold leading-tight tracking-tight sm:text-4xl md:text-5xl">
             Kirim Pesan Anonim ke{" "}
             <span className="bg-gradient-to-r from-purple-400 via-violet-400 to-purple-600 bg-clip-text text-transparent">
               Creator Favoritmu
             </span>
-          </h1>
+          </h2>
           <p className="mx-auto mb-10 max-w-2xl text-lg text-zinc-400 sm:text-xl">
             Sampaikan pesan, pertanyaan, atau dukunganmu secara anonim.
             Identitasmu tetap rahasia, pesanmu tetap tersampaikan.
@@ -66,7 +72,12 @@ export default function Home() {
 
       {/* How it Works Section */}
       <section id="cara-kerja" className="relative px-6 py-24">
-        <div className="mx-auto max-w-6xl">
+        {/* Background gradient for lower sections */}
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute top-0 left-1/3 h-[400px] w-[400px] rounded-full bg-purple-600/10 blur-[120px]" />
+          <div className="absolute bottom-0 right-1/3 h-[300px] w-[300px] rounded-full bg-violet-500/10 blur-[100px]" />
+        </div>
+        <div className="mx-auto max-w-6xl relative z-10">
           <div className="mb-16 text-center">
             <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
               Cara Kerja
@@ -209,8 +220,11 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="px-6 py-24">
-        <div className="mx-auto max-w-4xl rounded-3xl border border-purple-500/20 bg-gradient-to-br from-purple-600/10 via-violet-600/5 to-transparent p-12 text-center sm:p-16">
+      <section className="relative px-6 py-24">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute top-1/2 left-1/2 h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-purple-600/10 blur-[120px]" />
+        </div>
+        <div className="mx-auto max-w-4xl rounded-3xl border border-purple-500/20 bg-gradient-to-br from-purple-600/10 via-violet-600/5 to-transparent p-12 text-center sm:p-16 relative z-10">
           <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
             Siap Kirim Pesan Pertamamu?
           </h2>
@@ -229,8 +243,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-white/5 px-6 py-10">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
-          <Logo variant="text" size="sm" linkTo="/" />
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-center gap-4">
           <p className="text-sm text-zinc-500">
             &copy; {new Date().getFullYear()} Fanonym. Semua hak dilindungi.
           </p>

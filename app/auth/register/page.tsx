@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import Link from 'next/link'
-import Logo from '@/app/components/Logo'
 
 export default function RegisterPage() {
   const [userType, setUserType] = useState<'sender' | 'creator'>('sender')
@@ -113,17 +112,19 @@ export default function RegisterPage() {
       </div>
 
       <div className="w-full max-w-xl relative z-10">
-        {/* Logo */}
-        <div className="flex items-center justify-center mb-8">
-          <Logo variant="mask" size="lg" linkTo="/" />
+        {/* Fanonym Title */}
+        <div className="text-center mb-8">
+          <Link href="/" className="text-4xl font-black bg-gradient-to-r from-purple-400 via-violet-300 to-white bg-clip-text text-transparent">
+            fanonym
+          </Link>
         </div>
 
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">
+          <h1 className="text-2xl font-bold text-white mb-2">
             Buat Akun Baru
           </h1>
-          <p className="text-gray-400">
+          <p className="text-gray-400 text-sm">
             Pilih tipe akun Anda untuk memulai
           </p>
         </div>

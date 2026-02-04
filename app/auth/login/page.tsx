@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import Logo from '@/app/components/Logo'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -68,17 +67,19 @@ export default function LoginPage() {
       </div>
 
       <div className="w-full max-w-md relative z-10">
-        {/* Logo */}
-        <div className="flex items-center justify-center mb-8">
-          <Logo variant="mask" size="lg" linkTo="/" />
+        {/* Fanonym Title */}
+        <div className="text-center mb-8">
+          <Link href="/" className="text-4xl font-black bg-gradient-to-r from-purple-400 via-violet-300 to-white bg-clip-text text-transparent">
+            fanonym
+          </Link>
         </div>
 
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">
+          <h1 className="text-2xl font-bold text-white mb-2">
             {forgotMode ? 'Lupa Kata Sandi' : 'Selamat Datang Kembali'}
           </h1>
-          <p className="text-gray-400">
+          <p className="text-gray-400 text-sm">
             {forgotMode ? 'Masukkan email untuk reset password' : 'Masuk untuk melanjutkan ke akun Anda'}
           </p>
         </div>
