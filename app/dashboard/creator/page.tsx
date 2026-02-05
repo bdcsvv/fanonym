@@ -51,36 +51,58 @@ export default function CreatorDashboard() {
         .eq('id', user.id)
         .single()
 
+      if (!profileData) {
+        setLoading(false)
+        return
+      }
+
       const { data: earningsData } = await supabase
         .from('earnings')
         .select('*')
-        .eq('creator_id', profileData?.id)
+        .eq('creator_id', profileData.id)
         .single()
 
       const { data: pricingData } = await supabase
         .from('creator_pricing')
         .select('*')
-        .eq('creator_id', profileData?.id)
+        .eq('creator_id', profileData.id)
         .order('duration_hours', { ascending: true })
 
-      const { data: chatsData } = await supabase
+      const { data: chatsData, error: chatsError } = await supabase
         .from('chat_sessions')
         .select('*, sender:sender_id(id, username, full_name, avatar_url)')
-        .eq('creator_id', profileData?.id)
-        .order('created_at', { ascending: false })
+        .eq('creator_id', profileData.id)
+        .order('started_at', { ascending: false })
+
+      console.log('RAW Chats data:', chatsData)
+      console.log('Chats error:', chatsError)
 
       // Separate pending, active and expired chats
       const now = new Date()
-      const pending = (chatsData || []).filter(c => (c.is_accepted === false || c.is_accepted === null) && c.credits_paid > 0)
+      
+      // Pending = is_accepted is false AND credits_paid > 0
+      const pending = (chatsData || []).filter(c => {
+        console.log('Chat:', c.id, 'is_accepted:', c.is_accepted, 'credits_paid:', c.credits_paid)
+        return c.is_accepted === false && c.credits_paid > 0
+      })
+      
+      // Active = is_accepted is true AND not expired
       const active = (chatsData || []).filter(c => {
-        if (c.is_accepted === false || c.is_accepted === null) return false
-        if (!c.expires_at) return c.is_accepted === true
+        if (c.is_accepted !== true) return false
+        if (!c.expires_at) return true
         return new Date(c.expires_at) > now
       })
+      
+      // Expired = is_accepted is true AND expired
       const expired = (chatsData || []).filter(c => {
+        if (c.is_accepted !== true) return false
         if (!c.expires_at) return false
-        return c.is_accepted === true && new Date(c.expires_at) <= now
+        return new Date(c.expires_at) <= now
       })
+
+      console.log('Pending count:', pending.length)
+      console.log('Active count:', active.length)
+      console.log('Expired count:', expired.length)
 
       // Count unique senders (total anons)
       const uniqueSenders = new Set((chatsData || []).map(c => c.sender_id))
@@ -88,14 +110,14 @@ export default function CreatorDashboard() {
       const { data: spamData } = await supabase
         .from('spam_messages')
         .select('*, sender:sender_id(id, username, full_name, avatar_url)')
-        .eq('creator_id', profileData?.id)
+        .eq('creator_id', profileData.id)
         .eq('status', 'pending')
         .order('created_at', { ascending: false })
 
       const { data: withdrawalsData } = await supabase
         .from('withdrawals')
         .select('*')
-        .eq('creator_id', profileData?.id)
+        .eq('creator_id', profileData.id)
         .order('created_at', { ascending: false })
 
       setProfile(profileData)
@@ -247,7 +269,7 @@ export default function CreatorDashboard() {
 
   const handleSpamAction = async (messageId: string, senderId: string, action: 'accept' | 'reject') => {
     if (action === 'accept') {
-      // Bikin chat session 10 menit gratis
+      // Bikin chat session 10 menit gratis - langsung accepted karena dari spam
       const { data: session, error } = await supabase
         .from('chat_sessions')
         .insert({
@@ -256,7 +278,8 @@ export default function CreatorDashboard() {
           duration_hours: 0,
           credits_paid: 0,
           expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
-          is_active: true
+          is_accepted: true, // FIXED: use is_accepted instead of is_active
+          accepted_at: new Date().toISOString()
         })
         .select()
         .single()
@@ -285,13 +308,21 @@ export default function CreatorDashboard() {
 
     if (action === 'accept') {
       alert('Pesan diterima! Chat 10 menit telah dibuat.')
-      // Refresh active chats
+      // Refresh active chats - FIXED: properly filter by is_accepted
       const { data: chatsData } = await supabase
         .from('chat_sessions')
-        .select('*, sender:sender_id(id, username, full_name)')
+        .select('*, sender:sender_id(id, username, full_name, avatar_url)')
         .eq('creator_id', profile?.id)
-        .order('started_at', { ascending: false })
-      setActiveChats(chatsData || [])
+        .order('created_at', { ascending: false })
+      
+      // Re-filter active chats (is_accepted = true AND not expired)
+      const now = new Date()
+      const active = (chatsData || []).filter(c => {
+        if (c.is_accepted !== true) return false
+        if (!c.expires_at) return true
+        return new Date(c.expires_at) > now
+      })
+      setActiveChats(active)
     }
   }
 

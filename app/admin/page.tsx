@@ -120,6 +120,18 @@ export default function AdminPanel() {
   }
 
   const approveTopup = async (topupId: string, userId: string, amount: number) => {
+    console.log('Approving topup:', { topupId, userId, amount })
+    
+    if (!userId) {
+      alert('Error: User ID tidak ditemukan!')
+      return
+    }
+    
+    if (!amount || amount <= 0) {
+      alert('Error: Amount tidak valid!')
+      return
+    }
+
     const { error: updateError } = await supabase
       .from('topup_requests')
       .update({ status: 'approved', verified_at: new Date().toISOString() })
@@ -130,24 +142,44 @@ export default function AdminPanel() {
       return
     }
 
-    const { data: credits } = await supabase
+    // Check if user has credits record
+    const { data: credits, error: creditsError } = await supabase
       .from('credits')
       .select('balance')
       .eq('user_id', userId)
       .single()
 
+    console.log('Current credits:', credits, 'Error:', creditsError)
+
     if (credits) {
-      await supabase
+      // Update existing credits
+      const newBalance = (credits.balance || 0) + amount
+      console.log('Updating balance to:', newBalance)
+      
+      const { error: updateCreditsError } = await supabase
         .from('credits')
-        .update({ balance: credits.balance + amount })
+        .update({ balance: newBalance })
         .eq('user_id', userId)
+      
+      if (updateCreditsError) {
+        alert('Error updating credits: ' + updateCreditsError.message)
+        return
+      }
     } else {
-      await supabase
+      // Insert new credits record
+      console.log('Inserting new credits record for user:', userId, 'amount:', amount)
+      
+      const { error: insertError } = await supabase
         .from('credits')
         .insert({ user_id: userId, balance: amount })
+      
+      if (insertError) {
+        alert('Error inserting credits: ' + insertError.message)
+        return
+      }
     }
 
-    alert('Topup approved!')
+    alert(`Topup approved! ${amount} kredit telah ditambahkan ke user.`)
     loadData()
   }
 

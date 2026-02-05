@@ -9,10 +9,11 @@ export default function SenderDashboard() {
   const router = useRouter()
   const [profile, setProfile] = useState<any>(null)
   const [credits, setCredits] = useState<any>(null)
+  const [pendingChats, setPendingChats] = useState<any[]>([])
   const [activeChats, setActiveChats] = useState<any[]>([])
   const [expiredChats, setExpiredChats] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'active' | 'expired'>('active')
+  const [activeTab, setActiveTab] = useState<'pending' | 'active' | 'expired'>('active')
 
   useEffect(() => {
     const getProfile = async () => {
@@ -38,15 +39,35 @@ export default function SenderDashboard() {
         .from('chat_sessions')
         .select('*, creator:creator_id(id, username, full_name, avatar_url)')
         .eq('sender_id', profileData?.id)
-        .order('started_at', { ascending: false })
+        .order('created_at', { ascending: false })
 
-      // Separate active and expired
+      // Separate pending, active and expired
       const now = new Date()
-      const active = (chatsData || []).filter(c => new Date(c.expires_at) > now)
-      const expired = (chatsData || []).filter(c => new Date(c.expires_at) <= now)
+      
+      // Pending = is_accepted is false/null AND has paid credits (waiting for creator approval)
+      const pending = (chatsData || []).filter(c => {
+        const notAccepted = c.is_accepted === false || c.is_accepted === null
+        const isPaid = c.credits_paid > 0
+        return notAccepted && isPaid
+      })
+      
+      // Active = is_accepted is true AND not expired
+      const active = (chatsData || []).filter(c => {
+        if (c.is_accepted !== true) return false
+        if (!c.expires_at) return true
+        return new Date(c.expires_at) > now
+      })
+      
+      // Expired = is_accepted is true AND expired
+      const expired = (chatsData || []).filter(c => {
+        if (c.is_accepted !== true) return false
+        if (!c.expires_at) return false
+        return new Date(c.expires_at) <= now
+      })
 
       setProfile(profileData)
       setCredits(creditsData)
+      setPendingChats(pending)
       setActiveChats(active)
       setExpiredChats(expired)
       setLoading(false)
@@ -66,9 +87,14 @@ export default function SenderDashboard() {
     setExpiredChats(prev => prev.filter(c => c.id !== chatId))
   }
 
-  const getTimeLeft = (expiresAt: string) => {
+  const getTimeLeft = (chat: any) => {
+    // If not accepted yet, show "Menunggu approve"
+    if (chat.is_accepted !== true) {
+      return 'Menunggu approve'
+    }
+    
     const now = new Date().getTime()
-    const expires = new Date(expiresAt).getTime()
+    const expires = new Date(chat.expires_at).getTime()
     const diff = expires - now
     if (diff <= 0) return 'Expired'
     const hours = Math.floor(diff / (1000 * 60 * 60))
@@ -144,7 +170,15 @@ export default function SenderDashboard() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-2 mb-4 flex-wrap">
+          <button
+            onClick={() => setActiveTab('pending')}
+            className={`px-4 py-2 rounded-xl font-medium text-sm transition-colors ${
+              activeTab === 'pending' ? 'bg-yellow-500 text-white' : 'bg-gray-800/50 text-gray-400 hover:text-white'
+            }`}
+          >
+            ⏳ Pending ({pendingChats.length})
+          </button>
           <button
             onClick={() => setActiveTab('active')}
             className={`px-4 py-2 rounded-xl font-medium text-sm transition-colors ${
@@ -162,6 +196,42 @@ export default function SenderDashboard() {
             Expired ({expiredChats.length})
           </button>
         </div>
+
+        {/* Pending Chats - Waiting for creator approval */}
+        {activeTab === 'pending' && (
+          <div className="bg-gray-800/30 border border-yellow-500/20 rounded-2xl p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-yellow-400">⏳</span>
+              <p className="text-yellow-400 text-sm">Chat menunggu persetujuan creator</p>
+            </div>
+            {pendingChats.length === 0 ? (
+              <p className="text-gray-500 text-sm">Tidak ada chat yang menunggu approve.</p>
+            ) : (
+              <div className="space-y-3">
+                {pendingChats.map((chat) => (
+                  <Link key={chat.id} href={`/chat/${chat.id}`} className="flex items-center justify-between p-4 bg-gray-900/50 border border-yellow-500/30 rounded-xl hover:border-yellow-500/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      {chat.creator?.avatar_url ? (
+                        <img src={chat.creator.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover"/>
+                      ) : (
+                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center font-bold text-sm">
+                          {chat.creator?.full_name?.[0] || '?'}
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-medium text-sm">{chat.creator?.full_name || chat.creator?.username}</p>
+                        <p className="text-gray-500 text-xs">@{chat.creator?.username}</p>
+                      </div>
+                    </div>
+                    <div className="text-xs px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400">
+                      Menunggu approve
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Active Chats */}
         {activeTab === 'active' && (
@@ -186,7 +256,7 @@ export default function SenderDashboard() {
                       </div>
                     </div>
                     <div className="text-xs px-3 py-1 rounded-full bg-purple-500/20 text-purple-400">
-                      {getTimeLeft(chat.expires_at)}
+                      {getTimeLeft(chat)}
                     </div>
                   </Link>
                 ))}
