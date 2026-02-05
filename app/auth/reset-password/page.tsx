@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Link from 'next/link'
 
 export default function ResetPasswordPage() {
   const router = useRouter()
