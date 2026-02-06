@@ -39,7 +39,7 @@ export default function SenderDashboard() {
         .from('chat_sessions')
         .select('*, creator:creator_id(id, username, full_name, avatar_url)')
         .eq('sender_id', profileData?.id)
-        .order('created_at', { ascending: false })
+        .order('started_at', { ascending: false })
 
       console.log('Sender Dashboard - Raw chats:', chatsData)
       console.log('Sender Dashboard - Chats error:', chatsError)
