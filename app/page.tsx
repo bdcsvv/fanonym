@@ -244,6 +244,19 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-white/5 px-6 py-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-center gap-4">
+          <div className="flex items-center gap-6 text-sm">
+            <Link href="/terms" className="text-zinc-400 hover:text-purple-400 transition-colors">
+              Syarat & Ketentuan
+            </Link>
+            <span className="text-zinc-700">•</span>
+            <Link href="/privacy" className="text-zinc-400 hover:text-purple-400 transition-colors">
+              Kebijakan Privasi
+            </Link>
+            <span className="text-zinc-700">•</span>
+            <a href="mailto:support@fanonym.id" className="text-zinc-400 hover:text-purple-400 transition-colors">
+              Kontak
+            </a>
+          </div>
           <p className="text-sm text-zinc-500">
             &copy; {new Date().getFullYear()} Fanonym. Semua hak dilindungi.
           </p>

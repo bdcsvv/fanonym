@@ -226,8 +226,18 @@ export default function RegisterPage() {
                 type="checkbox"
                 checked={agreeTerms}
                 onChange={(e) => setAgreeTerms(e.target.checked)}
+                className="mt-1 rounded border-gray-600"
               />
-              Saya setuju dengan Syarat & Ketentuan dan Kebijakan Privasi
+              <span>
+                Saya berusia minimal 18 tahun dan setuju dengan{' '}
+                <Link href="/terms" target="_blank" className="text-purple-400 hover:text-purple-300 underline">
+                  Syarat & Ketentuan
+                </Link>
+                {' '}dan{' '}
+                <Link href="/privacy" target="_blank" className="text-purple-400 hover:text-purple-300 underline">
+                  Kebijakan Privasi
+                </Link>
+              </span>
             </label>
 
             {error && (
