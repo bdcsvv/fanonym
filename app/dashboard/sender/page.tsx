@@ -35,35 +35,44 @@ export default function SenderDashboard() {
         .eq('user_id', user.id)
         .single()
 
-      const { data: chatsData } = await supabase
+      const { data: chatsData, error: chatsError } = await supabase
         .from('chat_sessions')
         .select('*, creator:creator_id(id, username, full_name, avatar_url)')
         .eq('sender_id', profileData?.id)
         .order('created_at', { ascending: false })
 
+      console.log('Sender Dashboard - Raw chats:', chatsData)
+      console.log('Sender Dashboard - Chats error:', chatsError)
+      console.log('Sender Dashboard - Profile ID:', profileData?.id)
+
       // Separate pending, active and expired
       const now = new Date()
       
-      // Pending = is_accepted is false/null AND has paid credits (waiting for creator approval)
+      // Pending = is_accepted is falsy (false/null/undefined) AND has paid credits
       const pending = (chatsData || []).filter(c => {
-        const notAccepted = c.is_accepted === false || c.is_accepted === null
+        const notAccepted = !c.is_accepted // falsy check instead of strict comparison
         const isPaid = c.credits_paid > 0
+        console.log('Pending check:', c.id, 'is_accepted:', c.is_accepted, 'credits_paid:', c.credits_paid, 'result:', notAccepted && isPaid)
         return notAccepted && isPaid
       })
       
-      // Active = is_accepted is true AND not expired
+      // Active = is_accepted is truthy AND not expired
       const active = (chatsData || []).filter(c => {
-        if (c.is_accepted !== true) return false
+        if (!c.is_accepted) return false // truthy check instead of strict === true
         if (!c.expires_at) return true
-        return new Date(c.expires_at) > now
+        const isActive = new Date(c.expires_at) > now
+        console.log('Active check:', c.id, 'is_accepted:', c.is_accepted, 'expires_at:', c.expires_at, 'result:', isActive)
+        return isActive
       })
       
-      // Expired = is_accepted is true AND expired
+      // Expired = is_accepted is truthy AND expired
       const expired = (chatsData || []).filter(c => {
-        if (c.is_accepted !== true) return false
+        if (!c.is_accepted) return false
         if (!c.expires_at) return false
         return new Date(c.expires_at) <= now
       })
+
+      console.log('Sender Dashboard - Pending:', pending.length, 'Active:', active.length, 'Expired:', expired.length)
 
       setProfile(profileData)
       setCredits(creditsData)

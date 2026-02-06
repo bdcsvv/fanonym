@@ -80,22 +80,22 @@ export default function CreatorDashboard() {
       // Separate pending, active and expired chats
       const now = new Date()
       
-      // Pending = is_accepted is false AND credits_paid > 0
+      // Pending = is_accepted is falsy AND credits_paid > 0
       const pending = (chatsData || []).filter(c => {
-        console.log('Chat:', c.id, 'is_accepted:', c.is_accepted, 'credits_paid:', c.credits_paid)
-        return c.is_accepted === false && c.credits_paid > 0
+        console.log('Chat:', c.id, 'is_accepted:', c.is_accepted, 'type:', typeof c.is_accepted, 'credits_paid:', c.credits_paid)
+        return !c.is_accepted && c.credits_paid > 0
       })
       
-      // Active = is_accepted is true AND not expired
+      // Active = is_accepted is truthy AND not expired
       const active = (chatsData || []).filter(c => {
-        if (c.is_accepted !== true) return false
+        if (!c.is_accepted) return false
         if (!c.expires_at) return true
         return new Date(c.expires_at) > now
       })
       
-      // Expired = is_accepted is true AND expired
+      // Expired = is_accepted is truthy AND expired
       const expired = (chatsData || []).filter(c => {
-        if (c.is_accepted !== true) return false
+        if (!c.is_accepted) return false
         if (!c.expires_at) return false
         return new Date(c.expires_at) <= now
       })
