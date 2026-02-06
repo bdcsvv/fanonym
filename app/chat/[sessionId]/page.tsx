@@ -543,11 +543,19 @@ export default function ChatRoom() {
         <div className="absolute bottom-1/3 right-1/4 h-[300px] w-[300px] rounded-full bg-violet-500/5 blur-[100px]" />
       </div>
 
-      {/* Header */}
-      <nav className="border-b border-purple-500/20 p-3 sm:p-4 sticky top-0 bg-[#0a0a0f] z-10">
+      {/* Header - Fixed position */}
+      <nav className="fixed top-0 left-0 right-0 border-b border-purple-500/20 p-3 sm:p-4 bg-[#0a0a0f]/95 backdrop-blur-md z-50">
         <div className="max-w-4xl mx-auto flex justify-between items-center gap-2">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-            <button onClick={() => router.back()} className="text-gray-400 hover:text-white text-xl flex-shrink-0">←</button>
+            {/* Back Button - Better Design */}
+            <button 
+              onClick={() => router.back()} 
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-800/80 hover:bg-purple-500/20 text-gray-300 hover:text-white transition-all flex-shrink-0 border border-gray-700/50 hover:border-purple-500/50"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
             
             {/* Clickable Profile */}
             <a href={getProfileUrl()} className="flex items-center gap-2 sm:gap-3 min-w-0 hover:opacity-80 transition-opacity">
@@ -578,6 +586,9 @@ export default function ChatRoom() {
           </div>
         </div>
       </nav>
+
+      {/* Spacer for fixed header */}
+      <div className="h-16 sm:h-[72px]"></div>
 
       <div className="flex-1 overflow-y-auto p-3 sm:p-4 max-w-4xl mx-auto w-full relative z-10">
         <div className="space-y-3 sm:space-y-4">
