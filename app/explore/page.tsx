@@ -75,8 +75,6 @@ export default function ExplorePage() {
                 href={`/profile/${creator.username}`}
                 className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 hover:border-purple-500 transition-all card-hover animate-fadeInUp"
                 style={{ animationDelay: `${index * 0.1}s` }}
-                className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 hover:border-purple-500 transition-all card-hover animate-fadeInUp"
-                style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div className="flex items-center gap-4">
                   {creator.avatar_url ? (
