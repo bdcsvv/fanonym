@@ -12,11 +12,11 @@ export default function ExplorePage() {
 
   useEffect(() => {
     const fetchCreators = async () => {
+      // Fetch all creators (both verified and unverified)
       const { data } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_type', 'creator')
-        .eq('is_verified', true)
 
       setCreators(data || [])
       setLoading(false)
@@ -25,10 +25,16 @@ export default function ExplorePage() {
     fetchCreators()
   }, [])
 
-  const filteredCreators = creators.filter(c =>
-    c.username?.toLowerCase().includes(search.toLowerCase()) ||
-    c.full_name?.toLowerCase().includes(search.toLowerCase())
-  )
+  // Filter by search term - searches both username and full_name
+  const filteredCreators = creators.filter(c => {
+    const searchLower = search.toLowerCase().trim()
+    if (!searchLower) return true // Show all if no search
+    
+    const usernameMatch = c.username?.toLowerCase().includes(searchLower)
+    const nameMatch = c.full_name?.toLowerCase().includes(searchLower)
+    
+    return usernameMatch || nameMatch
+  })
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white relative">
@@ -40,7 +46,7 @@ export default function ExplorePage() {
 
       <nav className="border-b border-gray-800/50 p-4 relative z-10 bg-[#0a0a0f]/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <Logo variant="text" size="md" linkTo="/" />
+          <Logo variant="text" size="md" linkTo="/dashboard/sender" />
           <Link href="/dashboard/sender" className="text-gray-400 hover:text-white">Dashboard</Link>
         </div>
       </nav>

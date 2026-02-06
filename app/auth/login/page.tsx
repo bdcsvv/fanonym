@@ -164,14 +164,25 @@ export default function LoginPage() {
                   className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white"
                 />
 
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  placeholder="••••••••"
-                  className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white"
-                />
+                <div>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    placeholder="••••••••"
+                    className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setForgotMode(true)}
+                    className="text-purple-400 hover:text-purple-300 text-sm mt-2 float-right"
+                  >
+                    Lupa password?
+                  </button>
+                </div>
+
+                <div className="clear-both"></div>
 
                 {error && (
                   <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">

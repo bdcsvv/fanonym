@@ -20,6 +20,8 @@ const PAYMENT_METHODS = [
   { id: 'dana', name: 'DANA', number: '081234567890', holder: 'Fanonym' },
 ]
 
+const KREDIT_TO_IDR = 10000
+
 export default function TopupPage() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
@@ -77,17 +79,17 @@ export default function TopupPage() {
     setProcessing(true)
 
     const { data, error } = await supabase
-  .from('topup_requests')
-  .insert({
-    user_id: user.id,
-    amount_rupiah: selectedOption.price,
-    amount_credits: selectedOption.credits,
-    payment_code: selectedPayment,
-    payment_proof_url: proofUrl || null,
-    status: 'pending'
-  })
-  .select()
-  .single()
+      .from('topup_requests')
+      .insert({
+        user_id: user.id,
+        amount_rupiah: selectedOption.price,
+        amount_credits: selectedOption.credits,
+        payment_code: selectedPayment,
+        payment_proof_url: proofUrl || null,
+        status: 'pending'
+      })
+      .select()
+      .single()
 
     if (error) {
       alert('Gagal membuat request topup: ' + error.message)
@@ -108,13 +110,13 @@ export default function TopupPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded text-xs">Pending</span>
+        return <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-xs">Pending</span>
       case 'approved':
-        return <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">Approved</span>
+        return <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded-full text-xs">Approved</span>
       case 'rejected':
-        return <span className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs">Rejected</span>
+        return <span className="px-2 py-1 bg-red-500/20 text-red-400 rounded-full text-xs">Rejected</span>
       default:
-        return <span className="px-2 py-1 bg-gray-500/20 text-gray-400 rounded text-xs">{status}</span>
+        return <span className="px-2 py-1 bg-gray-500/20 text-gray-400 rounded-full text-xs">{status}</span>
     }
   }
 
@@ -129,17 +131,34 @@ export default function TopupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
-      <nav className="border-b border-gray-800 p-4">
+    <div className="min-h-screen bg-[#0a0a0f] text-white relative">
+      {/* Background gradient orbs */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[120px]" />
+        <div className="absolute bottom-1/4 right-1/4 h-[300px] w-[300px] rounded-full bg-violet-500/10 blur-[100px]" />
+      </div>
+
+      <nav className="border-b border-purple-500/20 p-4 relative z-10 bg-[#0a0a0f]/80 backdrop-blur-md">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold text-teal-400">Fanonym</Link>
-          <Link href="/dashboard/sender" className="text-gray-400 hover:text-white">Dashboard</Link>
+          <Link href="/dashboard/sender" className="text-2xl font-black bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)]">
+            fanonym
+          </Link>
+          <Link href="/dashboard/sender" className="text-gray-400 hover:text-white transition-colors">← Dashboard</Link>
         </div>
       </nav>
 
-      <main className="max-w-4xl mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-2">Top Up Kredit</h1>
-        <p className="text-gray-400 mb-6">Saldo saat ini: <span className="text-teal-400 font-bold">{credits} Kredit</span></p>
+      <main className="max-w-4xl mx-auto p-6 relative z-10">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">💎 Top Up Kredit</h1>
+          <div className="flex items-center gap-4">
+            <div className="bg-gray-800/30 border border-purple-500/20 rounded-xl px-4 py-2">
+              <span className="text-gray-400 text-sm">Saldo saat ini: </span>
+              <span className="text-purple-400 font-bold text-lg">{credits} Kredit</span>
+              <span className="text-gray-500 text-sm ml-2">≈ Rp {(credits * KREDIT_TO_IDR).toLocaleString('id-ID')}</span>
+            </div>
+          </div>
+        </div>
 
         {/* Topup Options */}
         {!showForm && (
@@ -148,19 +167,22 @@ export default function TopupPage() {
               {TOPUP_OPTIONS.map((option) => (
                 <div
                   key={option.credits}
-                  className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 hover:border-teal-500 transition-colors"
+                  className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-6 hover:border-purple-500/50 transition-all hover:shadow-lg hover:shadow-purple-500/10 group"
                 >
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-2xl font-bold text-teal-400">{option.credits} Kredit</span>
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">
+                      {option.credits}
+                    </span>
                     {option.credits >= 25 && (
-                      <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">Hemat!</span>
+                      <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full">🔥 Hemat!</span>
                     )}
                   </div>
-                  <p className="text-gray-400 mb-4">Rp {option.price.toLocaleString('id-ID')}</p>
+                  <p className="text-gray-400 text-sm mb-1">Kredit</p>
+                  <p className="text-white text-xl font-semibold mb-1">Rp {option.price.toLocaleString('id-ID')}</p>
                   <p className="text-gray-500 text-xs mb-4">Rp {(option.price / option.credits).toLocaleString('id-ID')}/kredit</p>
                   <button
                     onClick={() => handleSelectOption(option)}
-                    className="w-full py-3 bg-gradient-to-r from-teal-500 to-teal-600 rounded-lg font-semibold hover:from-teal-600 hover:to-teal-700 transition-all"
+                    className="w-full py-3 bg-gradient-to-r from-purple-500 to-violet-600 rounded-xl font-semibold hover:from-purple-600 hover:to-violet-700 transition-all shadow-lg shadow-purple-500/25 group-hover:shadow-purple-500/40"
                   >
                     Pilih
                   </button>
@@ -170,14 +192,16 @@ export default function TopupPage() {
 
             {/* Topup History */}
             {topupHistory.length > 0 && (
-              <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
-                <h3 className="text-lg font-semibold mb-4">Riwayat Topup</h3>
+              <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <span>📋</span> Riwayat Topup
+                </h3>
                 <div className="space-y-3">
                   {topupHistory.map((topup) => (
-                    <div key={topup.id} className="flex items-center justify-between p-4 bg-gray-900 border border-gray-700 rounded-lg">
+                    <div key={topup.id} className="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl">
                       <div>
-                        <p className="font-semibold">{topup.amount_credits} Kredit</p>
-                        <p className="text-gray-400 text-sm">Rp {topup.amount_rupiah?.toLocaleString('id-ID')} • {topup.payment_code}</p>
+                        <p className="font-semibold text-purple-400">{topup.amount_credits} Kredit</p>
+                        <p className="text-gray-400 text-sm">Rp {topup.amount_rupiah?.toLocaleString('id-ID')} • {topup.payment_code?.toUpperCase()}</p>
                         <p className="text-gray-500 text-xs">{new Date(topup.created_at).toLocaleString('id-ID')}</p>
                       </div>
                       {getStatusBadge(topup.status)}
@@ -191,21 +215,23 @@ export default function TopupPage() {
 
         {/* Payment Form */}
         {showForm && selectedOption && (
-          <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
+          <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-6">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-semibold">Konfirmasi Pembayaran</h3>
+              <h3 className="text-xl font-semibold">💳 Konfirmasi Pembayaran</h3>
               <button 
                 onClick={() => setShowForm(false)}
-                className="text-gray-400 hover:text-white"
+                className="text-gray-400 hover:text-white transition-colors flex items-center gap-1"
               >
                 ← Kembali
               </button>
             </div>
 
-            <div className="bg-teal-500/10 border border-teal-500/30 rounded-lg p-4 mb-6">
-              <p className="text-teal-400 text-sm">Paket dipilih:</p>
-              <p className="text-2xl font-bold text-teal-400">{selectedOption.credits} Kredit</p>
-              <p className="text-white">Rp {selectedOption.price.toLocaleString('id-ID')}</p>
+            <div className="bg-gradient-to-r from-purple-500/10 to-violet-500/10 border border-purple-500/30 rounded-xl p-4 mb-6">
+              <p className="text-purple-400 text-sm">Paket dipilih:</p>
+              <p className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">
+                {selectedOption.credits} Kredit
+              </p>
+              <p className="text-white text-lg">Rp {selectedOption.price.toLocaleString('id-ID')}</p>
             </div>
 
             {/* Payment Method */}
@@ -216,10 +242,10 @@ export default function TopupPage() {
                   <button
                     key={method.id}
                     onClick={() => setSelectedPayment(method.id)}
-                    className={`p-4 rounded-lg border text-left transition-colors ${
+                    className={`p-4 rounded-xl border text-left transition-all ${
                       selectedPayment === method.id
-                        ? 'border-teal-500 bg-teal-500/10'
-                        : 'border-gray-700 bg-gray-900 hover:border-gray-600'
+                        ? 'border-purple-500 bg-purple-500/10 shadow-lg shadow-purple-500/20'
+                        : 'border-gray-700/50 bg-gray-900/50 hover:border-purple-500/50'
                     }`}
                   >
                     <p className="font-semibold">{method.name}</p>
@@ -230,12 +256,12 @@ export default function TopupPage() {
 
             {/* Payment Info */}
             {selectedPaymentInfo && (
-              <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 mb-6">
+              <div className="bg-gray-900/50 border border-gray-700/50 rounded-xl p-4 mb-6">
                 <p className="text-sm text-gray-400 mb-2">Transfer ke:</p>
-                <p className="font-bold text-lg">{selectedPaymentInfo.name}</p>
-                <p className="text-teal-400 font-mono text-lg">{selectedPaymentInfo.number}</p>
+                <p className="font-bold text-lg text-white">{selectedPaymentInfo.name}</p>
+                <p className="text-purple-400 font-mono text-xl">{selectedPaymentInfo.number}</p>
                 <p className="text-gray-400">a.n. {selectedPaymentInfo.holder}</p>
-                <div className="mt-3 pt-3 border-t border-gray-700">
+                <div className="mt-4 pt-4 border-t border-gray-700/50">
                   <p className="text-sm text-gray-400">Jumlah transfer:</p>
                   <p className="text-2xl font-bold text-white">Rp {selectedOption.price.toLocaleString('id-ID')}</p>
                 </div>
@@ -250,7 +276,7 @@ export default function TopupPage() {
                 value={proofUrl}
                 onChange={(e) => setProofUrl(e.target.value)}
                 placeholder="https://drive.google.com/... atau link imgur"
-                className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:border-teal-500 outline-none"
+                className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700/50 rounded-xl focus:border-purple-500 outline-none transition-colors"
               />
               <p className="text-gray-500 text-xs mt-1">Upload screenshot bukti transfer ke Google Drive/Imgur dan paste linknya</p>
             </div>
@@ -258,9 +284,9 @@ export default function TopupPage() {
             <button
               onClick={handleSubmitTopup}
               disabled={processing || !selectedPayment}
-              className="w-full py-3 bg-gradient-to-r from-teal-500 to-teal-600 rounded-lg font-semibold hover:from-teal-600 hover:to-teal-700 transition-all disabled:opacity-50"
+              className="w-full py-4 bg-gradient-to-r from-purple-500 to-violet-600 rounded-xl font-semibold hover:from-purple-600 hover:to-violet-700 transition-all disabled:opacity-50 shadow-lg shadow-purple-500/25"
             >
-              {processing ? 'Processing...' : 'Saya Sudah Transfer'}
+              {processing ? 'Processing...' : '✅ Saya Sudah Transfer'}
             </button>
           </div>
         )}

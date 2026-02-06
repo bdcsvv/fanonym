@@ -70,7 +70,7 @@ export default function CreatorDashboard() {
 
       const { data: chatsData, error: chatsError } = await supabase
         .from('chat_sessions')
-        .select('*, sender:sender_id(id, username, full_name, avatar_url)')
+        .select('*, sender:sender_id(id, username, full_name, avatar_url), messages(id, sender_id, created_at)')
         .eq('creator_id', profileData.id)
         .order('started_at', { ascending: false })
 
@@ -135,6 +135,24 @@ export default function CreatorDashboard() {
 
     getData()
   }, [router])
+
+  // Check if chat has unread messages from sender (for creator view)
+  const hasUnreadMessages = (chat: any) => {
+    if (!chat.messages || chat.messages.length === 0) return false
+    if (!profile) return false
+    
+    // Get the latest message
+    const sortedMessages = [...chat.messages].sort((a: any, b: any) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
+    const latestMessage = sortedMessages[0]
+    
+    // If latest message is from sender (not creator), it's "unread"
+    return latestMessage.sender_id !== profile.id
+  }
+
+  // Count unread chats in inbox
+  const unreadInboxCount = activeChats.filter(chat => hasUnreadMessages(chat)).length
 
   // Calculate filtered earnings
   const calculateFilteredEarnings = async (filter: 'all' | 'today' | 'week' | 'month') => {
@@ -433,7 +451,7 @@ export default function CreatorDashboard() {
 
       <nav className="border-b border-purple-500/20 p-4 relative z-10 bg-[#0a0a0f]">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-2xl font-black bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)]">
+          <Link href="/dashboard/creator" className="text-2xl font-black bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)]">
             fanonym
           </Link>
           <div className="flex items-center gap-4 text-sm">
@@ -539,11 +557,16 @@ export default function CreatorDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('inbox')}
-            className={`px-4 py-2 rounded-xl font-medium transition-colors text-sm ${
+            className={`px-4 py-2 rounded-xl font-medium transition-colors text-sm relative ${
               activeTab === 'inbox' ? 'bg-purple-500 text-white' : 'bg-gray-800/50 text-gray-400 hover:text-white'
             }`}
           >
             Inbox ({activeChats.length})
+            {unreadInboxCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs flex items-center justify-center text-white">
+                {unreadInboxCount}
+              </span>
+            )}
           </button>
           <button
             onClick={() => setActiveTab('expired')}
@@ -633,18 +656,32 @@ export default function CreatorDashboard() {
                   <Link
                     key={chat.id}
                     href={`/chat/${chat.id}`}
-                    className="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl hover:border-purple-500/50 transition-colors"
+                    className={`flex items-center justify-between p-4 bg-gray-900/50 border rounded-xl hover:border-purple-500/50 transition-colors ${
+                      hasUnreadMessages(chat) ? 'border-green-500/50 bg-green-500/5' : 'border-gray-700/50'
+                    }`}
                   >
                     <div className="flex items-center gap-3">
-                      {chat.sender?.avatar_url ? (
-                        <img src={chat.sender.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
-                      ) : (
-                        <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center font-bold">
-                          {chat.sender?.full_name?.[0] || chat.sender?.username?.[0] || '?'}
-                        </div>
-                      )}
+                      <div className="relative">
+                        {chat.sender?.avatar_url ? (
+                          <img src={chat.sender.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center font-bold">
+                            {chat.sender?.full_name?.[0] || chat.sender?.username?.[0] || '?'}
+                          </div>
+                        )}
+                        {hasUnreadMessages(chat) && (
+                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                            <span className="text-[10px]">💬</span>
+                          </div>
+                        )}
+                      </div>
                       <div>
-                        <p className="font-semibold">{chat.sender?.full_name || chat.sender?.username || 'Anonymous'}</p>
+                        <p className="font-semibold flex items-center gap-2">
+                          {chat.sender?.full_name || chat.sender?.username || 'Anonymous'}
+                          {hasUnreadMessages(chat) && (
+                            <span className="text-xs text-green-400 font-normal">• Pesan baru</span>
+                          )}
+                        </p>
                         <p className="text-purple-400 text-sm">
                           💰 {chat.credits_paid} kredit
                         </p>

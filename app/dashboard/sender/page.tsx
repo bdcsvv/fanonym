@@ -5,6 +5,8 @@ import { supabase } from '@/app/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
+const KREDIT_TO_IDR = 10000
+
 export default function SenderDashboard() {
   const router = useRouter()
   const [profile, setProfile] = useState<any>(null)
@@ -37,7 +39,7 @@ export default function SenderDashboard() {
 
       const { data: chatsData, error: chatsError } = await supabase
         .from('chat_sessions')
-        .select('*, creator:creator_id(id, username, full_name, avatar_url)')
+        .select('*, creator:creator_id(id, username, full_name, avatar_url), messages(id, sender_id, created_at)')
         .eq('sender_id', profileData?.id)
         .order('started_at', { ascending: false })
 
@@ -111,6 +113,21 @@ export default function SenderDashboard() {
     return `${hours}j ${minutes}m`
   }
 
+  // Check if chat has unread messages from creator
+  const hasUnreadMessages = (chat: any) => {
+    if (!chat.messages || chat.messages.length === 0) return false
+    // Get the latest message
+    const sortedMessages = [...chat.messages].sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
+    const latestMessage = sortedMessages[0]
+    // If latest message is from creator (not sender), it's "unread"
+    return latestMessage.sender_id !== profile?.id
+  }
+
+  // Count unread chats
+  const unreadCount = activeChats.filter(chat => hasUnreadMessages(chat)).length
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
@@ -129,7 +146,7 @@ export default function SenderDashboard() {
 
       <nav className="border-b border-purple-500/20 p-4 relative z-10 bg-[#0a0a0f]">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-2xl font-black bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)]">
+          <Link href="/dashboard/sender" className="text-2xl font-black bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)]">
             fanonym
           </Link>
           <div className="flex items-center gap-4 text-sm">
@@ -160,7 +177,7 @@ export default function SenderDashboard() {
           <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
             <p className="text-gray-400 text-xs mb-1">Saldo Kredit</p>
             <p className="text-3xl font-bold text-white">{credits?.balance || 0}</p>
-            <p className="text-gray-500 text-xs">Kredit</p>
+            <p className="text-purple-400 text-sm mt-1">≈ Rp {((credits?.balance || 0) * KREDIT_TO_IDR).toLocaleString('id-ID')}</p>
           </div>
           <div className="bg-gradient-to-r from-purple-500/20 to-violet-500/20 border border-purple-500/30 rounded-2xl p-5 flex items-center justify-between">
             <div>
@@ -190,11 +207,16 @@ export default function SenderDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('active')}
-            className={`px-4 py-2 rounded-xl font-medium text-sm transition-colors ${
+            className={`px-4 py-2 rounded-xl font-medium text-sm transition-colors relative ${
               activeTab === 'active' ? 'bg-purple-500 text-white' : 'bg-gray-800/50 text-gray-400 hover:text-white'
             }`}
           >
             Chat Aktif ({activeChats.length})
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs flex items-center justify-center text-white">
+                {unreadCount}
+              </span>
+            )}
           </button>
           <button
             onClick={() => setActiveTab('expired')}
@@ -250,17 +272,31 @@ export default function SenderDashboard() {
             ) : (
               <div className="space-y-3">
                 {activeChats.map((chat) => (
-                  <Link key={chat.id} href={`/chat/${chat.id}`} className="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl hover:border-purple-500/50 transition-colors">
+                  <Link key={chat.id} href={`/chat/${chat.id}`} className={`flex items-center justify-between p-4 bg-gray-900/50 border rounded-xl hover:border-purple-500/50 transition-colors ${
+                    hasUnreadMessages(chat) ? 'border-green-500/50 bg-green-500/5' : 'border-gray-700/50'
+                  }`}>
                     <div className="flex items-center gap-3">
-                      {chat.creator?.avatar_url ? (
-                        <img src={chat.creator.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover"/>
-                      ) : (
-                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center font-bold text-sm">
-                          {chat.creator?.full_name?.[0] || '?'}
-                        </div>
-                      )}
+                      <div className="relative">
+                        {chat.creator?.avatar_url ? (
+                          <img src={chat.creator.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover"/>
+                        ) : (
+                          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center font-bold text-sm">
+                            {chat.creator?.full_name?.[0] || '?'}
+                          </div>
+                        )}
+                        {hasUnreadMessages(chat) && (
+                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                            <span className="text-[10px]">💬</span>
+                          </div>
+                        )}
+                      </div>
                       <div>
-                        <p className="font-medium text-sm">{chat.creator?.full_name || chat.creator?.username}</p>
+                        <p className="font-medium text-sm flex items-center gap-2">
+                          {chat.creator?.full_name || chat.creator?.username}
+                          {hasUnreadMessages(chat) && (
+                            <span className="text-xs text-green-400 font-normal">• Pesan baru</span>
+                          )}
+                        </p>
                         <p className="text-gray-500 text-xs">@{chat.creator?.username}</p>
                       </div>
                     </div>

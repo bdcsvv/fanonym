@@ -13,7 +13,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'profile' | 'blocked'>('profile')
+  const [activeTab, setActiveTab] = useState<'profile' | 'blocked' | 'security'>('profile')
 
   // Blocked users state
   const [blockedUsers, setBlockedUsers] = useState<any[]>([])
@@ -30,6 +30,14 @@ export default function SettingsPage() {
 
   // Verification (creator only)
   const [ktpUploading, setKtpUploading] = useState(false)
+
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmNewPassword, setConfirmNewPassword] = useState('')
+  const [changingPassword, setChangingPassword] = useState(false)
+  const [passwordError, setPasswordError] = useState('')
+  const [passwordSuccess, setPasswordSuccess] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -193,6 +201,38 @@ export default function SettingsPage() {
     alert('KTP berhasil diupload! Tunggu verifikasi dari admin.')
   }
 
+  const handleChangePassword = async () => {
+    setPasswordError('')
+    setPasswordSuccess(false)
+
+    if (newPassword.length < 6) {
+      setPasswordError('Password baru minimal 6 karakter')
+      return
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError('Password baru dan konfirmasi tidak sama')
+      return
+    }
+
+    setChangingPassword(true)
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword })
+      
+      if (error) throw error
+
+      setPasswordSuccess(true)
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmNewPassword('')
+    } catch (err: any) {
+      setPasswordError(err.message)
+    } finally {
+      setChangingPassword(false)
+    }
+  }
+
   const handleSave = async () => {
     setSaving(true)
 
@@ -236,7 +276,7 @@ export default function SettingsPage() {
 
       <nav className="border-b border-gray-800/50 p-4 relative z-10 bg-[#0a0a0f]/80 backdrop-blur-md">
         <div className="max-w-2xl mx-auto flex justify-between items-center">
-          <Logo variant="mask" size="md" linkTo="/" />
+          <Logo variant="mask" size="md" linkTo={profile?.user_type === 'creator' ? '/dashboard/creator' : '/dashboard/sender'} />
           <Link 
             href={profile?.user_type === 'creator' ? '/dashboard/creator' : '/dashboard/sender'} 
             className="text-gray-400 hover:text-white"
@@ -250,7 +290,7 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-bold mb-6">⚙️ Pengaturan</h1>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-6 flex-wrap">
           <button
             onClick={() => setActiveTab('profile')}
             className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
@@ -260,6 +300,16 @@ export default function SettingsPage() {
             }`}
           >
             👤 Profil
+          </button>
+          <button
+            onClick={() => setActiveTab('security')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+              activeTab === 'security'
+                ? 'bg-purple-500 text-white'
+                : 'bg-gray-800 text-gray-400 hover:text-white'
+            }`}
+          >
+            🔒 Keamanan
           </button>
           <button
             onClick={() => setActiveTab('blocked')}
@@ -470,6 +520,78 @@ export default function SettingsPage() {
           {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
         </button>
           </>
+        )}
+
+        {/* Security Tab */}
+        {activeTab === 'security' && (
+          <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center text-2xl">
+                🔒
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Ganti Password</h3>
+                <p className="text-sm text-gray-400">Perbarui password akun kamu</p>
+              </div>
+            </div>
+
+            {passwordSuccess && (
+              <div className="mb-4 p-4 bg-green-500/10 border border-green-500/30 rounded-xl">
+                <p className="text-green-400 flex items-center gap-2">
+                  <span>✅</span>
+                  <span>Password berhasil diubah!</span>
+                </p>
+              </div>
+            )}
+
+            {passwordError && (
+              <div className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+                <p className="text-red-400 flex items-center gap-2">
+                  <span>❌</span>
+                  <span>{passwordError}</span>
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm text-gray-400 block mb-1">Password Baru</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Minimal 6 karakter"
+                  className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl focus:border-purple-500 outline-none transition-colors"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-400 block mb-1">Konfirmasi Password Baru</label>
+                <input
+                  type="password"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  placeholder="Ulangi password baru"
+                  className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl focus:border-purple-500 outline-none transition-colors"
+                />
+              </div>
+              <button
+                onClick={handleChangePassword}
+                disabled={changingPassword || !newPassword || !confirmNewPassword}
+                className="w-full py-3 bg-gradient-to-r from-purple-500 to-violet-600 rounded-xl font-semibold hover:from-purple-600 hover:to-violet-700 transition-all disabled:opacity-50 shadow-lg shadow-purple-500/25"
+              >
+                {changingPassword ? 'Mengubah...' : '🔐 Ganti Password'}
+              </button>
+            </div>
+
+            <div className="mt-6 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30">
+              <p className="text-yellow-400 text-sm font-medium mb-1">ℹ️ Tips Keamanan</p>
+              <ul className="text-gray-400 text-sm space-y-1">
+                <li>• Gunakan password minimal 6 karakter</li>
+                <li>• Kombinasikan huruf, angka, dan simbol</li>
+                <li>• Jangan gunakan password yang sama dengan akun lain</li>
+              </ul>
+            </div>
+          </div>
         )}
 
         {/* Blocked Users Tab */}
