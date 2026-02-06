@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import FanonymLoader from '@/app/components/FanonymLoader'
 
 
 export default function CreatorProfilePage() {
@@ -170,17 +171,13 @@ export default function CreatorProfilePage() {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-        <div className="text-white">Loading...</div>
-      </div>
-    )
+    return <FanonymLoader text="Memuat profil..." />
   }
 
   if (!creator) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center page-transition">
+        <div className="text-center animate-fadeIn">
           <p className="text-white text-xl mb-4">Creator tidak ditemukan</p>
           <Link href="/" className="text-purple-400 hover:text-purple-300">
             ← Kembali ke Beranda

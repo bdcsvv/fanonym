@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import FanonymLoader from '@/app/components/FanonymLoader'
 
 const TOPUP_OPTIONS = [
   { credits: 5, price: 50000 },
@@ -123,15 +124,11 @@ export default function TopupPage() {
   const selectedPaymentInfo = PAYMENT_METHODS.find(p => p.id === selectedPayment)
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-        <div className="text-white">Loading...</div>
-      </div>
-    )
+    return <FanonymLoader text="Memuat halaman..." />
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white relative">
+    <div className="min-h-screen bg-[#0a0a0f] text-white relative page-transition">
       {/* Background gradient orbs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[120px]" />

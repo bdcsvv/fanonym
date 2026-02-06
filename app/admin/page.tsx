@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import { useRouter } from 'next/navigation'
+import FanonymLoader from '@/app/components/FanonymLoader'
 
 export default function AdminPanel() {
   const router = useRouter()
@@ -303,11 +304,7 @@ export default function AdminPanel() {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-        <div className="text-white">Loading...</div>
-      </div>
-    )
+    return <FanonymLoader text="Memuat admin panel..." />
   }
 
   if (!isAdmin) {
@@ -315,7 +312,7 @@ export default function AdminPanel() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
+    <div className="min-h-screen bg-[#0a0a0f] text-white page-transition">
       <nav className="border-b border-gray-800 p-4">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <h1 className="text-xl font-bold text-red-500">🔐 Admin Panel</h1>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import Link from 'next/link'
 import Logo from '@/app/components/Logo'
+import FanonymLoader from '@/app/components/FanonymLoader'
 
 export default function ExplorePage() {
   const [creators, setCreators] = useState<any[]>([])
@@ -52,27 +53,30 @@ export default function ExplorePage() {
       </nav>
 
       <main className="max-w-6xl mx-auto p-6 relative z-10">
-        <h1 className="text-2xl font-bold mb-6">Cari Creator</h1>
+        <h1 className="text-2xl font-bold mb-6 animate-fadeInDown">Cari Creator</h1>
 
         <input
           type="text"
           placeholder="🔍 Cari username atau nama..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full p-4 bg-gray-800 border border-gray-700 rounded-xl mb-6 focus:border-purple-500 outline-none"
+          className="w-full p-4 bg-gray-800 border border-gray-700 rounded-xl mb-6 focus:border-purple-500 outline-none transition-all animate-fadeIn"
         />
 
         {loading ? (
-          <p className="text-gray-400">Loading...</p>
+          <FanonymLoader fullScreen={false} text="Mencari creator..." />
         ) : filteredCreators.length === 0 ? (
-          <p className="text-gray-400">Tidak ada creator ditemukan.</p>
+          <p className="text-gray-400 animate-fadeIn">Tidak ada creator ditemukan.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredCreators.map((creator) => (
+            {filteredCreators.map((creator, index) => (
               <Link
                 key={creator.id}
                 href={`/profile/${creator.username}`}
-                className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 hover:border-purple-500 transition-colors"
+                className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 hover:border-purple-500 transition-all card-hover animate-fadeInUp"
+                style={{ animationDelay: `${index * 0.1}s` }}
+                className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 hover:border-purple-500 transition-all card-hover animate-fadeInUp"
+                style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div className="flex items-center gap-4">
                   {creator.avatar_url ? (

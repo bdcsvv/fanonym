@@ -5,6 +5,7 @@ import { supabase } from '@/app/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Logo from '@/app/components/Logo'
+import FanonymLoader from '@/app/components/FanonymLoader'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -259,15 +260,11 @@ export default function SettingsPage() {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-        <div className="text-white">Loading...</div>
-      </div>
-    )
+    return <FanonymLoader text="Memuat pengaturan..." />
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white relative">
+    <div className="min-h-screen bg-[#0a0a0f] text-white relative page-transition">
       {/* Background gradient orbs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[120px]" />

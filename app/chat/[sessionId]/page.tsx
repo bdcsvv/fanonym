@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 import ReportBlockModal from '@/app/components/ReportBlockModal'
+import FanonymLoader from '@/app/components/FanonymLoader'
 
 export default function ChatRoom() {
   const params = useParams()
@@ -488,11 +489,7 @@ export default function ChatRoom() {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-        <div className="text-white">Loading...</div>
-      </div>
-    )
+    return <FanonymLoader text="Memuat chat..." />
   }
 
   const isExpired = session && session.expires_at && new Date(session.expires_at) < new Date()

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import FanonymLoader from '@/app/components/FanonymLoader'
 
 const KREDIT_TO_IDR = 10000
 
@@ -129,15 +130,11 @@ export default function SenderDashboard() {
   const unreadCount = activeChats.filter(chat => hasUnreadMessages(chat)).length
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-        <div className="text-white">Loading...</div>
-      </div>
-    )
+    return <FanonymLoader text="Memuat dashboard..." />
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white relative">
+    <div className="min-h-screen bg-[#0a0a0f] text-white relative page-transition">
       {/* Background gradient orbs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[120px]" />
@@ -159,7 +156,7 @@ export default function SenderDashboard() {
 
       <main className="max-w-6xl mx-auto p-6 relative z-10">
         {/* Profile Header */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-4 mb-6 animate-fadeInDown">
           {profile?.avatar_url ? (
             <img src={profile.avatar_url} alt="Avatar" className="w-14 h-14 rounded-full object-cover border-2 border-purple-500/50"/>
           ) : (
@@ -174,32 +171,32 @@ export default function SenderDashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
+          <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5 animate-fadeInUp card-hover stagger-1">
             <p className="text-gray-400 text-xs mb-1">Saldo Kredit</p>
             <p className="text-3xl font-bold text-white">{credits?.balance || 0}</p>
             <p className="text-purple-400 text-sm mt-1">≈ Rp {((credits?.balance || 0) * KREDIT_TO_IDR).toLocaleString('id-ID')}</p>
           </div>
-          <div className="bg-gradient-to-r from-purple-500/20 to-violet-500/20 border border-purple-500/30 rounded-2xl p-5 flex items-center justify-between">
+          <div className="bg-gradient-to-r from-purple-500/20 to-violet-500/20 border border-purple-500/30 rounded-2xl p-5 flex items-center justify-between animate-fadeInUp card-hover stagger-2">
             <div>
               <p className="text-white font-medium text-sm">Butuh lebih banyak kredit?</p>
               <p className="text-gray-400 text-xs">Top up sekarang!</p>
             </div>
-            <Link href="/topup" className="px-4 py-2 bg-purple-500 rounded-xl hover:bg-purple-600 font-medium text-sm">Top Up</Link>
+            <Link href="/topup" className="px-4 py-2 bg-purple-500 rounded-xl hover:bg-purple-600 font-medium text-sm btn-hover transition-all">Top Up</Link>
           </div>
         </div>
 
-        <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5 mb-6">
+        <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5 mb-6 animate-fadeInUp stagger-3 card-hover">
           <h3 className="text-sm font-semibold mb-3 text-gray-200">🔍 Cari Creator</h3>
-          <Link href="/explore" className="block w-full p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl text-gray-400 hover:border-purple-500/50 transition-colors text-sm">
+          <Link href="/explore" className="block w-full p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl text-gray-400 hover:border-purple-500/50 transition-all text-sm glow-hover">
             Cari creator favorit kamu...
           </Link>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-4 flex-wrap">
+        <div className="flex gap-2 mb-4 flex-wrap animate-fadeIn stagger-4">
           <button
             onClick={() => setActiveTab('pending')}
-            className={`px-4 py-2 rounded-xl font-medium text-sm transition-colors ${
+            className={`px-4 py-2 rounded-xl font-medium text-sm transition-all btn-hover ${
               activeTab === 'pending' ? 'bg-yellow-500 text-white' : 'bg-gray-800/50 text-gray-400 hover:text-white'
             }`}
           >
@@ -207,20 +204,20 @@ export default function SenderDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('active')}
-            className={`px-4 py-2 rounded-xl font-medium text-sm transition-colors relative ${
+            className={`px-4 py-2 rounded-xl font-medium text-sm transition-all relative btn-hover ${
               activeTab === 'active' ? 'bg-purple-500 text-white' : 'bg-gray-800/50 text-gray-400 hover:text-white'
             }`}
           >
             Chat Aktif ({activeChats.length})
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs flex items-center justify-center text-white">
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs flex items-center justify-center text-white badge-pulse">
                 {unreadCount}
               </span>
             )}
           </button>
           <button
             onClick={() => setActiveTab('expired')}
-            className={`px-4 py-2 rounded-xl font-medium text-sm transition-colors ${
+            className={`px-4 py-2 rounded-xl font-medium text-sm transition-all btn-hover ${
               activeTab === 'expired' ? 'bg-purple-500 text-white' : 'bg-gray-800/50 text-gray-400 hover:text-white'
             }`}
           >
