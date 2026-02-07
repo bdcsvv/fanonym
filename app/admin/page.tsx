@@ -9,7 +9,7 @@ export default function AdminPanel() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [activeTab, setActiveTab] = useState<'topup' | 'withdraw' | 'verify' | 'users' | 'reports'>('topup')
+  const [activeTab, setActiveTab] = useState<'revenue' | 'topup' | 'withdraw' | 'verify' | 'users' | 'reports'>('revenue')
   
   const [pendingTopups, setPendingTopups] = useState<any[]>([])
   const [pendingWithdraws, setPendingWithdraws] = useState<any[]>([])
@@ -17,6 +17,17 @@ export default function AdminPanel() {
   const [users, setUsers] = useState<any[]>([])
   const [reports, setReports] = useState<any[]>([])
   const [stats, setStats] = useState<any>({})
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedUser, setSelectedUser] = useState<any>(null)
+  const [userChats, setUserChats] = useState<any[]>([])
+  const [userTopups, setUserTopups] = useState<any[]>([])
+  const [userWithdraws, setUserWithdraws] = useState<any[]>([])
+  const [revenue, setRevenue] = useState<any>({
+    totalCreditsCirculating: 0,
+    totalEarnings: 0,
+    platformFees: 0,
+    totalWithdrawn: 0
+  })
 
   const ADMIN_EMAILS = ['rizkinurulloh1124@gmail.com']
 
@@ -101,6 +112,33 @@ export default function AdminPanel() {
         reported_user:reported_user_id(id, username, full_name, avatar_url)
       `)
       .order('created_at', { ascending: false })
+
+    // Revenue data
+    const { data: allCredits } = await supabase
+      .from('credits')
+      .select('balance')
+    const totalCreditsCirculating = (allCredits || []).reduce((sum, c) => sum + (c.balance || 0), 0)
+
+    const { data: allEarnings } = await supabase
+      .from('earnings')
+      .select('total_earned, available_balance')
+    const totalEarnings = (allEarnings || []).reduce((sum, e) => sum + (e.total_earned || 0), 0)
+
+    const { data: completedWithdraws } = await supabase
+      .from('withdrawals')
+      .select('amount')
+      .eq('status', 'completed')
+    const totalWithdrawn = (completedWithdraws || []).reduce((sum, w) => sum + (w.amount || 0), 0)
+
+    // Platform fees (20% of total earnings)
+    const platformFees = Math.round(totalEarnings * 0.2)
+
+    setRevenue({
+      totalCreditsCirculating,
+      totalEarnings,
+      platformFees,
+      totalWithdrawn
+    })
 
     setPendingTopups(topups || [])
     setPendingWithdraws(withdraws || [])
@@ -280,6 +318,53 @@ export default function AdminPanel() {
     await updateReportStatus(reportId, 'resolved')
   }
 
+  // Load user detail
+  const loadUserDetail = async (user: any) => {
+    setSelectedUser(user)
+    
+    // Get user's chats
+    const { data: chats } = await supabase
+      .from('chat_sessions')
+      .select('*, creator:creator_id(username, full_name), sender:sender_id(username, full_name)')
+      .or(`creator_id.eq.${user.id},sender_id.eq.${user.id}`)
+      .order('created_at', { ascending: false })
+      .limit(20)
+    setUserChats(chats || [])
+    
+    // Get user's topups
+    const { data: topups } = await supabase
+      .from('topup_requests')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(10)
+    setUserTopups(topups || [])
+    
+    // Get user's withdrawals (if creator)
+    if (user.user_type === 'creator') {
+      const { data: withdraws } = await supabase
+        .from('withdrawals')
+        .select('*')
+        .eq('creator_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10)
+      setUserWithdraws(withdraws || [])
+    } else {
+      setUserWithdraws([])
+    }
+  }
+
+  // Filter users by search
+  const filteredUsers = users.filter(user => {
+    if (!searchQuery) return true
+    const query = searchQuery.toLowerCase()
+    return (
+      user.username?.toLowerCase().includes(query) ||
+      user.full_name?.toLowerCase().includes(query) ||
+      user.id?.toLowerCase().includes(query)
+    )
+  })
+
   const REPORT_REASONS: Record<string, { label: string; icon: string }> = {
     harassment: { label: 'Harassment', icon: '😤' },
     spam: { label: 'Spam', icon: '📧' },
@@ -377,6 +462,14 @@ export default function AdminPanel() {
         {/* Tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">
           <button
+            onClick={() => setActiveTab('revenue')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+              activeTab === 'revenue' ? 'bg-green-500 text-black' : 'bg-gray-800 text-gray-400 hover:text-white'
+            }`}
+          >
+            💰 Revenue
+          </button>
+          <button
             onClick={() => setActiveTab('topup')}
             className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
               activeTab === 'topup' ? 'bg-yellow-500 text-black' : 'bg-gray-800 text-gray-400 hover:text-white'
@@ -417,6 +510,56 @@ export default function AdminPanel() {
             🚩 Reports ({reports.filter(r => r.status === 'pending').length})
           </button>
         </div>
+
+        {/* Revenue Tab */}
+        {activeTab === 'revenue' && (
+          <div className="space-y-6">
+            <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
+              <h3 className="text-lg font-semibold mb-6">💰 Revenue Dashboard</h3>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div className="bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/30 rounded-xl p-5">
+                  <p className="text-green-400 text-sm mb-1">Total Kredit Beredar</p>
+                  <p className="text-3xl font-bold text-white">{revenue.totalCreditsCirculating}</p>
+                  <p className="text-green-400/70 text-sm">≈ Rp {(revenue.totalCreditsCirculating * KREDIT_TO_IDR).toLocaleString('id-ID')}</p>
+                </div>
+                <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/10 border border-purple-500/30 rounded-xl p-5">
+                  <p className="text-purple-400 text-sm mb-1">Total Earnings Creator</p>
+                  <p className="text-3xl font-bold text-white">{revenue.totalEarnings}</p>
+                  <p className="text-purple-400/70 text-sm">≈ Rp {(revenue.totalEarnings * KREDIT_TO_IDR).toLocaleString('id-ID')}</p>
+                </div>
+                <div className="bg-gradient-to-br from-yellow-500/20 to-yellow-600/10 border border-yellow-500/30 rounded-xl p-5">
+                  <p className="text-yellow-400 text-sm mb-1">Platform Fee (20%)</p>
+                  <p className="text-3xl font-bold text-white">{revenue.platformFees}</p>
+                  <p className="text-yellow-400/70 text-sm">≈ Rp {(revenue.platformFees * KREDIT_TO_IDR).toLocaleString('id-ID')}</p>
+                </div>
+                <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30 rounded-xl p-5">
+                  <p className="text-blue-400 text-sm mb-1">Total Withdrawn</p>
+                  <p className="text-3xl font-bold text-white">{revenue.totalWithdrawn}</p>
+                  <p className="text-blue-400/70 text-sm">kredit sudah dicairkan</p>
+                </div>
+              </div>
+
+              <div className="bg-gray-900/50 border border-gray-700 rounded-xl p-4">
+                <h4 className="font-semibold mb-3">📊 Summary</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between py-2 border-b border-gray-800">
+                    <span className="text-gray-400">Net Revenue (Platform Fee - Ops)</span>
+                    <span className="text-green-400 font-semibold">Rp {(revenue.platformFees * KREDIT_TO_IDR).toLocaleString('id-ID')}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-800">
+                    <span className="text-gray-400">Creator Payout Pending</span>
+                    <span className="text-yellow-400 font-semibold">{revenue.totalEarnings - revenue.totalWithdrawn} kredit</span>
+                  </div>
+                  <div className="flex justify-between py-2">
+                    <span className="text-gray-400">Conversion Rate (1 Kredit)</span>
+                    <span className="text-white font-semibold">Rp {KREDIT_TO_IDR.toLocaleString('id-ID')}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Topup Tab */}
         {activeTab === 'topup' && (
@@ -587,7 +730,22 @@ export default function AdminPanel() {
         {/* Users Tab */}
         {activeTab === 'users' && (
           <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
-            <h3 className="text-lg font-semibold mb-4">All Users</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">All Users</h3>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Cari username, nama, atau ID..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-64 px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm focus:border-purple-500 outline-none"
+                />
+                <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+            <p className="text-gray-500 text-sm mb-4">Menampilkan {filteredUsers.length} dari {users.length} users. Klik untuk lihat detail.</p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -596,11 +754,12 @@ export default function AdminPanel() {
                     <th className="pb-3">Type</th>
                     <th className="pb-3">Status</th>
                     <th className="pb-3">Joined</th>
+                    <th className="pb-3">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((user) => (
-                    <tr key={user.id} className="border-b border-gray-800">
+                  {filteredUsers.map((user) => (
+                    <tr key={user.id} className="border-b border-gray-800 hover:bg-gray-800/50 cursor-pointer" onClick={() => loadUserDetail(user)}>
                       <td className="py-3">
                         <div className="flex items-center gap-2">
                           {user.avatar_url ? (
@@ -626,7 +785,9 @@ export default function AdminPanel() {
                         </span>
                       </td>
                       <td className="py-3">
-                        {user.is_verified ? (
+                        {user.is_banned ? (
+                          <span className="px-2 py-1 rounded text-xs bg-red-500/20 text-red-400">🚫 Banned</span>
+                        ) : user.is_verified ? (
                           <span className="px-2 py-1 rounded text-xs bg-[#1da1f2]/20 text-[#1da1f2]">✓ Verified</span>
                         ) : user.status === 'pending_verification' ? (
                           <span className="px-2 py-1 rounded text-xs bg-yellow-500/20 text-yellow-400">⏳ Pending</span>
@@ -637,10 +798,143 @@ export default function AdminPanel() {
                       <td className="py-3 text-gray-500 text-xs">
                         {new Date(user.created_at).toLocaleDateString('id-ID')}
                       </td>
+                      <td className="py-3">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); loadUserDetail(user); }}
+                          className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded text-xs hover:bg-purple-500/30"
+                        >
+                          Detail
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* User Detail Modal */}
+        {selectedUser && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50" onClick={() => setSelectedUser(null)}>
+            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  {selectedUser.avatar_url ? (
+                    <img src={selectedUser.avatar_url} alt="" className="w-16 h-16 rounded-full object-cover"/>
+                  ) : (
+                    <div className="w-16 h-16 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center text-2xl font-bold">
+                      {selectedUser.full_name?.[0] || selectedUser.username?.[0] || '?'}
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="text-xl font-bold">{selectedUser.full_name || selectedUser.username}</h3>
+                    <p className="text-gray-400">@{selectedUser.username}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`px-2 py-0.5 rounded text-xs ${
+                        selectedUser.user_type === 'creator' ? 'bg-teal-500/20 text-teal-400' : 'bg-purple-500/20 text-purple-400'
+                      }`}>{selectedUser.user_type}</span>
+                      {selectedUser.is_banned && <span className="px-2 py-0.5 rounded text-xs bg-red-500/20 text-red-400">BANNED</span>}
+                      {selectedUser.is_verified && <span className="px-2 py-0.5 rounded text-xs bg-blue-500/20 text-blue-400">VERIFIED</span>}
+                    </div>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedUser(null)} className="text-gray-500 hover:text-white text-2xl">&times;</button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-gray-800 rounded-lg p-4">
+                  <p className="text-gray-500 text-xs">User ID</p>
+                  <p className="text-sm font-mono text-gray-300 truncate">{selectedUser.id}</p>
+                </div>
+                <div className="bg-gray-800 rounded-lg p-4">
+                  <p className="text-gray-500 text-xs">Joined</p>
+                  <p className="text-sm text-gray-300">{new Date(selectedUser.created_at).toLocaleDateString('id-ID')}</p>
+                </div>
+              </div>
+
+              {selectedUser.bio && (
+                <div className="bg-gray-800 rounded-lg p-4 mb-6">
+                  <p className="text-gray-500 text-xs mb-1">Bio</p>
+                  <p className="text-sm text-gray-300">{selectedUser.bio}</p>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold mb-2 text-sm text-gray-400">Chat Sessions ({userChats.length})</h4>
+                  {userChats.length === 0 ? (
+                    <p className="text-gray-500 text-sm">Tidak ada chat.</p>
+                  ) : (
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {userChats.map(chat => (
+                        <div key={chat.id} className="bg-gray-800 rounded-lg p-3 text-sm flex justify-between">
+                          <div>
+                            <p className="text-gray-300">
+                              {selectedUser.user_type === 'creator' 
+                                ? `Sender: ${chat.sender?.full_name || chat.sender?.username}`
+                                : `Creator: ${chat.creator?.full_name || chat.creator?.username}`
+                              }
+                            </p>
+                            <p className="text-gray-500 text-xs">{new Date(chat.created_at).toLocaleString('id-ID')}</p>
+                          </div>
+                          <span className={`px-2 py-0.5 h-fit rounded text-xs ${chat.is_accepted ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                            {chat.is_accepted ? 'Active' : 'Pending'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-2 text-sm text-gray-400">Topup History ({userTopups.length})</h4>
+                  {userTopups.length === 0 ? (
+                    <p className="text-gray-500 text-sm">Tidak ada topup.</p>
+                  ) : (
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {userTopups.map(topup => (
+                        <div key={topup.id} className="bg-gray-800 rounded-lg p-3 text-sm flex justify-between">
+                          <div>
+                            <p className="text-gray-300">{topup.amount_credits} Kredit</p>
+                            <p className="text-gray-500 text-xs">{new Date(topup.created_at).toLocaleString('id-ID')}</p>
+                          </div>
+                          <span className={`px-2 py-0.5 h-fit rounded text-xs ${
+                            topup.status === 'approved' ? 'bg-green-500/20 text-green-400' : 
+                            topup.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : 
+                            'bg-red-500/20 text-red-400'
+                          }`}>{topup.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {selectedUser.user_type === 'creator' && (
+                  <div>
+                    <h4 className="font-semibold mb-2 text-sm text-gray-400">Withdraw History ({userWithdraws.length})</h4>
+                    {userWithdraws.length === 0 ? (
+                      <p className="text-gray-500 text-sm">Tidak ada withdraw.</p>
+                    ) : (
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {userWithdraws.map(wd => (
+                          <div key={wd.id} className="bg-gray-800 rounded-lg p-3 text-sm flex justify-between">
+                            <div>
+                              <p className="text-gray-300">{wd.amount} Kredit → {wd.bank_name}</p>
+                              <p className="text-gray-500 text-xs">{new Date(wd.created_at).toLocaleString('id-ID')}</p>
+                            </div>
+                            <span className={`px-2 py-0.5 h-fit rounded text-xs ${
+                              wd.status === 'completed' ? 'bg-green-500/20 text-green-400' : 
+                              wd.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : 
+                              'bg-red-500/20 text-red-400'
+                            }`}>{wd.status}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

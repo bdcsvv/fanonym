@@ -15,11 +15,13 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     // Check if user came from email link
-    supabase.auth.onAuthStateChange(async (event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         // User is in password recovery mode
       }
     })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   const handleResetPassword = async (e: React.FormEvent) => {

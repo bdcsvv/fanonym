@@ -147,6 +147,24 @@ body {
   }
 }
 
+/* Float Up Animation - for floating emojis */
+@keyframes floatUp {
+  0% {
+    transform: translateY(100vh) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.3;
+  }
+  90% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(-100px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
 /* Spin Animation */
 @keyframes spin {
   from {
@@ -199,6 +217,10 @@ body {
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
+}
+
+.animate-floatUp {
+  animation: floatUp linear infinite;
 }
 
 .animate-spin {
@@ -318,4 +340,129 @@ body {
 
 .badge-pulse {
   animation: pulse 2s ease-in-out infinite;
+}
+
+/* ========== GALAXY BACKGROUND ANIMATIONS ========== */
+
+/* Nebula floating animations */
+@keyframes nebula1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.2;
+  }
+  33% {
+    transform: translate(30px, -20px) scale(1.1);
+    opacity: 0.25;
+  }
+  66% {
+    transform: translate(-20px, 30px) scale(0.95);
+    opacity: 0.15;
+  }
+}
+
+@keyframes nebula2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.15;
+  }
+  50% {
+    transform: translate(-40px, 20px) scale(1.15);
+    opacity: 0.2;
+  }
+}
+
+@keyframes nebula3 {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0.15;
+  }
+}
+
+/* Star twinkle animation */
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+/* Floating particle animation */
+@keyframes floatParticle {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0.3;
+  }
+  25% {
+    transform: translate(10px, -15px) rotate(90deg);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate(-5px, -30px) rotate(180deg);
+    opacity: 0.3;
+  }
+  75% {
+    transform: translate(-15px, -15px) rotate(270deg);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(0, 0) rotate(360deg);
+    opacity: 0.3;
+  }
+}
+
+/* Shooting star animation */
+@keyframes shootingStar {
+  0% {
+    transform: translate(0, 0) rotate(-45deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  20% {
+    transform: translate(200px, 200px) rotate(-45deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(200px, 200px) rotate(-45deg);
+    opacity: 0;
+  }
+}
+
+/* Animation classes for galaxy */
+.animate-nebula1 {
+  animation: nebula1 20s ease-in-out infinite;
+}
+
+.animate-nebula2 {
+  animation: nebula2 25s ease-in-out infinite;
+}
+
+.animate-nebula3 {
+  animation: nebula3 30s ease-in-out infinite;
+}
+
+.animate-twinkle {
+  animation: twinkle ease-in-out infinite;
+}
+
+.animate-floatParticle {
+  animation: floatParticle ease-in-out infinite;
+}
+
+.animate-shootingStar {
+  animation: shootingStar 20s ease-out infinite;
+}
+
+/* Radial vignette for depth */
+.bg-radial-vignette {
+  background: radial-gradient(ellipse at center, transparent 0%, transparent 50%, rgba(12, 10, 20, 0.8) 100%);
 }

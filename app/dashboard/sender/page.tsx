@@ -5,6 +5,8 @@ import { supabase } from '@/app/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import FanonymLoader from '@/app/components/FanonymLoader'
+import HelpButton from '@/app/components/HelpButton'
+import GalaxyBackground from '@/app/components/GalaxyBackground'
 
 const KREDIT_TO_IDR = 10000
 
@@ -144,7 +146,10 @@ export default function SenderDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0c0a14] text-white">
+    <div className="min-h-screen bg-[#0c0a14] text-white relative">
+      {/* Galaxy Background */}
+      <GalaxyBackground />
+
       {/* Navbar */}
       <nav className="sticky top-0 z-50 border-b border-purple-500/20 bg-[#0c0a14]/95 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -190,7 +195,7 @@ export default function SenderDashboard() {
         </div>
       </nav>
 
-      <main className="max-w-6xl mx-auto px-6 py-8">
+      <main className="max-w-6xl mx-auto px-6 py-8 relative z-10">
         {/* Profile Header */}
         <div className="flex items-center gap-5 mb-10 animate-fadeInDown">
           <div className="relative">
@@ -455,6 +460,9 @@ export default function SenderDashboard() {
           )}
         </div>
       </main>
+
+      {/* Help Button */}
+      <HelpButton subject="Butuh Bantuan - Sender Dashboard" />
     </div>
   )
 }

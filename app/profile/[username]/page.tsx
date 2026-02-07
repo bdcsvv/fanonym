@@ -5,6 +5,7 @@ import { supabase } from '@/app/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import FanonymLoader from '@/app/components/FanonymLoader'
+import GalaxyBackground from '@/app/components/GalaxyBackground'
 
 export default function CreatorProfilePage() {
   const params = useParams()
@@ -198,17 +199,9 @@ export default function CreatorProfilePage() {
   const bestValueIndex = getBestValueIndex()
 
   return (
-    <div className="min-h-screen bg-[#0c0a14] text-white">
-      {/* Background decorations */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute left-1/4 top-1/4 w-3 h-3 bg-purple-500/30 rounded-full animate-pulse"></div>
-        <div className="absolute right-1/4 top-20 w-2 h-2 bg-purple-400/40 rounded-full"></div>
-        <div className="absolute left-20 bottom-1/3 w-4 h-4 bg-purple-600/20 rounded-full animate-pulse"></div>
-        <div className="absolute right-32 bottom-1/4 w-2 h-2 bg-violet-500/30 rounded-full"></div>
-        {/* Gradient orbs */}
-        <div className="absolute left-1/2 top-1/3 h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-purple-600/10 blur-[120px]"></div>
-        <div className="absolute right-0 bottom-0 h-[300px] w-[300px] rounded-full bg-violet-500/10 blur-[100px]"></div>
-      </div>
+    <div className="min-h-screen bg-[#0c0a14] text-white relative">
+      {/* Galaxy Background */}
+      <GalaxyBackground />
 
       {/* Navbar */}
       <nav className="sticky top-0 z-50 border-b border-purple-500/20 bg-[#0c0a14]/95 backdrop-blur-md">

@@ -5,6 +5,7 @@ import { supabase } from '@/app/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import FanonymLoader from '@/app/components/FanonymLoader'
+import GalaxyBackground from '@/app/components/GalaxyBackground'
 
 export default function SenderProfilePage() {
   const params = useParams()
@@ -145,7 +146,10 @@ export default function SenderProfilePage() {
   const trustScore = totalReviews > 0 ? Math.round((reviews.good / totalReviews) * 100) : 100
 
   return (
-    <div className="min-h-screen bg-[#0c0a14] text-white">
+    <div className="min-h-screen bg-[#0c0a14] text-white relative">
+      {/* Galaxy Background */}
+      <GalaxyBackground />
+
       {/* Navbar */}
       <nav className="sticky top-0 z-50 border-b border-purple-500/20 bg-[#0c0a14]/95 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -195,7 +199,7 @@ export default function SenderProfilePage() {
       </nav>
 
       {/* Profile Content */}
-      <main className="max-w-4xl mx-auto px-6 py-12">
+      <main className="max-w-4xl mx-auto px-6 py-12 relative z-10">
         {/* Avatar Section */}
         <div className="flex flex-col items-center mb-10 animate-fadeInDown">
           {/* Avatar with Border */}
