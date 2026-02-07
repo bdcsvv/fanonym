@@ -154,11 +154,8 @@ export default function SenderProfilePage() {
       <nav className="sticky top-0 z-50 border-b border-purple-500/20 bg-[#0c0a14]/95 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 animate-fadeIn">
-            <div className="w-9 h-9 bg-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-sm">
-              f
-            </div>
-            <span className="text-xl font-bold">fanonym</span>
+          <Link href={currentUserProfile?.user_type === 'creator' ? '/dashboard/creator' : '/dashboard/sender'} className="font-black text-2xl bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)] animate-fadeIn">
+            fanonym
           </Link>
 
           {/* Nav Links */}

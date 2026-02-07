@@ -21,11 +21,22 @@ export default function CreatorDashboard() {
   const [totalAnons, setTotalAnons] = useState(0)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'pending' | 'inbox' | 'expired' | 'spam' | 'pricing' | 'withdraw'>('pending')
+  const [navTab, setNavTab] = useState<'dashboard' | 'analytics' | 'history'>('dashboard')
   const [newDuration, setNewDuration] = useState('')
   const [newPrice, setNewPrice] = useState('')
   const [earningsFilter, setEarningsFilter] = useState<'all' | 'today' | 'week' | 'month'>('all')
   const [filteredEarnings, setFilteredEarnings] = useState(0)
   const [copied, setCopied] = useState(false)
+  
+  // Analytics stats
+  const [analyticsData, setAnalyticsData] = useState<{
+    today: number
+    week: number
+    month: number
+    todayChats: number
+    weekChats: number
+    monthChats: number
+  }>({ today: 0, week: 0, month: 0, todayChats: 0, weekChats: 0, monthChats: 0 })
   
   // Withdraw form
   const [withdrawAmount, setWithdrawAmount] = useState('')
@@ -138,6 +149,30 @@ export default function CreatorDashboard() {
 
       setWithdrawals(withdrawData || [])
 
+      // Calculate analytics data (reuse 'now' from above)
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      const monthStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+
+      // Filter chats by date and calculate earnings
+      const allChats = chatsData || []
+      const todayChats = allChats.filter(c => new Date(c.created_at) >= todayStart)
+      const weekChats = allChats.filter(c => new Date(c.created_at) >= weekStart)
+      const monthChats = allChats.filter(c => new Date(c.created_at) >= monthStart)
+
+      const todayEarnings = todayChats.reduce((sum, c) => sum + (c.credits_paid || 0), 0)
+      const weekEarnings = weekChats.reduce((sum, c) => sum + (c.credits_paid || 0), 0)
+      const monthEarnings = monthChats.reduce((sum, c) => sum + (c.credits_paid || 0), 0)
+
+      setAnalyticsData({
+        today: todayEarnings,
+        week: weekEarnings,
+        month: monthEarnings,
+        todayChats: todayChats.length,
+        weekChats: weekChats.length,
+        monthChats: monthChats.length
+      })
+
       // Count unique senders
       const uniqueSenders = new Set((chatsData || []).map(c => c.sender_id))
       setTotalAnons(uniqueSenders.size)
@@ -194,24 +229,74 @@ export default function CreatorDashboard() {
     calculateFilteredEarnings(earningsFilter)
   }, [earningsFilter, profile, earnings])
 
-  const handleAcceptChat = async (chatId: string, durationHours: number) => {
+  const handleAcceptChat = async (chatId: string, durationHours: number, creditsPaid: number, senderId: string) => {
     const expiresAt = new Date()
     expiresAt.setHours(expiresAt.getHours() + durationHours)
 
-    const { error } = await supabase
-      .from('chat_sessions')
-      .update({ 
-        is_accepted: true,
-        accepted_at: new Date().toISOString(),
-        expires_at: expiresAt.toISOString()
-      })
-      .eq('id', chatId)
+    try {
+      // 1. Deduct credits from sender
+      const { data: senderCredits } = await supabase
+        .from('credits')
+        .select('balance')
+        .eq('user_id', senderId)
+        .single()
 
-    if (error) {
-      alert('Error accepting chat: ' + error.message)
-      return
+      if (!senderCredits || senderCredits.balance < creditsPaid) {
+        alert('Error: Sender tidak memiliki cukup kredit!')
+        return
+      }
+
+      const { error: deductError } = await supabase
+        .from('credits')
+        .update({ balance: senderCredits.balance - creditsPaid })
+        .eq('user_id', senderId)
+
+      if (deductError) throw deductError
+
+      // 2. Add credits to creator earnings
+      const { data: currentEarnings } = await supabase
+        .from('earnings')
+        .select('*')
+        .eq('creator_id', profile.id)
+        .single()
+
+      if (currentEarnings) {
+        await supabase
+          .from('earnings')
+          .update({ 
+            total_earned: (currentEarnings.total_earned || 0) + creditsPaid,
+            available_balance: (currentEarnings.available_balance || 0) + creditsPaid
+          })
+          .eq('creator_id', profile.id)
+      } else {
+        await supabase
+          .from('earnings')
+          .insert({
+            creator_id: profile.id,
+            total_earned: creditsPaid,
+            available_balance: creditsPaid,
+            withdrawn: 0
+          })
+      }
+
+      // 3. Update chat session
+      const { error } = await supabase
+        .from('chat_sessions')
+        .update({ 
+          is_accepted: true,
+          accepted_at: new Date().toISOString(),
+          expires_at: expiresAt.toISOString(),
+          credits_transferred: true
+        })
+        .eq('id', chatId)
+
+      if (error) throw error
+
+      alert('Chat diterima! Kredit sudah ditransfer.')
+      window.location.reload()
+    } catch (err: any) {
+      alert('Error accepting chat: ' + err.message)
     }
-    window.location.reload()
   }
 
   const handleLogout = async () => {
@@ -421,22 +506,34 @@ export default function CreatorDashboard() {
       <nav className="sticky top-0 z-50 border-b border-purple-500/20 bg-[#0c0a14]/95 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           {/* Logo */}
-          <Link href="/dashboard/creator" className="flex items-center gap-2">
-            <div className="w-9 h-9 bg-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-sm">
-              f
-            </div>
-            <span className="text-xl font-bold">fanonym</span>
+          <Link href="/dashboard/creator" className="font-black text-2xl bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)]">
+            fanonym
           </Link>
 
           {/* Center Tabs */}
           <div className="hidden md:flex items-center bg-zinc-800/50 rounded-full p-1">
-            <button className="px-5 py-2 bg-purple-600 text-white text-sm font-medium rounded-full">
-              Creator Dashboard
+            <button 
+              onClick={() => setNavTab('dashboard')}
+              className={`px-5 py-2 text-sm font-medium rounded-full transition-colors ${
+                navTab === 'dashboard' ? 'bg-purple-600 text-white' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              Dashboard
             </button>
-            <button className="px-5 py-2 text-zinc-400 text-sm font-medium hover:text-white transition-colors">
+            <button 
+              onClick={() => setNavTab('analytics')}
+              className={`px-5 py-2 text-sm font-medium rounded-full transition-colors ${
+                navTab === 'analytics' ? 'bg-purple-600 text-white' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
               Analytics
             </button>
-            <button className="px-5 py-2 text-zinc-400 text-sm font-medium hover:text-white transition-colors">
+            <button 
+              onClick={() => setNavTab('history')}
+              className={`px-5 py-2 text-sm font-medium rounded-full transition-colors ${
+                navTab === 'history' ? 'bg-purple-600 text-white' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
               History
             </button>
           </div>
@@ -454,6 +551,169 @@ export default function CreatorDashboard() {
       </nav>
 
       <main className="max-w-6xl mx-auto px-6 py-8 relative z-10">
+        {/* Analytics Tab */}
+        {navTab === 'analytics' && (
+          <div className="animate-fadeIn">
+            <h2 className="text-2xl font-bold mb-6">📊 Analytics Pendapatan</h2>
+            
+            {/* Period Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {/* Today */}
+              <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-zinc-400 text-sm">Hari Ini</span>
+                  <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
+                    <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <p className="text-3xl font-bold text-green-400 mb-1">{analyticsData.today}</p>
+                <p className="text-zinc-500 text-sm">Kredit</p>
+                <p className="text-zinc-600 text-xs mt-2">≈ Rp {(analyticsData.today * KREDIT_TO_IDR).toLocaleString('id-ID')}</p>
+                <div className="mt-4 pt-4 border-t border-zinc-800">
+                  <p className="text-zinc-500 text-sm">{analyticsData.todayChats} chat sessions</p>
+                </div>
+              </div>
+
+              {/* This Week */}
+              <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-zinc-400 text-sm">7 Hari Terakhir</span>
+                  <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                    <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                </div>
+                <p className="text-3xl font-bold text-purple-400 mb-1">{analyticsData.week}</p>
+                <p className="text-zinc-500 text-sm">Kredit</p>
+                <p className="text-zinc-600 text-xs mt-2">≈ Rp {(analyticsData.week * KREDIT_TO_IDR).toLocaleString('id-ID')}</p>
+                <div className="mt-4 pt-4 border-t border-zinc-800">
+                  <p className="text-zinc-500 text-sm">{analyticsData.weekChats} chat sessions</p>
+                </div>
+              </div>
+
+              {/* This Month */}
+              <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-zinc-400 text-sm">30 Hari Terakhir</span>
+                  <div className="w-10 h-10 bg-yellow-500/20 rounded-xl flex items-center justify-center">
+                    <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                </div>
+                <p className="text-3xl font-bold text-yellow-400 mb-1">{analyticsData.month}</p>
+                <p className="text-zinc-500 text-sm">Kredit</p>
+                <p className="text-zinc-600 text-xs mt-2">≈ Rp {(analyticsData.month * KREDIT_TO_IDR).toLocaleString('id-ID')}</p>
+                <div className="mt-4 pt-4 border-t border-zinc-800">
+                  <p className="text-zinc-500 text-sm">{analyticsData.monthChats} chat sessions</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Summary Card */}
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
+              <h3 className="font-semibold mb-4">💰 Ringkasan</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-zinc-800/50 rounded-xl p-4 text-center">
+                  <p className="text-zinc-500 text-xs mb-1">Total Pendapatan</p>
+                  <p className="text-xl font-bold text-white">{earnings?.total_earned || 0}</p>
+                  <p className="text-zinc-600 text-xs">Kredit</p>
+                </div>
+                <div className="bg-zinc-800/50 rounded-xl p-4 text-center">
+                  <p className="text-zinc-500 text-xs mb-1">Saldo Tersedia</p>
+                  <p className="text-xl font-bold text-green-400">{earnings?.available_balance || 0}</p>
+                  <p className="text-zinc-600 text-xs">Kredit</p>
+                </div>
+                <div className="bg-zinc-800/50 rounded-xl p-4 text-center">
+                  <p className="text-zinc-500 text-xs mb-1">Total Withdrawn</p>
+                  <p className="text-xl font-bold text-purple-400">{earnings?.withdrawn || 0}</p>
+                  <p className="text-zinc-600 text-xs">Kredit</p>
+                </div>
+                <div className="bg-zinc-800/50 rounded-xl p-4 text-center">
+                  <p className="text-zinc-500 text-xs mb-1">Total Anon</p>
+                  <p className="text-xl font-bold text-white">{totalAnons}</p>
+                  <p className="text-zinc-600 text-xs">Senders</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* History Tab */}
+        {navTab === 'history' && (
+          <div className="animate-fadeIn">
+            <h2 className="text-2xl font-bold mb-6">📜 Riwayat Withdraw</h2>
+            
+            {withdrawals.length === 0 ? (
+              <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-12 text-center">
+                <div className="text-5xl mb-4">💸</div>
+                <p className="text-zinc-400">Belum ada riwayat withdraw</p>
+                <button 
+                  onClick={() => { setNavTab('dashboard'); setActiveTab('withdraw'); }}
+                  className="mt-4 px-6 py-2 bg-purple-600 hover:bg-purple-500 rounded-xl font-medium transition-colors"
+                >
+                  Tarik Saldo Sekarang
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {withdrawals.map((w) => (
+                  <div key={w.id} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                          w.status === 'completed' ? 'bg-green-500/20' :
+                          w.status === 'pending' ? 'bg-yellow-500/20' :
+                          'bg-red-500/20'
+                        }`}>
+                          {w.status === 'completed' ? (
+                            <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : w.status === 'pending' ? (
+                            <svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          ) : (
+                            <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-lg">{w.amount} Kredit</p>
+                          <p className="text-zinc-500 text-sm">{w.bank_name} • {w.account_number}</p>
+                        </div>
+                      </div>
+                      {getStatusBadge(w.status)}
+                    </div>
+                    <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
+                      <p className="text-zinc-500 text-sm">
+                        {new Date(w.created_at).toLocaleDateString('id-ID', { 
+                          day: 'numeric', 
+                          month: 'long', 
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                      <p className="text-zinc-400 text-sm">
+                        ≈ Rp {(w.amount * KREDIT_TO_IDR * (1 - PLATFORM_FEE)).toLocaleString('id-ID')}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Dashboard Tab */}
+        {navTab === 'dashboard' && (
+          <>
         {/* Profile Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
           <div className="flex items-center gap-4">
@@ -772,7 +1032,7 @@ export default function CreatorDashboard() {
                             </div>
                           </div>
                           <button
-                            onClick={() => handleAcceptChat(chat.id, chat.duration_hours)}
+                            onClick={() => handleAcceptChat(chat.id, chat.duration_hours, chat.credits_paid, chat.sender_id)}
                             className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-sm font-medium rounded-lg transition-colors"
                           >
                             Accept Chat
@@ -1069,26 +1329,23 @@ export default function CreatorDashboard() {
                 {withdrawLoading ? 'Memproses...' : 'Request Withdraw'}
               </button>
 
-              {/* Withdrawal History */}
+              {/* Link to History */}
               {withdrawals.length > 0 && (
-                <div className="mt-8">
-                  <h4 className="font-medium mb-4">Riwayat Withdraw</h4>
-                  <div className="space-y-2">
-                    {withdrawals.map((w) => (
-                      <div key={w.id} className="flex items-center justify-between bg-zinc-800/50 rounded-lg p-3">
-                        <div>
-                          <p className="font-medium">{w.amount} Kredit</p>
-                          <p className="text-xs text-zinc-500">{w.bank_name} • {w.account_number}</p>
-                        </div>
-                        {getStatusBadge(w.status)}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <button 
+                  onClick={() => setNavTab('history')}
+                  className="w-full mt-4 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Lihat Riwayat Withdraw ({withdrawals.length})
+                </button>
               )}
             </div>
           )}
         </div>
+          </>
+        )}
       </main>
 
       {/* Help Button */}

@@ -111,15 +111,8 @@ export default function CreatorProfilePage() {
     setUnlocking(true)
 
     try {
-      // Deduct credits
-      const { error: creditError } = await supabase
-        .from('credits')
-        .update({ balance: credits - creditsCost })
-        .eq('user_id', currentUser.id)
-
-      if (creditError) throw creditError
-
-      // Create chat session with status pending (waiting for creator to accept)
+      // DON'T deduct credits yet - wait for creator to accept
+      // Just create chat session with status pending
       const { data: session, error } = await supabase
         .from('chat_sessions')
         .insert({
@@ -128,6 +121,7 @@ export default function CreatorProfilePage() {
           duration_hours: priceOption.duration_hours,
           credits_paid: creditsCost,
           is_accepted: false,
+          credits_transferred: false, // NEW: track if credits have been transferred
           expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
         })
         .select()
@@ -135,34 +129,9 @@ export default function CreatorProfilePage() {
 
       if (error) throw error
 
-      // Get current earnings and update
-      const { data: currentEarnings } = await supabase
-        .from('earnings')
-        .select('*')
-        .eq('creator_id', creator.id)
-        .single()
+      // DON'T update earnings yet - wait for creator to accept
 
-      if (currentEarnings) {
-        await supabase
-          .from('earnings')
-          .update({ 
-            total_earned: (currentEarnings.total_earned || 0) + creditsCost,
-            available_balance: (currentEarnings.available_balance || 0) + creditsCost
-          })
-          .eq('creator_id', creator.id)
-      } else {
-        // Create earnings record if not exists
-        await supabase
-          .from('earnings')
-          .insert({
-            creator_id: creator.id,
-            total_earned: creditsCost,
-            available_balance: creditsCost,
-            withdrawn: 0
-          })
-      }
-
-      alert('Chat berhasil di-unlock! Menunggu creator accept.')
+      alert('Chat request dikirim! Menunggu creator accept. Kredit akan dipotong setelah creator menerima.')
       router.push(`/chat/${session.id}`)
     } catch (err: any) {
       alert('Error: ' + err.message)
@@ -207,11 +176,11 @@ export default function CreatorProfilePage() {
       <nav className="sticky top-0 z-50 border-b border-purple-500/20 bg-[#0c0a14]/95 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 animate-fadeIn">
-            <div className="w-9 h-9 bg-purple-600 rounded-full flex items-center justify-center">
-              <div className="w-5 h-5 border-2 border-white rounded-full"></div>
-            </div>
-            <span className="text-xl font-bold">fanonym</span>
+          <Link 
+            href={currentUser ? (currentUserProfile?.user_type === 'creator' ? '/dashboard/creator' : '/dashboard/sender') : '/'} 
+            className="font-black text-2xl bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)] animate-fadeIn"
+          >
+            fanonym
           </Link>
 
           {/* Nav Links */}

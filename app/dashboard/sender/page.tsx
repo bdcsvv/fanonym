@@ -20,6 +20,9 @@ export default function SenderDashboard() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'pending' | 'active' | 'expired'>('active')
   const [searchQuery, setSearchQuery] = useState('')
+  const [searchResult, setSearchResult] = useState<any>(null)
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [searchError, setSearchError] = useState('')
 
   useEffect(() => {
     const getProfile = async () => {
@@ -132,13 +135,33 @@ export default function SenderDashboard() {
   // Count unread chats
   const unreadCount = activeChats.filter(chat => hasUnreadMessages(chat)).length
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (searchQuery.trim()) {
-      router.push(`/explore?q=${encodeURIComponent(searchQuery)}`)
-    } else {
-      router.push('/explore')
+    if (!searchQuery.trim()) {
+      setSearchResult(null)
+      setSearchError('')
+      return
     }
+
+    setSearchLoading(true)
+    setSearchError('')
+    setSearchResult(null)
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_type', 'creator')
+      .ilike('username', searchQuery.trim())
+      .single()
+
+    setSearchLoading(false)
+
+    if (error || !data) {
+      setSearchError('Creator tidak ditemukan')
+      return
+    }
+
+    setSearchResult(data)
   }
 
   if (loading) {
@@ -154,11 +177,8 @@ export default function SenderDashboard() {
       <nav className="sticky top-0 z-50 border-b border-purple-500/20 bg-[#0c0a14]/95 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           {/* Logo */}
-          <Link href="/dashboard/sender" className="flex items-center gap-2 animate-fadeIn">
-            <div className="w-9 h-9 bg-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-sm">
-              f
-            </div>
-            <span className="text-xl font-bold">fanonym</span>
+          <Link href="/dashboard/sender" className="font-black text-2xl bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)] animate-fadeIn">
+            fanonym
           </Link>
 
           {/* Nav Links */}
@@ -230,9 +250,6 @@ export default function SenderDashboard() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <span className="px-3 py-1 bg-purple-600/20 text-purple-400 text-xs font-medium rounded-full border border-purple-500/30">
-                Premium Account
-              </span>
             </div>
             <p className="text-xs text-zinc-400 uppercase tracking-wider mb-1">Saldo Kredit</p>
             <div className="flex items-baseline gap-2">
@@ -268,15 +285,70 @@ export default function SenderDashboard() {
             </svg>
             <h3 className="text-lg font-semibold">Cari Creator</h3>
           </div>
-          <form onSubmit={handleSearch}>
+          <form onSubmit={handleSearch} className="flex gap-2">
             <input 
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari creator favorit kamu..."
-              className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700 rounded-xl text-white placeholder-zinc-500 focus:border-purple-500 outline-none transition-colors"
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                if (!e.target.value.trim()) {
+                  setSearchResult(null)
+                  setSearchError('')
+                }
+              }}
+              placeholder="Masukkan username creator..."
+              className="flex-1 px-4 py-3 bg-zinc-800/50 border border-zinc-700 rounded-xl text-white placeholder-zinc-500 focus:border-purple-500 outline-none transition-colors"
             />
+            <button
+              type="submit"
+              disabled={searchLoading}
+              className="px-6 py-3 bg-purple-600 hover:bg-purple-500 disabled:bg-zinc-700 rounded-xl font-medium transition-colors"
+            >
+              {searchLoading ? '...' : 'Cari'}
+            </button>
           </form>
+
+          {/* Search Result */}
+          {searchError && (
+            <div className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-center">
+              {searchError}
+            </div>
+          )}
+
+          {searchResult && (
+            <div className="mt-4 p-4 bg-zinc-800/50 border border-purple-500/30 rounded-xl">
+              <div className="flex items-center gap-4">
+                {searchResult.avatar_url ? (
+                  <img 
+                    src={searchResult.avatar_url} 
+                    alt={searchResult.username}
+                    className="w-14 h-14 rounded-full object-cover border-2 border-purple-500/50"
+                  />
+                ) : (
+                  <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center text-xl font-bold">
+                    {searchResult.full_name?.[0] || searchResult.username?.[0]}
+                  </div>
+                )}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-lg">{searchResult.full_name || searchResult.username}</p>
+                    {searchResult.is_verified && (
+                      <svg className="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </div>
+                  <p className="text-zinc-400 text-sm">@{searchResult.username}</p>
+                </div>
+                <Link
+                  href={`/profile/${searchResult.username}`}
+                  className="px-5 py-2 bg-purple-600 hover:bg-purple-500 rounded-xl font-medium transition-colors"
+                >
+                  Lihat Profil
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Tabs */}
