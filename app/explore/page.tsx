@@ -47,7 +47,7 @@ export default function ExplorePage() {
 
       <nav className="border-b border-gray-800/50 p-4 relative z-10 bg-[#0a0a0f]/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <Logo size="md" linkTo="/dashboard/sender" />
+          <Logo variant="text" size="md" linkTo="/dashboard/sender" />
           <Link href="/dashboard/sender" className="text-gray-400 hover:text-white">Dashboard</Link>
         </div>
       </nav>
