@@ -273,7 +273,7 @@ export default function SettingsPage() {
 
       <nav className="border-b border-gray-800/50 p-4 relative z-10 bg-[#0a0a0f]/80 backdrop-blur-md">
         <div className="max-w-2xl mx-auto flex justify-between items-center">
-          <Logo variant="mask" size="md" linkTo={profile?.user_type === 'creator' ? '/dashboard/creator' : '/dashboard/sender'} />
+          <Logo size="md" linkTo={profile?.user_type === 'creator' ? '/dashboard/creator' : '/dashboard/sender'} />
           <Link 
             href={profile?.user_type === 'creator' ? '/dashboard/creator' : '/dashboard/sender'} 
             className="text-gray-400 hover:text-white"
@@ -354,37 +354,6 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
-
-        {/* Cover Photo Upload - Creator Only */}
-        {profile?.user_type === 'creator' && (
-          <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 mb-6">
-            <h3 className="text-lg font-semibold mb-4">Cover Photo</h3>
-            <div className="space-y-4">
-              {coverPhotoUrl ? (
-                <img 
-                  src={coverPhotoUrl} 
-                  alt="Cover" 
-                  className="w-full h-32 object-cover rounded-lg border border-gray-600"
-                />
-              ) : (
-                <div className="w-full h-32 bg-gradient-to-r from-purple-600/30 to-violet-600/30 rounded-lg flex items-center justify-center text-gray-500">
-                  Belum ada cover photo
-                </div>
-              )}
-              <label className="px-4 py-2 bg-purple-500 rounded-lg cursor-pointer hover:bg-purple-600 inline-block">
-                {coverUploading ? 'Uploading...' : 'Upload Cover'}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleCoverUpload}
-                  className="hidden"
-                  disabled={coverUploading}
-                />
-              </label>
-              <p className="text-gray-500 text-xs">Recommended: 1200x400px</p>
-            </div>
-          </div>
-        )}
 
         {/* Basic Info */}
         <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 mb-6">

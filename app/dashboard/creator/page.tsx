@@ -28,6 +28,10 @@ export default function CreatorDashboard() {
   const [filteredEarnings, setFilteredEarnings] = useState(0)
   const [copied, setCopied] = useState(false)
   
+  // Notifications
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [notifications, setNotifications] = useState<any[]>([])
+  
   // Analytics stats
   const [analyticsData, setAnalyticsData] = useState<{
     today: number
@@ -101,22 +105,39 @@ export default function CreatorDashboard() {
       console.log('RAW Chats data:', chatsData)
 
       const now = new Date()
+      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
       
-      // Pending = is_accepted is falsy AND credits_paid > 0
-      const pending = (chatsData || []).filter(c => {
-        console.log('Chat:', c.id, 'is_accepted:', c.is_accepted, 'credits_paid:', c.credits_paid)
-        return !c.is_accepted && c.credits_paid > 0
+      // Check for expired pending chats (24h not accepted) and refund
+      const expiredPendingChats = (chatsData || []).filter((c: any) => 
+        !c.is_accepted && 
+        c.credits_paid > 0 && 
+        !c.refunded &&
+        new Date(c.created_at) < twentyFourHoursAgo
+      )
+      
+      // Auto-refund expired pending chats
+      for (const chat of expiredPendingChats) {
+        // This will be handled by the sender dashboard or a cron job
+        // For now, mark as expired
+        console.log('Expired pending chat:', chat.id, 'should be refunded')
+      }
+      
+      // Pending = is_accepted is falsy AND credits_paid > 0 AND not older than 24h
+      const pending = (chatsData || []).filter((c: any) => {
+        if (c.is_accepted || c.credits_paid <= 0) return false
+        // Only show pending if created within last 24 hours
+        return new Date(c.created_at) >= twentyFourHoursAgo
       })
       
       // Active = is_accepted is truthy AND not expired
-      const active = (chatsData || []).filter(c => {
+      const active = (chatsData || []).filter((c: any) => {
         if (!c.is_accepted) return false
         if (!c.expires_at) return true
         return new Date(c.expires_at) > now
       })
       
       // Expired = is_accepted is truthy AND expired
-      const expired = (chatsData || []).filter(c => {
+      const expired = (chatsData || []).filter((c: any) => {
         if (!c.is_accepted) return false
         if (!c.expires_at) return false
         return new Date(c.expires_at) <= now
@@ -149,20 +170,63 @@ export default function CreatorDashboard() {
 
       setWithdrawals(withdrawData || [])
 
+      // Build notifications
+      const notifs: any[] = []
+      
+      // Withdrawal notifications
+      ;(withdrawData || []).slice(0, 5).forEach((w: any) => {
+        if (w.status === 'completed') {
+          notifs.push({
+            id: `w-${w.id}`,
+            type: 'withdraw_success',
+            message: `Withdraw ${w.amount} kredit berhasil!`,
+            time: w.updated_at || w.created_at
+          })
+        } else if (w.status === 'rejected') {
+          notifs.push({
+            id: `w-${w.id}`,
+            type: 'withdraw_failed',
+            message: `Withdraw ${w.amount} kredit ditolak`,
+            time: w.updated_at || w.created_at
+          })
+        }
+      })
+      
+      // Unread messages notifications
+      const unreadChats = (chatsData || []).filter((c: any) => {
+        if (!c.is_accepted || !c.messages || c.messages.length === 0) return false
+        const sortedMsgs = [...c.messages].sort((a: any, b: any) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+        return sortedMsgs[0]?.sender_id !== user.id
+      })
+      
+      unreadChats.slice(0, 5).forEach((c: any) => {
+        notifs.push({
+          id: `c-${c.id}`,
+          type: 'unread_message',
+          message: `Pesan belum dibalas dari ${c.sender?.full_name || 'Anonim'}`,
+          time: c.messages?.[0]?.created_at || c.created_at
+        })
+      })
+      
+      setNotifications(notifs.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()))
+
       // Calculate analytics data (reuse 'now' from above)
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
       const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
       const monthStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
 
-      // Filter chats by date and calculate earnings
-      const allChats = chatsData || []
-      const todayChats = allChats.filter(c => new Date(c.created_at) >= todayStart)
-      const weekChats = allChats.filter(c => new Date(c.created_at) >= weekStart)
-      const monthChats = allChats.filter(c => new Date(c.created_at) >= monthStart)
+      // Filter ONLY accepted chats (credits_transferred) for earnings
+      const acceptedChats = (chatsData || []).filter((c: any) => c.is_accepted && c.credits_transferred !== false)
+      
+      const todayChats = acceptedChats.filter((c: any) => new Date(c.accepted_at || c.created_at) >= todayStart)
+      const weekChats = acceptedChats.filter((c: any) => new Date(c.accepted_at || c.created_at) >= weekStart)
+      const monthChats = acceptedChats.filter((c: any) => new Date(c.accepted_at || c.created_at) >= monthStart)
 
-      const todayEarnings = todayChats.reduce((sum, c) => sum + (c.credits_paid || 0), 0)
-      const weekEarnings = weekChats.reduce((sum, c) => sum + (c.credits_paid || 0), 0)
-      const monthEarnings = monthChats.reduce((sum, c) => sum + (c.credits_paid || 0), 0)
+      const todayEarnings = todayChats.reduce((sum: number, c: any) => sum + (c.credits_paid || 0), 0)
+      const weekEarnings = weekChats.reduce((sum: number, c: any) => sum + (c.credits_paid || 0), 0)
+      const monthEarnings = monthChats.reduce((sum: number, c: any) => sum + (c.credits_paid || 0), 0)
 
       setAnalyticsData({
         today: todayEarnings,
@@ -174,7 +238,7 @@ export default function CreatorDashboard() {
       })
 
       // Count unique senders
-      const uniqueSenders = new Set((chatsData || []).map(c => c.sender_id))
+      const uniqueSenders = new Set((chatsData || []).map((c: any) => c.sender_id))
       setTotalAnons(uniqueSenders.size)
 
       setLoading(false)
@@ -539,14 +603,76 @@ export default function CreatorDashboard() {
           </div>
 
           {/* Right - Notification */}
-          <button className="relative p-2 hover:bg-zinc-800 rounded-full transition-colors">
-            <svg className="w-6 h-6 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-            {(pendingChats.length > 0 || unreadInboxCount > 0) && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+          <div className="relative">
+            <button 
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative p-2 hover:bg-zinc-800 rounded-full transition-colors"
+            >
+              <svg className="w-6 h-6 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              {(pendingChats.length > 0 || unreadInboxCount > 0 || notifications.length > 0) && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              )}
+            </button>
+            
+            {/* Notification Dropdown */}
+            {showNotifications && (
+              <div className="absolute right-0 top-12 w-80 bg-zinc-900 border border-zinc-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                <div className="p-3 border-b border-zinc-700 flex justify-between items-center">
+                  <h4 className="font-semibold">Notifikasi</h4>
+                  <button onClick={() => setShowNotifications(false)} className="text-zinc-500 hover:text-white">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="max-h-80 overflow-y-auto">
+                  {notifications.length === 0 && pendingChats.length === 0 ? (
+                    <p className="text-zinc-500 text-center py-8 text-sm">Tidak ada notifikasi</p>
+                  ) : (
+                    <div className="divide-y divide-zinc-800">
+                      {pendingChats.length > 0 && (
+                        <div className="p-3 hover:bg-zinc-800/50 cursor-pointer" onClick={() => { setNavTab('dashboard'); setActiveTab('pending'); setShowNotifications(false); }}>
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                              <span className="text-yellow-400 text-sm">💬</span>
+                            </div>
+                            <div>
+                              <p className="text-sm">{pendingChats.length} pesan pending</p>
+                              <p className="text-xs text-zinc-500">Menunggu response</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {notifications.map(notif => (
+                        <div key={notif.id} className="p-3 hover:bg-zinc-800/50">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                              notif.type === 'withdraw_success' ? 'bg-green-500/20' :
+                              notif.type === 'withdraw_failed' ? 'bg-red-500/20' :
+                              'bg-purple-500/20'
+                            }`}>
+                              <span className="text-sm">
+                                {notif.type === 'withdraw_success' ? '✅' :
+                                 notif.type === 'withdraw_failed' ? '❌' : '💬'}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="text-sm">{notif.message}</p>
+                              <p className="text-xs text-zinc-500">
+                                {new Date(notif.time).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
-          </button>
+          </div>
         </div>
       </nav>
 

@@ -56,26 +56,45 @@ export default function SenderDashboard() {
 
       // Separate pending, active and expired
       const now = new Date()
+      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
       
-      // Pending = is_accepted is falsy (false/null/undefined) AND has paid credits
-      const pending = (chatsData || []).filter(c => {
-        const notAccepted = !c.is_accepted // falsy check instead of strict comparison
+      // Check for expired pending chats (24h not accepted) and auto-refund
+      const expiredPendingChats = (chatsData || []).filter((c: any) => 
+        !c.is_accepted && 
+        c.credits_paid > 0 && 
+        !c.refunded &&
+        new Date(c.created_at) < twentyFourHoursAgo
+      )
+      
+      // Auto-refund expired pending chats (credit not yet deducted in new flow, so just mark as expired)
+      for (const chat of expiredPendingChats) {
+        // Mark chat as expired/cancelled
+        await supabase
+          .from('chat_sessions')
+          .update({ refunded: true, status: 'expired_no_response' })
+          .eq('id', chat.id)
+        console.log('Marked expired pending chat:', chat.id)
+      }
+      
+      // Pending = is_accepted is falsy AND has paid credits AND within 24h
+      const pending = (chatsData || []).filter((c: any) => {
+        const notAccepted = !c.is_accepted
         const isPaid = c.credits_paid > 0
-        console.log('Pending check:', c.id, 'is_accepted:', c.is_accepted, 'credits_paid:', c.credits_paid, 'result:', notAccepted && isPaid)
-        return notAccepted && isPaid
+        const notRefunded = !c.refunded
+        const withinTime = new Date(c.created_at) >= twentyFourHoursAgo
+        return notAccepted && isPaid && notRefunded && withinTime
       })
       
       // Active = is_accepted is truthy AND not expired
-      const active = (chatsData || []).filter(c => {
-        if (!c.is_accepted) return false // truthy check instead of strict === true
+      const active = (chatsData || []).filter((c: any) => {
+        if (!c.is_accepted) return false
         if (!c.expires_at) return true
         const isActive = new Date(c.expires_at) > now
-        console.log('Active check:', c.id, 'is_accepted:', c.is_accepted, 'expires_at:', c.expires_at, 'result:', isActive)
         return isActive
       })
       
       // Expired = is_accepted is truthy AND expired
-      const expired = (chatsData || []).filter(c => {
+      const expired = (chatsData || []).filter((c: any) => {
         if (!c.is_accepted) return false
         if (!c.expires_at) return false
         return new Date(c.expires_at) <= now
