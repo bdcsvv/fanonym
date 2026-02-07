@@ -107,27 +107,19 @@ export default function CreatorDashboard() {
       const now = new Date()
       const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
       
-      // Check for expired pending chats (24h not accepted) and refund
-      const expiredPendingChats = (chatsData || []).filter((c: any) => 
-        !c.is_accepted && 
-        c.credits_paid > 0 && 
-        !c.refunded &&
-        new Date(c.created_at) < twentyFourHoursAgo
-      )
-      
-      // Auto-refund expired pending chats
-      for (const chat of expiredPendingChats) {
-        // This will be handled by the sender dashboard or a cron job
-        // For now, mark as expired
-        console.log('Expired pending chat:', chat.id, 'should be refunded')
-      }
-      
-      // Pending = is_accepted is falsy AND credits_paid > 0 AND not older than 24h
-      const pending = (chatsData || []).filter((c: any) => {
-        if (c.is_accepted || c.credits_paid <= 0) return false
-        // Only show pending if created within last 24 hours
-        return new Date(c.created_at) >= twentyFourHoursAgo
+      // Pending = is_accepted is falsy AND credits_paid > 0
+      // Show ALL pending chats (not filtered by 24h for display, but mark expired ones)
+      const allPending = (chatsData || []).filter((c: any) => {
+        return !c.is_accepted && c.credits_paid > 0
       })
+      
+      // Check which pending chats are expired (older than 24h)
+      const expiredPendingIds = allPending
+        .filter((c: any) => new Date(c.created_at) < twentyFourHoursAgo)
+        .map((c: any) => c.id)
+      
+      // For now, show all pending chats to creator (they can still accept within reason)
+      const pending = allPending
       
       // Active = is_accepted is truthy AND not expired
       const active = (chatsData || []).filter((c: any) => {
