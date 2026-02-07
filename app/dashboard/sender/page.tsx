@@ -17,6 +17,7 @@ export default function SenderDashboard() {
   const [expiredChats, setExpiredChats] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'pending' | 'active' | 'expired'>('active')
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     const getProfile = async () => {
@@ -129,218 +130,330 @@ export default function SenderDashboard() {
   // Count unread chats
   const unreadCount = activeChats.filter(chat => hasUnreadMessages(chat)).length
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      router.push(`/explore?q=${encodeURIComponent(searchQuery)}`)
+    } else {
+      router.push('/explore')
+    }
+  }
+
   if (loading) {
     return <FanonymLoader text="Memuat dashboard..." />
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white relative page-transition">
-      {/* Background gradient orbs */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 h-[300px] w-[300px] rounded-full bg-violet-500/10 blur-[100px]" />
-      </div>
-
-      <nav className="border-b border-purple-500/20 p-4 relative z-10 bg-[#0a0a0f]">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <Link href="/dashboard/sender" className="text-2xl font-black bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)]">
-            fanonym
+    <div className="min-h-screen bg-[#0c0a14] text-white">
+      {/* Navbar */}
+      <nav className="sticky top-0 z-50 border-b border-purple-500/20 bg-[#0c0a14]/95 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          {/* Logo */}
+          <Link href="/dashboard/sender" className="flex items-center gap-2 animate-fadeIn">
+            <div className="w-9 h-9 bg-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-sm">
+              f
+            </div>
+            <span className="text-xl font-bold">fanonym</span>
           </Link>
-          <div className="flex items-center gap-4 text-sm">
-            <Link href={`/sender/${profile?.username}`} className="text-gray-400 hover:text-white">👤 Profile</Link>
-            <Link href="/settings" className="text-gray-400 hover:text-white">⚙️ Settings</Link>
-            <button onClick={handleLogout} className="text-gray-400 hover:text-white">Logout</button>
+
+          {/* Nav Links */}
+          <div className="flex items-center gap-6 text-sm">
+            <Link 
+              href={`/sender/${profile?.username}`} 
+              className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              Profile
+            </Link>
+            <Link 
+              href="/settings" 
+              className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Settings
+            </Link>
+            <button 
+              onClick={handleLogout} 
+              className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Logout
+            </button>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-6xl mx-auto p-6 relative z-10">
+      <main className="max-w-6xl mx-auto px-6 py-8">
         {/* Profile Header */}
-        <div className="flex items-center gap-4 mb-6 animate-fadeInDown">
-          {profile?.avatar_url ? (
-            <img src={profile.avatar_url} alt="Avatar" className="w-14 h-14 rounded-full object-cover border-2 border-purple-500/50"/>
-          ) : (
-            <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center text-xl font-bold">
-              {profile?.full_name?.[0] || profile?.username?.[0] || '?'}
-            </div>
-          )}
+        <div className="flex items-center gap-5 mb-10 animate-fadeInDown">
+          <div className="relative">
+            {profile?.avatar_url ? (
+              <img 
+                src={profile.avatar_url} 
+                alt="Avatar" 
+                className="w-24 h-24 rounded-full object-cover border-4 border-purple-500/30"
+              />
+            ) : (
+              <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center text-3xl font-bold">
+                {profile?.full_name?.[0] || profile?.username?.[0] || '?'}
+              </div>
+            )}
+          </div>
           <div>
-            <h2 className="text-xl font-bold">Halo, {profile?.full_name || profile?.username}!</h2>
-            {profile?.bio && <p className="text-gray-400 text-sm">{profile.bio}</p>}
+            <h1 className="text-3xl md:text-4xl font-bold">
+              <span className="text-white">Halo,</span>{' '}
+              <span className="text-purple-400">{profile?.full_name || profile?.username}!</span>
+            </h1>
+            <p className="text-zinc-400 mt-1">Welcome back to your anonymous messaging hub.</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5 animate-fadeInUp card-hover stagger-1">
-            <p className="text-gray-400 text-xs mb-1">Saldo Kredit</p>
-            <p className="text-3xl font-bold text-white">{credits?.balance || 0}</p>
-            <p className="text-purple-400 text-sm mt-1">≈ Rp {((credits?.balance || 0) * KREDIT_TO_IDR).toLocaleString('id-ID')}</p>
-          </div>
-          <div className="bg-gradient-to-r from-purple-500/20 to-violet-500/20 border border-purple-500/30 rounded-2xl p-5 flex items-center justify-between animate-fadeInUp card-hover stagger-2">
-            <div>
-              <p className="text-white font-medium text-sm">Butuh lebih banyak kredit?</p>
-              <p className="text-gray-400 text-xs">Top up sekarang!</p>
+        {/* Credits & Top Up Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Credits Card */}
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 animate-fadeInUp stagger-1">
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-12 h-12 bg-purple-600/20 rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <span className="px-3 py-1 bg-purple-600/20 text-purple-400 text-xs font-medium rounded-full border border-purple-500/30">
+                Premium Account
+              </span>
             </div>
-            <Link href="/topup" className="px-4 py-2 bg-purple-500 rounded-xl hover:bg-purple-600 font-medium text-sm btn-hover transition-all">Top Up</Link>
+            <p className="text-xs text-zinc-400 uppercase tracking-wider mb-1">Saldo Kredit</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold text-purple-400">{credits?.balance || 0}</span>
+              <span className="text-zinc-400">Credits</span>
+            </div>
+            <p className="text-purple-400/70 text-sm mt-2">≈ Rp {((credits?.balance || 0) * KREDIT_TO_IDR).toLocaleString('id-ID')}</p>
+          </div>
+
+          {/* Top Up Card */}
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 flex flex-col justify-center animate-fadeInUp stagger-2">
+            <h3 className="text-xl font-semibold mb-2">Butuh lebih banyak kredit?</h3>
+            <p className="text-zinc-400 text-sm mb-5">
+              Top up sekarang untuk terus terhubung dengan creator favoritmu secara anonim.
+            </p>
+            <Link 
+              href="/topup" 
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-500 rounded-xl font-semibold transition-all hover:shadow-lg hover:shadow-purple-500/25"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Top Up Sekarang
+            </Link>
           </div>
         </div>
 
-        <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5 mb-6 animate-fadeInUp stagger-3 card-hover">
-          <h3 className="text-sm font-semibold mb-3 text-gray-200">🔍 Cari Creator</h3>
-          <Link href="/explore" className="block w-full p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl text-gray-400 hover:border-purple-500/50 transition-all text-sm glow-hover">
-            Cari creator favorit kamu...
-          </Link>
+        {/* Search Creator Card */}
+        <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 mb-8 animate-fadeInUp stagger-3">
+          <div className="flex items-center gap-2 text-purple-400 mb-4">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <h3 className="text-lg font-semibold">Cari Creator</h3>
+          </div>
+          <form onSubmit={handleSearch}>
+            <input 
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari creator favorit kamu..."
+              className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700 rounded-xl text-white placeholder-zinc-500 focus:border-purple-500 outline-none transition-colors"
+            />
+          </form>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-4 flex-wrap animate-fadeIn stagger-4">
+        <div className="bg-zinc-900/30 border border-zinc-800 rounded-2xl p-2 mb-6 inline-flex gap-2 animate-fadeIn stagger-4">
           <button
             onClick={() => setActiveTab('pending')}
-            className={`px-4 py-2 rounded-xl font-medium text-sm transition-all btn-hover ${
-              activeTab === 'pending' ? 'bg-yellow-500 text-white' : 'bg-gray-800/50 text-gray-400 hover:text-white'
+            className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium text-sm transition-all ${
+              activeTab === 'pending' 
+                ? 'bg-zinc-800 text-white' 
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
-            ⏳ Pending ({pendingChats.length})
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Pending ({pendingChats.length})
           </button>
           <button
             onClick={() => setActiveTab('active')}
-            className={`px-4 py-2 rounded-xl font-medium text-sm transition-all relative btn-hover ${
-              activeTab === 'active' ? 'bg-purple-500 text-white' : 'bg-gray-800/50 text-gray-400 hover:text-white'
+            className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium text-sm transition-all relative ${
+              activeTab === 'active' 
+                ? 'bg-purple-600 text-white' 
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
             Chat Aktif ({activeChats.length})
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs flex items-center justify-center text-white badge-pulse">
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs flex items-center justify-center text-white animate-pulse">
                 {unreadCount}
               </span>
             )}
           </button>
           <button
             onClick={() => setActiveTab('expired')}
-            className={`px-4 py-2 rounded-xl font-medium text-sm transition-all btn-hover ${
-              activeTab === 'expired' ? 'bg-purple-500 text-white' : 'bg-gray-800/50 text-gray-400 hover:text-white'
+            className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium text-sm transition-all ${
+              activeTab === 'expired' 
+                ? 'bg-zinc-800 text-white' 
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
             Expired ({expiredChats.length})
           </button>
         </div>
 
-        {/* Pending Chats - Waiting for creator approval */}
-        {activeTab === 'pending' && (
-          <div className="bg-gray-800/30 border border-yellow-500/20 rounded-2xl p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-yellow-400">⏳</span>
-              <p className="text-yellow-400 text-sm">Chat menunggu persetujuan creator</p>
-            </div>
-            {pendingChats.length === 0 ? (
-              <p className="text-gray-500 text-sm">Tidak ada chat yang menunggu approve.</p>
-            ) : (
-              <div className="space-y-3">
-                {pendingChats.map((chat) => (
-                  <Link key={chat.id} href={`/chat/${chat.id}`} className="flex items-center justify-between p-4 bg-gray-900/50 border border-yellow-500/30 rounded-xl hover:border-yellow-500/50 transition-colors">
-                    <div className="flex items-center gap-3">
+        {/* Chat Lists */}
+        <div className="space-y-3 animate-fadeInUp stagger-5">
+          {/* Pending Chats */}
+          {activeTab === 'pending' && (
+            <>
+              {pendingChats.length === 0 ? (
+                <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-8 text-center">
+                  <p className="text-zinc-500">Tidak ada chat yang menunggu approve.</p>
+                </div>
+              ) : (
+                pendingChats.map((chat, index) => (
+                  <Link 
+                    key={chat.id} 
+                    href={`/chat/${chat.id}`} 
+                    className="flex items-center justify-between p-4 bg-zinc-900/50 border border-zinc-800 rounded-2xl hover:border-yellow-500/30 transition-all animate-fadeIn"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <div className="flex items-center gap-4">
                       {chat.creator?.avatar_url ? (
-                        <img src={chat.creator.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover"/>
+                        <img src={chat.creator.avatar_url} alt="" className="w-14 h-14 rounded-full object-cover"/>
                       ) : (
-                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center font-bold text-sm">
+                        <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center font-bold text-lg">
                           {chat.creator?.full_name?.[0] || '?'}
                         </div>
                       )}
                       <div>
-                        <p className="font-medium text-sm">{chat.creator?.full_name || chat.creator?.username}</p>
-                        <p className="text-gray-500 text-xs">@{chat.creator?.username}</p>
+                        <p className="font-semibold text-lg">{chat.creator?.full_name || chat.creator?.username}</p>
+                        <p className="text-zinc-500 text-sm">@{chat.creator?.username}</p>
                       </div>
                     </div>
-                    <div className="text-xs px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400">
+                    <div className="text-sm px-4 py-2 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
                       Menunggu approve
                     </div>
                   </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                ))
+              )}
+            </>
+          )}
 
-        {/* Active Chats */}
-        {activeTab === 'active' && (
-          <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
-            {activeChats.length === 0 ? (
-              <p className="text-gray-500 text-sm">Belum ada chat aktif.</p>
-            ) : (
-              <div className="space-y-3">
-                {activeChats.map((chat) => (
-                  <Link key={chat.id} href={`/chat/${chat.id}`} className={`flex items-center justify-between p-4 bg-gray-900/50 border rounded-xl hover:border-purple-500/50 transition-colors ${
-                    hasUnreadMessages(chat) ? 'border-green-500/50 bg-green-500/5' : 'border-gray-700/50'
-                  }`}>
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        {chat.creator?.avatar_url ? (
-                          <img src={chat.creator.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover"/>
-                        ) : (
-                          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center font-bold text-sm">
-                            {chat.creator?.full_name?.[0] || '?'}
-                          </div>
-                        )}
-                        {hasUnreadMessages(chat) && (
-                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                            <span className="text-[10px]">💬</span>
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm flex items-center gap-2">
-                          {chat.creator?.full_name || chat.creator?.username}
-                          {hasUnreadMessages(chat) && (
-                            <span className="text-xs text-green-400 font-normal">• Pesan baru</span>
+          {/* Active Chats */}
+          {activeTab === 'active' && (
+            <>
+              {activeChats.length === 0 ? (
+                <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-8 text-center">
+                  <p className="text-zinc-500">Belum ada chat aktif.</p>
+                </div>
+              ) : (
+                activeChats.map((chat, index) => {
+                  const isUnread = hasUnreadMessages(chat)
+                  return (
+                    <Link 
+                      key={chat.id} 
+                      href={`/chat/${chat.id}`} 
+                      className={`flex items-center justify-between p-4 bg-zinc-900/50 border rounded-2xl transition-all animate-fadeIn ${
+                        isUnread ? 'border-green-500/30 bg-green-500/5' : 'border-zinc-800 hover:border-purple-500/30'
+                      }`}
+                      style={{ animationDelay: `${index * 0.05}s` }}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          {chat.creator?.avatar_url ? (
+                            <img src={chat.creator.avatar_url} alt="" className="w-14 h-14 rounded-full object-cover"/>
+                          ) : (
+                            <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center font-bold text-lg">
+                              {chat.creator?.full_name?.[0] || '?'}
+                            </div>
                           )}
-                        </p>
-                        <p className="text-gray-500 text-xs">@{chat.creator?.username}</p>
+                          {isUnread && (
+                            <span className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-[#0c0a14]"></span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-lg flex items-center gap-2">
+                            {chat.creator?.full_name || chat.creator?.username}
+                            {isUnread && (
+                              <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs font-medium rounded-full">
+                                Pesan Baru
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-zinc-500 text-sm">@{chat.creator?.username}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-xs px-3 py-1 rounded-full bg-purple-500/20 text-purple-400">
-                      {getTimeLeft(chat)}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                      <div className="text-sm px-4 py-2 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                        {getTimeLeft(chat)}
+                      </div>
+                    </Link>
+                  )
+                })
+              )}
+            </>
+          )}
 
-        {/* Expired Chats */}
-        {activeTab === 'expired' && (
-          <div className="bg-gray-800/30 border border-purple-500/20 rounded-2xl p-5">
-            {expiredChats.length === 0 ? (
-              <p className="text-gray-500 text-sm">Tidak ada chat expired.</p>
-            ) : (
-              <div className="space-y-3">
-                {expiredChats.map((chat) => (
-                  <div key={chat.id} className="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl opacity-70">
-                    <Link href={`/chat/${chat.id}`} className="flex items-center gap-3 flex-1">
+          {/* Expired Chats */}
+          {activeTab === 'expired' && (
+            <>
+              {expiredChats.length === 0 ? (
+                <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-8 text-center">
+                  <p className="text-zinc-500">Tidak ada chat expired.</p>
+                </div>
+              ) : (
+                expiredChats.map((chat, index) => (
+                  <div 
+                    key={chat.id} 
+                    className="flex items-center justify-between p-4 bg-zinc-900/50 border border-zinc-800 rounded-2xl opacity-60 animate-fadeIn"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <Link href={`/chat/${chat.id}`} className="flex items-center gap-4 flex-1">
                       {chat.creator?.avatar_url ? (
-                        <img src={chat.creator.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover"/>
+                        <img src={chat.creator.avatar_url} alt="" className="w-14 h-14 rounded-full object-cover grayscale"/>
                       ) : (
-                        <div className="w-10 h-10 bg-gradient-to-br from-gray-500 to-gray-600 rounded-full flex items-center justify-center font-bold text-sm">
+                        <div className="w-14 h-14 bg-gradient-to-br from-zinc-600 to-zinc-700 rounded-full flex items-center justify-center font-bold text-lg">
                           {chat.creator?.full_name?.[0] || '?'}
                         </div>
                       )}
                       <div>
-                        <p className="font-medium text-sm">{chat.creator?.full_name || chat.creator?.username}</p>
-                        <p className="text-gray-500 text-xs">Expired: {new Date(chat.expires_at).toLocaleDateString('id-ID')}</p>
+                        <p className="font-semibold text-lg">{chat.creator?.full_name || chat.creator?.username}</p>
+                        <p className="text-zinc-600 text-sm">Expired: {new Date(chat.expires_at).toLocaleDateString('id-ID')}</p>
                       </div>
                     </Link>
                     <button
                       onClick={() => handleDeleteChat(chat.id)}
-                      className="text-xs px-3 py-1 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                      className="text-sm px-4 py-2 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
                     >
                       Hapus
                     </button>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                ))
+              )}
+            </>
+          )}
+        </div>
       </main>
     </div>
   )

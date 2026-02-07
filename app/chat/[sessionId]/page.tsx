@@ -82,7 +82,6 @@ export default function ChatRoom() {
         .select('*')
         .eq('id', otherId)
         .single()
-
       setOtherUser(otherProfile)
 
       const { data: messagesData } = await supabase
@@ -90,41 +89,18 @@ export default function ChatRoom() {
         .select('*')
         .eq('session_id', sessionId)
         .order('created_at', { ascending: true })
-
       setMessages(messagesData || [])
+
       setLoading(false)
     }
 
     init()
-  }, [sessionId, router])
-
-  useEffect(() => {
-    if (!sessionId) return
 
     const channel = supabase
-      .channel(`messages-${sessionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `session_id=eq.${sessionId}`
-        },
+      .channel(`chat-${sessionId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `session_id=eq.${sessionId}` },
         (payload) => {
-          setMessages((prev) => [...prev, payload.new])
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'messages',
-          filter: `session_id=eq.${sessionId}`
-        },
-        (payload) => {
-          setMessages((prev) => prev.map(m => m.id === payload.new.id ? payload.new : m))
+          setMessages(prev => [...prev, payload.new])
         }
       )
       .subscribe()
@@ -132,142 +108,129 @@ export default function ChatRoom() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [sessionId])
+  }, [sessionId, router])
 
   useEffect(() => {
-    if (!session?.expires_at) return
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
-    const updateTimer = () => {
+  useEffect(() => {
+    if (!session || !session.expires_at) return
+
+    const interval = setInterval(() => {
       const now = new Date().getTime()
       const expires = new Date(session.expires_at).getTime()
       const diff = expires - now
 
       if (diff <= 0) {
         setTimeLeft('Expired')
+        clearInterval(interval)
         return
       }
 
-      const hours = Math.floor(diff / (1000 * 60 * 60))
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
       const seconds = Math.floor((diff % (1000 * 60)) / 1000)
-      setTimeLeft(`${hours}j ${minutes}m ${seconds}d`)
-    }
 
-    updateTimer()
-    const interval = setInterval(updateTimer, 1000)
+      if (days > 0) {
+        setTimeLeft(`${days}d ${hours}h ${minutes}m`)
+      } else if (hours > 0) {
+        setTimeLeft(`${hours}j ${minutes}m ${seconds}d`)
+      } else {
+        setTimeLeft(`${minutes}m ${seconds}d`)
+      }
+    }, 1000)
+
     return () => clearInterval(interval)
   }, [session])
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newMessage.trim() || !currentUser || !session) return
+    if (!newMessage.trim()) return
 
-    if (new Date(session.expires_at) < new Date()) {
-      alert('Chat session sudah expired!')
-      return
-    }
-
-    const { error } = await supabase.from('messages').insert({
+    await supabase.from('messages').insert({
       session_id: sessionId,
       sender_id: currentUser.id,
-      content: newMessage.trim(),
+      content: newMessage,
       is_read: false
     })
 
-    if (!error) {
-      setNewMessage('')
-    }
+    setNewMessage('')
   }
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file || !currentUser || !session) return
+    if (!file) return
 
-    if (new Date(session.expires_at) < new Date()) {
-      alert('Chat session sudah expired!')
-      return
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
+    const maxSize = 10 * 1024 * 1024
+    if (file.size > maxSize) {
       alert('File terlalu besar! Maksimal 10MB')
-      return
-    }
-
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/quicktime']
-    if (!allowedTypes.includes(file.type)) {
-      alert('Format file tidak didukung! Gunakan JPG, PNG, GIF, WEBP, atau MP4')
       return
     }
 
     setUploading(true)
 
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${sessionId}/${currentUser.id}-${Date.now()}.${fileExt}`
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${currentUser.id}/${Date.now()}.${fileExt}`
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(fileName, file)
 
-    const { error: uploadError } = await supabase.storage
-      .from('media')
-      .upload(fileName, file)
+      if (uploadError) throw uploadError
 
-    if (uploadError) {
-      alert('Gagal upload: ' + uploadError.message)
-      setUploading(false)
-      return
+      const { data: publicUrl } = supabase.storage
+        .from('media')
+        .getPublicUrl(fileName)
+
+      const mediaType = file.type.startsWith('video') ? 'video' : 'image'
+      const content = JSON.stringify({
+        type: 'media',
+        media_type: mediaType,
+        url: publicUrl.publicUrl
+      })
+
+      await supabase.from('messages').insert({
+        session_id: sessionId,
+        sender_id: currentUser.id,
+        content: content,
+        is_read: false
+      })
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('Gagal upload file')
     }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('media')
-      .getPublicUrl(fileName)
-
-    const isVideo = file.type.startsWith('video/')
-    const mediaData = {
-      type: 'media',
-      media_type: isVideo ? 'video' : 'image',
-      url: publicUrl
-    }
-
-    await supabase.from('messages').insert({
-      session_id: sessionId,
-      sender_id: currentUser.id,
-      content: JSON.stringify(mediaData),
-      is_read: false
-    })
 
     setUploading(false)
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const sendPaymentRequest = async () => {
     const amount = parseInt(paymentAmount)
     if (!amount || amount < 1) {
-      alert('Masukkan jumlah kredit yang valid!')
+      alert('Masukkan jumlah kredit yang valid')
       return
     }
 
-    const paymentData = {
+    const content = JSON.stringify({
       type: 'payment_request',
       amount: amount,
-      description: paymentDesc || 'Custom payment',
+      description: paymentDesc || 'Payment request',
       status: 'pending'
-    }
+    })
 
-    const { error } = await supabase.from('messages').insert({
+    await supabase.from('messages').insert({
       session_id: sessionId,
       sender_id: currentUser.id,
-      content: JSON.stringify(paymentData),
+      content: content,
       is_read: false
     })
 
-    if (!error) {
-      setShowPaymentModal(false)
-      setPaymentAmount('')
-      setPaymentDesc('')
-    }
+    setShowPaymentModal(false)
+    setPaymentAmount('')
+    setPaymentDesc('')
   }
 
   const handlePayment = async (messageId: string, amount: number) => {
@@ -400,12 +363,12 @@ export default function ChatRoom() {
       duration_hours: session.duration_hours + pricingOption.duration_hours
     })
 
-    setShowExtendModal(false)
     setExtendLoading(false)
-    alert(`Chat berhasil diperpanjang ${pricingOption.duration_hours} jam!`)
+    setShowExtendModal(false)
+    alert('Chat berhasil diperpanjang!')
   }
 
-  const renderMessage = (msg: any) => {
+  const renderMessage = (msg: any, index: number) => {
     let isPaymentRequest = false
     let isMedia = false
     let paymentData = null
@@ -424,11 +387,17 @@ export default function ChatRoom() {
       // Not JSON, regular message
     }
 
+    const isFromMe = msg.sender_id === currentUser?.id
+    const animationDelay = `${index * 0.05}s`
+
     if (isMedia && mediaData) {
-      const isFromMe = msg.sender_id === currentUser?.id
       return (
-        <div key={msg.id} className={`flex ${isFromMe ? 'justify-end' : 'justify-start'}`}>
-          <div className={`max-w-[70%] rounded-2xl overflow-hidden ${isFromMe ? 'bg-purple-500' : 'bg-gray-800'}`}>
+        <div 
+          key={msg.id} 
+          className={`flex ${isFromMe ? 'justify-end' : 'justify-start'} animate-fadeIn`}
+          style={{ animationDelay }}
+        >
+          <div className={`max-w-[70%] rounded-2xl overflow-hidden ${isFromMe ? 'bg-purple-600' : 'bg-zinc-800 border border-zinc-700'}`}>
             {mediaData.media_type === 'video' ? (
               <video src={mediaData.url} controls className="max-w-full max-h-80 rounded-lg"/>
             ) : (
@@ -436,7 +405,7 @@ export default function ChatRoom() {
                 <img src={mediaData.url} alt="Media" className="max-w-full max-h-80 object-cover"/>
               </a>
             )}
-            <p className={`text-xs p-2 ${isFromMe ? 'text-purple-200' : 'text-gray-500'}`}>
+            <p className={`text-xs p-2 ${isFromMe ? 'text-purple-200' : 'text-zinc-500'}`}>
               {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
             </p>
           </div>
@@ -446,21 +415,24 @@ export default function ChatRoom() {
 
     if (isPaymentRequest && paymentData) {
       const isPaid = paymentData.status === 'paid'
-      const isFromMe = msg.sender_id === currentUser?.id
       return (
-        <div key={msg.id} className={`flex ${isFromMe ? 'justify-end' : 'justify-start'}`}>
-          <div className={`max-w-[70%] px-4 py-3 rounded-2xl ${isFromMe ? 'bg-purple-600' : 'bg-purple-900'}`}>
+        <div 
+          key={msg.id} 
+          className={`flex ${isFromMe ? 'justify-end' : 'justify-start'} animate-fadeIn`}
+          style={{ animationDelay }}
+        >
+          <div className={`max-w-[70%] px-4 py-3 rounded-2xl ${isFromMe ? 'bg-purple-600' : 'bg-purple-900/50 border border-purple-500/30'}`}>
             <p className="text-xs text-purple-300 mb-1">💰 Payment Request</p>
             <p className="text-2xl font-bold text-white">{paymentData.amount} Kredit</p>
             <p className="text-sm text-purple-200 mb-2">{paymentData.description}</p>
             {isPaid ? (
               <div className="px-3 py-2 bg-green-500/30 rounded-lg text-green-300 text-center text-sm">✅ Sudah Dibayar</div>
             ) : !isFromMe ? (
-              <button onClick={() => handlePayment(msg.id, paymentData.amount)} className="w-full px-4 py-2 bg-purple-500 rounded-lg font-semibold hover:bg-purple-600">Bayar Sekarang</button>
+              <button onClick={() => handlePayment(msg.id, paymentData.amount)} className="w-full px-4 py-2 bg-purple-500 rounded-lg font-semibold hover:bg-purple-400 transition-colors">Bayar Sekarang</button>
             ) : (
               <div className="px-3 py-2 bg-yellow-500/30 rounded-lg text-yellow-300 text-center text-sm">⏳ Menunggu Pembayaran</div>
             )}
-            <p className={`text-xs mt-2 ${isFromMe ? 'text-purple-300' : 'text-purple-400'}`}>
+            <p className="text-xs mt-2 text-purple-300">
               {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
             </p>
           </div>
@@ -470,17 +442,21 @@ export default function ChatRoom() {
 
     if (msg.content.startsWith('🔄')) {
       return (
-        <div key={msg.id} className="flex justify-center">
-          <div className="px-4 py-2 bg-gray-800/50 rounded-full text-gray-400 text-sm">{msg.content}</div>
+        <div key={msg.id} className="flex justify-center animate-fadeIn" style={{ animationDelay }}>
+          <div className="px-4 py-2 bg-zinc-800/50 rounded-full text-zinc-400 text-sm border border-zinc-700">{msg.content}</div>
         </div>
       )
     }
 
     return (
-      <div key={msg.id} className={`flex ${msg.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}>
-        <div className={`max-w-[70%] px-4 py-2 rounded-2xl ${msg.sender_id === currentUser?.id ? 'bg-purple-500 text-white' : 'bg-gray-800 text-white'}`}>
-          <p>{msg.content}</p>
-          <p className={`text-xs mt-1 ${msg.sender_id === currentUser?.id ? 'text-purple-200' : 'text-gray-500'}`}>
+      <div 
+        key={msg.id} 
+        className={`flex ${isFromMe ? 'justify-end' : 'justify-start'} animate-fadeIn`}
+        style={{ animationDelay }}
+      >
+        <div className={`max-w-[70%] px-4 py-3 rounded-2xl ${isFromMe ? 'bg-purple-600 rounded-tr-md' : 'bg-zinc-800 border border-zinc-700 rounded-tl-md'}`}>
+          <p className="text-white">{msg.content}</p>
+          <p className={`text-xs mt-1 ${isFromMe ? 'text-purple-200' : 'text-zinc-500'}`}>
             {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
           </p>
         </div>
@@ -495,10 +471,8 @@ export default function ChatRoom() {
   const isExpired = session && session.expires_at && new Date(session.expires_at) < new Date()
   const isPending = session && session.is_accepted === false
 
-  // Get profile URL based on user type
   const getProfileUrl = () => {
     if (!otherUser) return '#'
-    // Check if other user is creator or sender
     const isOtherCreator = session?.creator_id === otherUser.id
     if (isOtherCreator) {
       return `/profile/${otherUser.username}`
@@ -507,25 +481,18 @@ export default function ChatRoom() {
     }
   }
 
-  // Show pending state for sender
   if (isPending && !isCreator) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
+      <div className="min-h-screen bg-[#0c0a14] flex items-center justify-center p-4">
+        <div className="text-center max-w-md animate-fadeIn">
           <div className="text-6xl mb-4">⏳</div>
           <h2 className="text-2xl font-bold text-white mb-2">Menunggu Creator Accept</h2>
-          <p className="text-gray-400 mb-4">
+          <p className="text-zinc-400 mb-4">
             Chat kamu sudah dibayar! Menunggu {session?.creator?.full_name || 'creator'} untuk accept chat. 
             Waktu akan mulai dihitung setelah creator accept.
           </p>
-          <p className="text-purple-400 text-sm mb-6">
-            💰 {session?.credits_paid} kredit • {session?.duration_hours} jam
-          </p>
-          <button
-            onClick={() => router.back()}
-            className="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-semibold transition-colors"
-          >
-            ← Kembali
+          <button onClick={() => router.back()} className="px-6 py-3 bg-purple-600 hover:bg-purple-500 rounded-xl font-semibold transition-colors">
+            ← Kembali ke Dashboard
           </button>
         </div>
       </div>
@@ -533,143 +500,255 @@ export default function ChatRoom() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white flex flex-col relative">
-      {/* Background gradient */}
+    <div className="min-h-screen bg-[#0c0a14] text-white flex flex-col relative">
+      {/* Background decorations */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute left-1/2 top-1/3 h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-purple-600/10 blur-[120px]" />
-        <div className="absolute bottom-1/3 right-1/4 h-[300px] w-[300px] rounded-full bg-violet-500/5 blur-[100px]" />
+        <svg className="absolute left-8 top-1/3 w-8 h-8 text-purple-500/20 animate-pulse" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        <svg className="absolute right-12 top-1/4 w-10 h-10 text-purple-500/10" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+        </svg>
+        <div className="absolute left-1/4 bottom-1/3 w-6 h-6 border-2 border-purple-500/20 rotate-45"></div>
       </div>
 
-      {/* Header - Fixed position */}
-      <nav className="fixed top-0 left-0 right-0 border-b border-purple-500/20 p-3 sm:p-4 bg-[#0a0a0f]/95 backdrop-blur-md z-50">
-        <div className="max-w-4xl mx-auto flex justify-between items-center gap-2">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-            {/* Back Button - Better Design */}
+      {/* Header */}
+      <nav className="fixed top-0 left-0 right-0 border-b border-purple-500/20 px-4 py-3 bg-[#0c0a14]/95 backdrop-blur-md z-50 animate-fadeInDown">
+        <div className="max-w-4xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            {/* Back Button */}
             <button 
               onClick={() => router.back()} 
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-800/80 hover:bg-purple-500/20 text-gray-300 hover:text-white transition-all flex-shrink-0 border border-gray-700/50 hover:border-purple-500/50"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-800/80 hover:bg-purple-600/20 text-zinc-300 hover:text-white transition-all border border-zinc-700 hover:border-purple-500/50"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             
-            {/* Clickable Profile */}
-            <a href={getProfileUrl()} className="flex items-center gap-2 sm:gap-3 min-w-0 hover:opacity-80 transition-opacity">
-              {otherUser?.avatar_url ? (
-                <img src={otherUser.avatar_url} alt="" className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover flex-shrink-0 border-2 border-purple-500/50"/>
-              ) : (
-                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center font-bold flex-shrink-0 text-sm sm:text-base">
-                  {otherUser?.full_name?.[0] || '?'}
-                </div>
-              )}
-              <div className="min-w-0">
-                <p className="font-semibold truncate text-sm sm:text-base">{otherUser?.full_name || otherUser?.username}</p>
-                <p className="text-xs text-gray-400 truncate">@{otherUser?.username}</p>
+            {/* Profile */}
+            <a href={getProfileUrl()} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <div className="relative">
+                {otherUser?.avatar_url ? (
+                  <img src={otherUser.avatar_url} alt="" className="w-11 h-11 rounded-full object-cover border-2 border-purple-500/50"/>
+                ) : (
+                  <div className="w-11 h-11 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center font-bold">
+                    {otherUser?.full_name?.[0] || '?'}
+                  </div>
+                )}
+                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#0c0a14]"></span>
+              </div>
+              <div>
+                <p className="font-semibold">{otherUser?.full_name || otherUser?.username}</p>
+                <p className="text-xs text-zinc-400">@{otherUser?.username}</p>
               </div>
             </a>
           </div>
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            <div className={`text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full whitespace-nowrap font-medium ${isExpired ? 'bg-red-500/20 text-red-400' : 'bg-purple-500/20 text-purple-400'}`}>
-              {isExpired ? 'Expired' : `⏱ ${timeLeft}`}
+
+          <div className="flex items-center gap-2">
+            {/* Timer */}
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border ${
+              isExpired 
+                ? 'bg-red-500/10 border-red-500/30 text-red-400' 
+                : 'bg-purple-500/10 border-purple-500/30 text-purple-400'
+            }`}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {isExpired ? 'Expired' : timeLeft}
             </div>
+
+            {/* Report Button */}
             <button
               onClick={() => setShowReportModal(true)}
-              className="p-2 rounded-lg bg-gray-800/50 hover:bg-gray-700 text-gray-400 hover:text-red-400 transition-colors"
+              className="p-2.5 rounded-xl bg-zinc-800/50 hover:bg-zinc-700 border border-zinc-700 text-zinc-400 hover:text-red-400 transition-colors"
               title="Laporkan / Blokir"
             >
-              🚩
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+              </svg>
             </button>
           </div>
         </div>
       </nav>
 
-      {/* Spacer for fixed header */}
-      <div className="h-16 sm:h-[72px]"></div>
+      {/* Spacer */}
+      <div className="h-[72px]"></div>
 
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 max-w-4xl mx-auto w-full relative z-10">
-        <div className="space-y-3 sm:space-y-4">
-          {messages.length === 0 && <p className="text-center text-gray-500 mt-10">Belum ada pesan. Mulai chat!</p>}
-          {messages.map(renderMessage)}
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 max-w-4xl mx-auto w-full relative z-10">
+        <div className="space-y-4">
+          {messages.length === 0 && (
+            <p className="text-center text-zinc-500 mt-10 animate-fadeIn">Belum ada pesan. Mulai chat!</p>
+          )}
+          {messages.map((msg, index) => renderMessage(msg, index))}
           <div ref={messagesEndRef} />
         </div>
       </div>
 
+      {/* Expired Banner */}
       {isExpired && !isCreator && (
-        <div className="border-t border-purple-500/20 p-3 sm:p-4 bg-red-500/10">
+        <div className="border-t border-red-500/30 p-4 bg-red-500/10 animate-fadeInUp">
           <div className="max-w-4xl mx-auto text-center">
-            <p className="text-red-400 mb-3 text-sm sm:text-base">⏰ Chat sudah expired. Perpanjang untuk lanjut chat!</p>
-            <button onClick={() => setShowExtendModal(true)} className="px-6 py-3 bg-gradient-to-r from-purple-500 to-violet-600 rounded-xl font-semibold hover:from-purple-600 hover:to-violet-700">🔄 Perpanjang Chat</button>
+            <p className="text-red-400 mb-3">⏰ Chat sudah expired. Perpanjang untuk lanjut chat!</p>
+            <button 
+              onClick={() => setShowExtendModal(true)} 
+              className="px-6 py-3 bg-purple-600 hover:bg-purple-500 rounded-xl font-semibold transition-colors"
+            >
+              🔄 Perpanjang Chat
+            </button>
           </div>
         </div>
       )}
 
+      {/* Input Area */}
       {!isExpired && (
-        <div className="border-t border-purple-500/20 p-3 sm:p-4 bg-[#0a0a0f]">
+        <div className="border-t border-zinc-800 p-4 bg-[#0c0a14] animate-fadeInUp">
           <div className="max-w-4xl mx-auto">
             {isCreator && (
               <div className="mb-3">
-                <button onClick={() => setShowPaymentModal(true)} className="px-3 sm:px-4 py-2 bg-purple-600 rounded-lg text-sm hover:bg-purple-700">💰 Request Payment</button>
+                <button 
+                  onClick={() => setShowPaymentModal(true)} 
+                  className="px-4 py-2 bg-purple-600/20 border border-purple-500/30 rounded-xl text-purple-400 text-sm hover:bg-purple-600/30 transition-colors"
+                >
+                  💰 Request Payment
+                </button>
               </div>
             )}
-            <form onSubmit={sendMessage} className="flex gap-2">
-              <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*,video/mp4,video/quicktime" style={{ display: 'none' }}/>
-              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="px-3 sm:px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl hover:bg-gray-700 disabled:opacity-50 flex-shrink-0">
-                {uploading ? '⏳' : '📎'}
+            <form onSubmit={sendMessage} className="flex items-center gap-3 bg-zinc-900/50 border border-zinc-800 rounded-2xl px-4 py-2">
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileUpload} 
+                accept="image/*,video/mp4,video/quicktime" 
+                style={{ display: 'none' }}
+              />
+              <button 
+                type="button" 
+                onClick={() => fileInputRef.current?.click()} 
+                disabled={uploading} 
+                className="p-2 text-zinc-400 hover:text-purple-400 disabled:opacity-50 transition-colors"
+              >
+                {uploading ? (
+                  <svg className="w-6 h-6 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                  </svg>
+                )}
               </button>
-              <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Ketik pesan..." className="flex-1 min-w-0 px-3 sm:px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 outline-none text-sm sm:text-base"/>
-              <button type="submit" disabled={!newMessage.trim()} className="px-4 sm:px-6 py-3 bg-purple-500 rounded-xl font-semibold hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 text-sm sm:text-base">
-                <span className="hidden sm:inline">Kirim</span>
-                <span className="sm:hidden">→</span>
+              
+              <input 
+                type="text" 
+                value={newMessage} 
+                onChange={(e) => setNewMessage(e.target.value)} 
+                placeholder="Ketik pesan anonim..." 
+                className="flex-1 bg-transparent py-2 outline-none placeholder-zinc-500"
+              />
+              
+              <button 
+                type="submit" 
+                disabled={!newMessage.trim()} 
+                className="flex items-center gap-2 px-4 py-2 text-zinc-400 hover:text-purple-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <span className="text-sm font-medium">Kirim</span>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
               </button>
             </form>
+
+            {/* Encryption Notice */}
+            <p className="text-center text-xs text-zinc-600 mt-3 flex items-center justify-center gap-1">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              Percakapan ini dienkripsi secara end-to-end
+            </p>
           </div>
         </div>
       )}
 
+      {/* Payment Modal */}
       {showPaymentModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 animate-fadeIn">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-md animate-scaleIn">
             <h3 className="text-lg font-semibold mb-4">💰 Request Payment</h3>
             <div className="mb-4">
-              <label className="text-sm text-gray-400 block mb-1">Jumlah Kredit</label>
-              <input type="number" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} placeholder="10" min="1" className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg"/>
+              <label className="text-sm text-zinc-400 block mb-1">Jumlah Kredit</label>
+              <input 
+                type="number" 
+                value={paymentAmount} 
+                onChange={(e) => setPaymentAmount(e.target.value)} 
+                placeholder="10" 
+                min="1" 
+                className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-xl focus:border-purple-500 outline-none"
+              />
             </div>
             <div className="mb-4">
-              <label className="text-sm text-gray-400 block mb-1">Deskripsi (opsional)</label>
-              <input type="text" value={paymentDesc} onChange={(e) => setPaymentDesc(e.target.value)} placeholder="Nomor WA / Link / dll" className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg"/>
+              <label className="text-sm text-zinc-400 block mb-1">Deskripsi (opsional)</label>
+              <input 
+                type="text" 
+                value={paymentDesc} 
+                onChange={(e) => setPaymentDesc(e.target.value)} 
+                placeholder="Nomor WA / Link / dll" 
+                className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-xl focus:border-purple-500 outline-none"
+              />
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setShowPaymentModal(false)} className="flex-1 px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600">Batal</button>
-              <button onClick={sendPaymentRequest} className="flex-1 px-4 py-2 bg-purple-600 rounded-lg hover:bg-purple-700 font-semibold">Kirim Request</button>
+              <button 
+                onClick={() => setShowPaymentModal(false)} 
+                className="flex-1 px-4 py-3 bg-zinc-800 rounded-xl hover:bg-zinc-700 transition-colors"
+              >
+                Batal
+              </button>
+              <button 
+                onClick={sendPaymentRequest} 
+                className="flex-1 px-4 py-3 bg-purple-600 rounded-xl hover:bg-purple-500 font-semibold transition-colors"
+              >
+                Kirim Request
+              </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Extend Modal */}
       {showExtendModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 animate-fadeIn">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-md animate-scaleIn">
             <h3 className="text-lg font-semibold mb-4">🔄 Perpanjang Chat</h3>
-            <p className="text-gray-400 text-sm mb-4">Pilih durasi perpanjangan:</p>
+            <p className="text-zinc-400 text-sm mb-4">Pilih durasi perpanjangan:</p>
             {creatorPricing.length > 0 ? (
               <div className="space-y-3 mb-4">
                 {creatorPricing.map((pricing) => (
-                  <button key={pricing.id} onClick={() => handleExtendChat(pricing)} disabled={extendLoading} className="w-full p-4 bg-gray-800 border border-gray-700 rounded-xl hover:border-purple-500 transition-colors flex justify-between items-center disabled:opacity-50">
+                  <button 
+                    key={pricing.id} 
+                    onClick={() => handleExtendChat(pricing)} 
+                    disabled={extendLoading} 
+                    className="w-full p-4 bg-zinc-800 border border-zinc-700 rounded-xl hover:border-purple-500 transition-colors flex justify-between items-center disabled:opacity-50"
+                  >
                     <span className="font-semibold">{pricing.duration_hours} Jam</span>
                     <span className="text-purple-400 font-bold">{pricing.price_credits} Kredit</span>
                   </button>
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-center mb-4">Creator belum set harga.</p>
+              <p className="text-zinc-500 text-center mb-4">Creator belum set harga.</p>
             )}
-            <button onClick={() => setShowExtendModal(false)} className="w-full px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600">Batal</button>
+            <button 
+              onClick={() => setShowExtendModal(false)} 
+              className="w-full px-4 py-3 bg-zinc-800 rounded-xl hover:bg-zinc-700 transition-colors"
+            >
+              Batal
+            </button>
           </div>
         </div>
       )}
 
-      {/* Report/Block Modal */}
+      {/* Report Modal */}
       <ReportBlockModal
         isOpen={showReportModal}
         onClose={() => setShowReportModal(false)}
