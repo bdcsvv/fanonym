@@ -7,6 +7,9 @@ import Link from 'next/link'
 import FanonymLoader from '@/app/components/FanonymLoader'
 import HelpButton from '@/app/components/HelpButton'
 import GalaxyBackground from '@/app/components/GalaxyBackground'
+import Toast from '@/app/components/Toast'
+import NotificationBadge from '@/app/components/NotificationBadge'
+import { handleError } from '@/app/lib/errorHandler'
 
 export default function CreatorDashboard() {
   const router = useRouter()
@@ -27,6 +30,8 @@ export default function CreatorDashboard() {
   const [earningsFilter, setEarningsFilter] = useState<'all' | 'today' | 'week' | 'month'>('all')
   const [filteredEarnings, setFilteredEarnings] = useState(0)
   const [copied, setCopied] = useState(false)
+  const [acceptingChatId, setAcceptingChatId] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
   
   // Notifications
   const [showNotifications, setShowNotifications] = useState(false)
@@ -286,30 +291,64 @@ export default function CreatorDashboard() {
   }, [earningsFilter, profile, earnings])
 
   const handleAcceptChat = async (chatId: string, durationHours: number, creditsPaid: number, senderId: string) => {
+    setAcceptingChatId(chatId)
+    
     const expiresAt = new Date()
     expiresAt.setHours(expiresAt.getHours() + durationHours)
 
     try {
-      // 1. Deduct credits from sender
-      const { data: senderCredits } = await supabase
+      // First, verify the chat session hasn't been accepted already
+      const { data: existingChat, error: chatCheckError } = await supabase
+        .from('chat_sessions')
+        .select('is_accepted, credits_transferred')
+        .eq('id', chatId)
+        .single()
+
+      if (chatCheckError) throw chatCheckError
+
+      if (existingChat.is_accepted || existingChat.credits_transferred) {
+        setToast({ message: 'Chat ini sudah di-accept sebelumnya!', type: 'error' })
+        // Refresh data
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data: chatsData } = await supabase
+            .from('chat_sessions')
+            .select('*, sender:sender_id(id, username, full_name, avatar_url), messages(id, sender_id, created_at)')
+            .eq('creator_id', user.id)
+            .order('started_at', { ascending: false })
+          
+          const pending = (chatsData || []).filter((c: any) => !c.is_accepted && c.credits_paid > 0)
+          setPendingChats(pending)
+        }
+        return
+      }
+
+      // 1. Verify sender has enough credits
+      const { data: senderCredits, error: creditsCheckError } = await supabase
         .from('credits')
         .select('balance')
         .eq('user_id', senderId)
         .single()
 
+      if (creditsCheckError) throw creditsCheckError
+
       if (!senderCredits || senderCredits.balance < creditsPaid) {
-        alert('Error: Sender tidak memiliki cukup kredit!')
+        setToast({ message: 'Error: Sender tidak memiliki cukup kredit!', type: 'error' })
         return
       }
 
+      // 2. Deduct credits from sender
       const { error: deductError } = await supabase
         .from('credits')
         .update({ balance: senderCredits.balance - creditsPaid })
         .eq('user_id', senderId)
 
-      if (deductError) throw deductError
+      if (deductError) {
+        console.error('Failed to deduct credits:', deductError)
+        throw new Error('Gagal mengurangi kredit sender')
+      }
 
-      // 2. Add credits to creator earnings
+      // 3. Add credits to creator earnings
       const { data: currentEarnings } = await supabase
         .from('earnings')
         .select('*')
@@ -317,15 +356,25 @@ export default function CreatorDashboard() {
         .single()
 
       if (currentEarnings) {
-        await supabase
+        const { error: updateEarningsError } = await supabase
           .from('earnings')
           .update({ 
             total_earned: (currentEarnings.total_earned || 0) + creditsPaid,
             available_balance: (currentEarnings.available_balance || 0) + creditsPaid
           })
           .eq('creator_id', profile.id)
+        
+        if (updateEarningsError) {
+          console.error('Failed to update earnings:', updateEarningsError)
+          // Try to refund sender
+          await supabase
+            .from('credits')
+            .update({ balance: senderCredits.balance })
+            .eq('user_id', senderId)
+          throw new Error('Gagal update earnings, kredit dikembalikan')
+        }
       } else {
-        await supabase
+        const { error: insertEarningsError } = await supabase
           .from('earnings')
           .insert({
             creator_id: profile.id,
@@ -333,25 +382,47 @@ export default function CreatorDashboard() {
             available_balance: creditsPaid,
             withdrawn: 0
           })
+        
+        if (insertEarningsError) {
+          console.error('Failed to insert earnings:', insertEarningsError)
+          // Try to refund sender
+          await supabase
+            .from('credits')
+            .update({ balance: senderCredits.balance })
+            .eq('user_id', senderId)
+          throw new Error('Gagal create earnings, kredit dikembalikan')
+        }
       }
 
-      // 3. Update chat session
-      const { error } = await supabase
+      // 4. Update chat session - mark as accepted AND credits_transferred
+      const { error: updateChatError } = await supabase
         .from('chat_sessions')
         .update({ 
           is_accepted: true,
           accepted_at: new Date().toISOString(),
           expires_at: expiresAt.toISOString(),
-          credits_transferred: true
+          credits_transferred: true,
+          status: 'active'
         })
         .eq('id', chatId)
 
-      if (error) throw error
+      if (updateChatError) {
+        console.error('Failed to update chat session:', updateChatError)
+        throw new Error('Gagal update chat session')
+      }
 
-      alert('Chat diterima! Kredit sudah ditransfer.')
-      window.location.reload()
+      setToast({ message: 'Chat diterima! Kredit sudah ditransfer.', type: 'success' })
+      
+      // Refresh data after short delay
+      setTimeout(() => {
+        window.location.reload()
+      }, 1500)
+      
     } catch (err: any) {
-      alert('Error accepting chat: ' + err.message)
+      const appError = handleError(err)
+      setToast({ message: appError.userMessage, type: 'error' })
+    } finally {
+      setAcceptingChatId(null)
     }
   }
 
@@ -603,9 +674,11 @@ export default function CreatorDashboard() {
               <svg className="w-6 h-6 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
-              {(pendingChats.length > 0 || unreadInboxCount > 0 || notifications.length > 0) && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              )}
+              <NotificationBadge 
+                count={pendingChats.length + unreadInboxCount + notifications.length}
+                size="sm"
+                color="red"
+              />
             </button>
             
             {/* Notification Dropdown */}
@@ -1151,9 +1224,20 @@ export default function CreatorDashboard() {
                           </div>
                           <button
                             onClick={() => handleAcceptChat(chat.id, chat.duration_hours, chat.credits_paid, chat.sender_id)}
-                            className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-sm font-medium rounded-lg transition-colors"
+                            disabled={acceptingChatId === chat.id}
+                            className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                           >
-                            Accept Chat
+                            {acceptingChatId === chat.id ? (
+                              <>
+                                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                                </svg>
+                                Accepting...
+                              </>
+                            ) : (
+                              'Accept Chat'
+                            )}
                           </button>
                         </div>
                       </div>
@@ -1468,6 +1552,15 @@ export default function CreatorDashboard() {
 
       {/* Help Button */}
       <HelpButton subject="Butuh Bantuan - Creator Dashboard" />
+      
+      {/* Toast Notification */}
+      {toast && (
+        <Toast 
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   )
 }

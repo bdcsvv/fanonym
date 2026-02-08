@@ -7,6 +7,11 @@ import Link from 'next/link'
 import FanonymLoader from '@/app/components/FanonymLoader'
 import HelpButton from '@/app/components/HelpButton'
 import GalaxyBackground from '@/app/components/GalaxyBackground'
+import { EmptyChats, EmptyPendingChats, EmptySearchResults } from '@/app/components/EmptyState'
+import EmptyState from '@/app/components/EmptyState'
+import Toast from '@/app/components/Toast'
+import NotificationBadge from '@/app/components/NotificationBadge'
+
 
 const KREDIT_TO_IDR = 10000
 
@@ -23,6 +28,8 @@ export default function SenderDashboard() {
   const [searchResult, setSearchResult] = useState<any>(null)
   const [searchLoading, setSearchLoading] = useState(false)
   const [searchError, setSearchError] = useState('')
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
 
   useEffect(() => {
     const getProfile = async () => {
@@ -96,8 +103,21 @@ export default function SenderDashboard() {
 
   const handleDeleteChat = async (chatId: string) => {
     if (!confirm('Hapus chat ini?')) return
-    await supabase.from('chat_sessions').delete().eq('id', chatId)
-    setExpiredChats(prev => prev.filter(c => c.id !== chatId))
+    
+    setDeleteLoading(chatId)
+    try {
+      const { error } = await supabase.from('chat_sessions').delete().eq('id', chatId)
+      
+      if (error) throw error
+      
+      setExpiredChats(prev => prev.filter(c => c.id !== chatId))
+      setToast({ message: 'Chat berhasil dihapus', type: 'success' })
+    } catch (error) {
+      console.error('Delete error:', error)
+      setToast({ message: 'Gagal menghapus chat', type: 'error' })
+    } finally {
+      setDeleteLoading(null)
+    }
   }
 
   const getTimeLeft = (chat: any) => {
@@ -373,11 +393,11 @@ export default function SenderDashboard() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
             Chat Aktif ({activeChats.length})
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs flex items-center justify-center text-white animate-pulse">
-                {unreadCount}
-              </span>
-            )}
+            <NotificationBadge 
+              count={unreadCount}
+              size="sm"
+              color="green"
+            />
           </button>
           <button
             onClick={() => setActiveTab('expired')}
@@ -400,9 +420,7 @@ export default function SenderDashboard() {
           {activeTab === 'pending' && (
             <>
               {pendingChats.length === 0 ? (
-                <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-8 text-center">
-                  <p className="text-zinc-500">Tidak ada chat yang menunggu approve.</p>
-                </div>
+                <EmptyPendingChats />
               ) : (
                 pendingChats.map((chat, index) => (
                   <Link 
@@ -437,9 +455,10 @@ export default function SenderDashboard() {
           {activeTab === 'active' && (
             <>
               {activeChats.length === 0 ? (
-                <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-8 text-center">
-                  <p className="text-zinc-500">Belum ada chat aktif.</p>
-                </div>
+                <EmptyChats onAction={() => {
+                  // Scroll to search
+                  document.querySelector('input[type="text"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                }} />
               ) : (
                 activeChats.map((chat, index) => {
                   const isUnread = hasUnreadMessages(chat)
@@ -491,8 +510,16 @@ export default function SenderDashboard() {
           {activeTab === 'expired' && (
             <>
               {expiredChats.length === 0 ? (
-                <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-8 text-center">
-                  <p className="text-zinc-500">Tidak ada chat expired.</p>
+                <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl">
+                  <EmptyState
+                    icon={
+                      <svg className="w-16 h-16 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    }
+                    title="Tidak Ada Chat Expired"
+                    description="Chat expired akan muncul di sini. Jaga chat kamu tetap aktif!"
+                  />
                 </div>
               ) : (
                 expiredChats.map((chat, index) => (
@@ -516,9 +543,20 @@ export default function SenderDashboard() {
                     </Link>
                     <button
                       onClick={() => handleDeleteChat(chat.id)}
-                      className="text-sm px-4 py-2 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+                      disabled={deleteLoading === chat.id}
+                      className="text-sm px-4 py-2 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
-                      Hapus
+                      {deleteLoading === chat.id ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                          </svg>
+                          Hapus...
+                        </>
+                      ) : (
+                        'Hapus'
+                      )}
                     </button>
                   </div>
                 ))
@@ -530,6 +568,15 @@ export default function SenderDashboard() {
 
       {/* Help Button */}
       <HelpButton subject="Butuh Bantuan - Sender Dashboard" />
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast 
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   )
 }

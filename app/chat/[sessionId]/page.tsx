@@ -5,6 +5,11 @@ import { supabase } from '@/app/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 import ReportBlockModal from '@/app/components/ReportBlockModal'
 import FanonymLoader from '@/app/components/FanonymLoader'
+import Toast from '@/app/components/Toast'
+import { calculateTimeLeft, getTimeWarningLevel, getTimeColorClass } from '@/app/lib/timerUtils'
+import { validateImage, validateMessage } from '@/app/lib/validation'
+import { compressImage } from '@/app/lib/mobileUtils'
+import { handleError } from '@/app/lib/errorHandler'
 
 export default function ChatRoom() {
   const params = useParams()
@@ -21,6 +26,7 @@ export default function ChatRoom() {
   const [otherUser, setOtherUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [timeLeft, setTimeLeft] = useState<string>('')
+  const [timeWarningLevel, setTimeWarningLevel] = useState<'safe' | 'warning' | 'critical' | 'expired'>('safe')
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [showExtendModal, setShowExtendModal] = useState(false)
   const [paymentAmount, setPaymentAmount] = useState('')
@@ -30,6 +36,7 @@ export default function ChatRoom() {
   const [extendLoading, setExtendLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
 
   useEffect(() => {
     const init = async () => {
@@ -117,30 +124,24 @@ export default function ChatRoom() {
   useEffect(() => {
     if (!session || !session.expires_at) return
 
-    const interval = setInterval(() => {
-      const now = new Date().getTime()
-      const expires = new Date(session.expires_at).getTime()
-      const diff = expires - now
-
-      if (diff <= 0) {
-        setTimeLeft('Expired')
-        clearInterval(interval)
-        return
+    const updateTimer = () => {
+      const { formatted, isExpired: expired } = calculateTimeLeft(session.expires_at)
+      const warningLevel = getTimeWarningLevel(session.expires_at)
+      
+      setTimeLeft(formatted)
+      setTimeWarningLevel(warningLevel)
+      
+      if (expired) {
+        // Optionally reload or show expired UI
+        setToast({ message: 'Chat session telah expired', type: 'info' })
       }
+    }
 
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
-
-      if (days > 0) {
-        setTimeLeft(`${days}d ${hours}h ${minutes}m`)
-      } else if (hours > 0) {
-        setTimeLeft(`${hours}j ${minutes}m ${seconds}d`)
-      } else {
-        setTimeLeft(`${minutes}m ${seconds}d`)
-      }
-    }, 1000)
+    // Update immediately
+    updateTimer()
+    
+    // Then update every second
+    const interval = setInterval(updateTimer, 1000)
 
     return () => clearInterval(interval)
   }, [session])
@@ -149,35 +150,53 @@ export default function ChatRoom() {
     e.preventDefault()
     if (!newMessage.trim()) return
 
-    await supabase.from('messages').insert({
-      session_id: sessionId,
-      sender_id: currentUser.id,
-      content: newMessage,
-      is_read: false
-    })
+    // Validate message
+    const validation = validateMessage(newMessage)
+    if (!validation.isValid) {
+      setToast({ message: Object.values(validation.errors)[0], type: 'error' })
+      return
+    }
 
-    setNewMessage('')
+    try {
+      const { error } = await supabase.from('messages').insert({
+        session_id: sessionId,
+        sender_id: currentUser.id,
+        content: newMessage.trim(),
+        is_read: false
+      })
+
+      if (error) throw error
+
+      setNewMessage('')
+    } catch (error) {
+      const appError = handleError(error)
+      setToast({ message: appError.userMessage, type: 'error' })
+    }
   }
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    const maxSize = 10 * 1024 * 1024
-    if (file.size > maxSize) {
-      alert('File terlalu besar! Maksimal 10MB')
+    // Validate file
+    const validation = validateImage(file, 'message')
+    if (!validation.isValid) {
+      setToast({ message: Object.values(validation.errors)[0], type: 'error' })
       return
     }
 
     setUploading(true)
 
     try {
-      const fileExt = file.name.split('.').pop()
+      // Compress image before upload
+      const compressed = await compressImage(file, 1920, 1920, 0.8)
+      
+      const fileExt = compressed.name.split('.').pop()
       const fileName = `${currentUser.id}/${Date.now()}.${fileExt}`
       
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('media')
-        .upload(fileName, file)
+        .upload(fileName, compressed)
 
       if (uploadError) throw uploadError
 
@@ -758,6 +777,15 @@ export default function ChatRoom() {
         currentUserId={currentUser?.id || ''}
         mode="both"
       />
+      
+      {/* Toast Notification */}
+      {toast && (
+        <Toast 
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   )
 }
