@@ -78,12 +78,6 @@ export default function RegisterPage() {
     }
   }
 
-  // Remove old success display - now redirects to /auth/success
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a0a0f] via-[#0f0a1a] to-[#0a0a0f] flex items-center justify-center p-4 py-12">
       {/* Background glow */}
