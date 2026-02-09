@@ -280,17 +280,44 @@ export default function AdminPanel() {
   }
 
   const rejectVerification = async (creatorId: string) => {
-    await supabase
-      .from('profiles')
-      .update({ 
-        status: 'verification_rejected',
-        ktp_url: null,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', creatorId)
+    if (!confirm('Yakin ingin menolak verifikasi ini?')) return
 
-    alert('Verification rejected!')
-    loadData()
+    try {
+      console.log('Rejecting verification for:', creatorId)
+      
+      // Step 1: Update profile status
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ 
+          status: 'verification_rejected',
+          is_verified: false,
+          ktp_url: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', creatorId)
+        .select()
+
+      console.log('Update result:', { data, error })
+
+      if (error) {
+        alert('ERROR DB: ' + error.message + '\nCode: ' + error.code + '\nDetails: ' + error.details)
+        return
+      }
+
+      if (!data || data.length === 0) {
+        alert('WARNING: Update returned 0 rows. Kemungkinan RLS policy blocking update. Cek Supabase RLS policies untuk table profiles.')
+        return
+      }
+
+      // Step 2: Remove from local state
+      setPendingVerify(prev => prev.filter(c => c.id !== creatorId))
+
+      alert('✅ Verification rejected! Status berubah ke: ' + data[0]?.status)
+      loadData()
+    } catch (err: any) {
+      alert('CATCH ERROR: ' + err.message)
+      console.error('Reject verification error:', err)
+    }
   }
 
   // Report handling functions
@@ -690,20 +717,36 @@ export default function AdminPanel() {
                       </div>
                     </div>
                     
-                    {/* KTP Preview */}
-                    <div className="mb-4">
-                      <p className="text-sm text-gray-400 mb-2">Foto KTP:</p>
-                      {creator.ktp_url ? (
-                        <a href={creator.ktp_url} target="_blank" rel="noopener noreferrer">
-                          <img 
-                            src={creator.ktp_url} 
-                            alt="KTP" 
-                            className="max-w-md rounded-lg border border-gray-700 hover:border-teal-500 transition-colors"
-                          />
-                        </a>
-                      ) : (
-                        <p className="text-red-400">Tidak ada KTP</p>
-                      )}
+                    {/* KTP & Selfie Preview */}
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <p className="text-sm text-gray-400 mb-2">📄 Foto KTP:</p>
+                        {creator.ktp_url ? (
+                          <a href={creator.ktp_url} target="_blank" rel="noopener noreferrer">
+                            <img 
+                              src={creator.ktp_url} 
+                              alt="KTP" 
+                              className="w-full rounded-lg border border-gray-700 hover:border-teal-500 transition-colors"
+                            />
+                          </a>
+                        ) : (
+                          <p className="text-red-400">Tidak ada KTP</p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-400 mb-2">🤳 Selfie dengan KTP:</p>
+                        {creator.selfie_ktp_url ? (
+                          <a href={creator.selfie_ktp_url} target="_blank" rel="noopener noreferrer">
+                            <img 
+                              src={creator.selfie_ktp_url} 
+                              alt="Selfie KTP" 
+                              className="w-full rounded-lg border border-gray-700 hover:border-teal-500 transition-colors"
+                            />
+                          </a>
+                        ) : (
+                          <p className="text-yellow-400">Tidak ada selfie</p>
+                        )}
+                      </div>
                     </div>
 
                     <div className="flex gap-2">
