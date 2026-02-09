@@ -173,7 +173,7 @@ export default function CreatorProfilePage() {
       <GalaxyBackground />
 
       {/* Navbar */}
-      <nav className="sticky top-0 z-50 border-b border-purple-500/20 bg-[#0c0a14]/95 backdrop-blur-md">
+      <nav className="sticky top-0 z-50 bg-[#0c0a14]/80 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           {/* Logo */}
           <Link 
@@ -188,12 +188,12 @@ export default function CreatorProfilePage() {
             {currentUser ? (
               <Link 
                 href={currentUserProfile?.user_type === 'creator' ? '/dashboard/creator' : '/dashboard/sender'}
-                className="text-zinc-400 hover:text-white transition-colors text-sm"
+                className="text-zinc-400 hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] transition-all text-sm"
               >
                 Dashboard
               </Link>
             ) : (
-              <Link href="/auth/login" className="text-zinc-400 hover:text-white text-sm transition-colors">
+              <Link href="/auth/login" className="text-zinc-400 hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] text-sm transition-all">
                 Masuk
               </Link>
             )}

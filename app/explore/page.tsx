@@ -45,10 +45,10 @@ export default function ExplorePage() {
         <div className="absolute bottom-1/4 right-1/4 h-[300px] w-[300px] rounded-full bg-violet-500/10 blur-[100px]" />
       </div>
 
-      <nav className="border-b border-gray-800/50 p-4 relative z-10 bg-[#0a0a0f]/80 backdrop-blur-md">
+      <nav className="p-4 relative z-10 bg-[#0c0a14]/80 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <Logo size="md" linkTo="/dashboard/sender" />
-          <Link href="/dashboard/sender" className="text-gray-400 hover:text-white">Dashboard</Link>
+          <Link href="/dashboard/sender" className="text-gray-400 hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] transition-all">Dashboard</Link>
         </div>
       </nav>
 

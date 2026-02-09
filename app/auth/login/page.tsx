@@ -21,7 +21,14 @@ export default function LoginPage() {
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) throw error
+      
+      if (error) {
+        // Network error
+        if (error.message.includes('fetch') || error.message.includes('Failed to fetch')) {
+          throw new Error('Tidak bisa terhubung ke server. Cek koneksi internet atau Supabase URL.')
+        }
+        throw error
+      }
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -35,7 +42,8 @@ export default function LoginPage() {
         router.push('/dashboard/sender')
       }
     } catch (err: any) {
-      setError(err.message)
+      console.error('Login error:', err)
+      setError(err.message || 'Terjadi kesalahan. Coba lagi.')
     } finally {
       setLoading(false)
     }

@@ -8,7 +8,7 @@ export default function Home() {
       <FloatingEmojis />
 
       {/* Navbar - Fixed */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#0c0a14]/90 backdrop-blur-md">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0c0a14]/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link href="/" className="font-black text-2xl bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)]">
             fanonym
@@ -16,13 +16,13 @@ export default function Home() {
           <div className="flex items-center gap-4">
             <Link
               href="/auth/login"
-              className="text-sm text-zinc-400 transition-colors hover:text-white"
+              className="text-sm text-zinc-400 transition-colors hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]"
             >
               Masuk
             </Link>
             <Link
               href="/auth/register"
-              className="rounded-full bg-purple-600 px-5 py-2.5 text-sm font-medium transition-all hover:bg-purple-500 hover:shadow-lg hover:shadow-purple-500/25"
+              className="rounded-full bg-purple-600 px-5 py-2.5 text-sm font-medium transition-all hover:bg-purple-500 hover:shadow-xl hover:shadow-purple-500/50"
             >
               Daftar
             </Link>

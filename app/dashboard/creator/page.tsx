@@ -62,37 +62,49 @@ export default function CreatorDashboard() {
 
   useEffect(() => {
     const getData = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/auth/login')
-        return
-      }
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        
+        // If auth error or no user, redirect to login
+        if (authError || !user) {
+          console.error('Auth error:', authError)
+          await supabase.auth.signOut() // Clear bad session
+          router.push('/auth/login')
+          return
+        }
 
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
 
-      if (!profileData || profileData.user_type !== 'creator') {
-        router.push('/dashboard/sender')
-        return
-      }
+        if (profileError || !profileData) {
+          console.error('Profile error:', profileError)
+          await supabase.auth.signOut()
+          router.push('/auth/login')
+          return
+        }
 
-      setProfile(profileData)
+        if (profileData.user_type !== 'creator') {
+          router.push('/dashboard/sender')
+          return
+        }
 
-      // Get earnings
-      const { data: earningsData } = await supabase
-        .from('earnings')
-        .select('*')
-        .eq('creator_id', user.id)
-        .single()
-      
-      setEarnings(earningsData)
-      setFilteredEarnings(earningsData?.total_earned || 0)
+        setProfile(profileData)
 
-      // Get pricing
-      const { data: pricingData } = await supabase
+        // Get earnings
+        const { data: earningsData } = await supabase
+          .from('earnings')
+          .select('*')
+          .eq('creator_id', user.id)
+          .single()
+        
+        setEarnings(earningsData)
+        setFilteredEarnings(earningsData?.total_earned || 0)
+
+        // Get pricing
+        const { data: pricingData } = await supabase
         .from('creator_pricing')
         .select('*')
         .eq('creator_id', user.id)
@@ -239,7 +251,12 @@ export default function CreatorDashboard() {
       setTotalAnons(uniqueSenders.size)
 
       setLoading(false)
+    } catch (error) {
+      console.error('Error loading dashboard:', error)
+      setLoading(false)
+      // Don't redirect on error, just show empty state
     }
+  }
 
     getData()
   }, [router])
@@ -630,7 +647,7 @@ export default function CreatorDashboard() {
       <GalaxyBackground />
 
       {/* Navbar */}
-      <nav className="sticky top-0 z-50 border-b border-purple-500/20 bg-[#0c0a14]/95 backdrop-blur-md">
+      <nav className="sticky top-0 z-50 bg-[#0c0a14]/80 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           {/* Logo */}
           <Link href="/dashboard/creator" className="font-black text-2xl bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)]">
@@ -638,27 +655,27 @@ export default function CreatorDashboard() {
           </Link>
 
           {/* Center Tabs */}
-          <div className="hidden md:flex items-center bg-zinc-800/50 rounded-full p-1">
+          <div className="hidden md:flex items-center bg-zinc-900/40 backdrop-blur-sm border border-zinc-800/50 rounded-full p-1">
             <button 
               onClick={() => setNavTab('dashboard')}
-              className={`px-5 py-2 text-sm font-medium rounded-full transition-colors ${
-                navTab === 'dashboard' ? 'bg-purple-600 text-white' : 'text-zinc-400 hover:text-white'
+              className={`px-5 py-2 text-sm font-medium rounded-full transition-all ${
+                navTab === 'dashboard' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
               }`}
             >
               Dashboard
             </button>
             <button 
               onClick={() => setNavTab('analytics')}
-              className={`px-5 py-2 text-sm font-medium rounded-full transition-colors ${
-                navTab === 'analytics' ? 'bg-purple-600 text-white' : 'text-zinc-400 hover:text-white'
+              className={`px-5 py-2 text-sm font-medium rounded-full transition-all ${
+                navTab === 'analytics' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
               }`}
             >
               Analytics
             </button>
             <button 
               onClick={() => setNavTab('history')}
-              className={`px-5 py-2 text-sm font-medium rounded-full transition-colors ${
-                navTab === 'history' ? 'bg-purple-600 text-white' : 'text-zinc-400 hover:text-white'
+              className={`px-5 py-2 text-sm font-medium rounded-full transition-all ${
+                navTab === 'history' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
               }`}
             >
               History
@@ -669,9 +686,9 @@ export default function CreatorDashboard() {
           <div className="relative">
             <button 
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 hover:bg-zinc-800 rounded-full transition-colors"
+              className="relative p-2 hover:bg-zinc-800/50 rounded-full transition-all hover:shadow-lg hover:shadow-purple-500/20"
             >
-              <svg className="w-6 h-6 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-zinc-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
               <NotificationBadge 

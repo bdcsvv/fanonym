@@ -31,6 +31,11 @@ export default function SettingsPage() {
 
   // Verification (creator only)
   const [ktpUploading, setKtpUploading] = useState(false)
+  const [selfieUploading, setSelfieUploading] = useState(false)
+  const [ktpFile, setKtpFile] = useState<File | null>(null)
+  const [selfieFile, setSelfieFile] = useState<File | null>(null)
+  const [ktpPreview, setKtpPreview] = useState('')
+  const [selfiePreview, setSelfiePreview] = useState('')
 
   // Password change state
   const [currentPassword, setCurrentPassword] = useState('')
@@ -165,41 +170,113 @@ export default function SettingsPage() {
     setCoverUploading(false)
   }
 
-  const handleKtpUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleKtpSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    setKtpUploading(true)
+    setKtpFile(file)
+    // Create preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setKtpPreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
 
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${user.id}-${Date.now()}.${fileExt}`
+  const handleSelfieSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
 
-    const { error: uploadError } = await supabase.storage
-      .from('ktp')
-      .upload(fileName, file)
+    setSelfieFile(file)
+    // Create preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setSelfiePreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
 
-    if (uploadError) {
-      alert('Gagal upload KTP: ' + uploadError.message)
-      setKtpUploading(false)
+  const handleVerificationSubmit = async () => {
+    if (!ktpFile || !selfieFile) {
+      alert('Upload KTP dan Selfie dengan KTP terlebih dahulu!')
       return
     }
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('ktp')
-      .getPublicUrl(fileName)
+    setKtpUploading(true)
 
-    // Update profile with KTP URL and set status to pending verification
-    await supabase
-      .from('profiles')
-      .update({ 
-        ktp_url: publicUrl,
-        status: 'pending_verification'
+    try {
+      // Upload KTP
+      const ktpExt = ktpFile.name.split('.').pop()
+      const ktpFileName = `ktp-${user.id}-${Date.now()}.${ktpExt}`
+
+      const { error: ktpError } = await supabase.storage
+        .from('ktp')
+        .upload(ktpFileName, ktpFile)
+
+      if (ktpError) throw new Error('Gagal upload KTP: ' + ktpError.message)
+
+      const { data: { publicUrl: ktpUrl } } = supabase.storage
+        .from('ktp')
+        .getPublicUrl(ktpFileName)
+
+      // Upload Selfie
+      const selfieExt = selfieFile.name.split('.').pop()
+      const selfieFileName = `selfie-${user.id}-${Date.now()}.${selfieExt}`
+
+      const { error: selfieError } = await supabase.storage
+        .from('ktp')
+        .upload(selfieFileName, selfieFile)
+
+      if (selfieError) throw new Error('Gagal upload Selfie: ' + selfieError.message)
+
+      const { data: { publicUrl: selfieUrl } } = supabase.storage
+        .from('ktp')
+        .getPublicUrl(selfieFileName)
+
+      // Update profile with both URLs and set status to pending verification
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ 
+          ktp_url: ktpUrl,
+          selfie_ktp_url: selfieUrl,
+          status: 'pending_verification',
+          verification_submitted_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+
+      if (updateError) throw updateError
+
+      // Create verification request for admin
+      await supabase
+        .from('verification_requests')
+        .insert({
+          creator_id: user.id,
+          ktp_url: ktpUrl,
+          selfie_ktp_url: selfieUrl,
+          status: 'pending',
+          submitted_at: new Date().toISOString()
+        })
+
+      setProfile({ 
+        ...profile, 
+        ktp_url: ktpUrl, 
+        selfie_ktp_url: selfieUrl,
+        status: 'pending_verification' 
       })
-      .eq('id', user.id)
-
-    setProfile({ ...profile, ktp_url: publicUrl, status: 'pending_verification' })
-    setKtpUploading(false)
-    alert('KTP berhasil diupload! Tunggu verifikasi dari admin.')
+      
+      alert('Dokumen berhasil diupload! Tunggu verifikasi dari admin (1-2 hari kerja).')
+      
+      // Clear previews
+      setKtpFile(null)
+      setSelfieFile(null)
+      setKtpPreview('')
+      setSelfiePreview('')
+      
+    } catch (err: any) {
+      alert(err.message || 'Terjadi kesalahan saat upload')
+    } finally {
+      setKtpUploading(false)
+    }
   }
 
   const handleChangePassword = async () => {
@@ -271,49 +348,67 @@ export default function SettingsPage() {
         <div className="absolute bottom-1/4 right-1/4 h-[300px] w-[300px] rounded-full bg-violet-500/10 blur-[100px]" />
       </div>
 
-      <nav className="border-b border-gray-800/50 p-4 relative z-10 bg-[#0a0a0f]/80 backdrop-blur-md">
+      <nav className="p-4 relative z-10 bg-[#0c0a14]/80 backdrop-blur-xl">
         <div className="max-w-2xl mx-auto flex justify-between items-center">
           <Logo size="md" linkTo={profile?.user_type === 'creator' ? '/dashboard/creator' : '/dashboard/sender'} />
           <Link 
             href={profile?.user_type === 'creator' ? '/dashboard/creator' : '/dashboard/sender'} 
-            className="text-gray-400 hover:text-white"
+            className="text-gray-400 hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] transition-all"
           >
             ← Dashboard
           </Link>
         </div>
       </nav>
 
-      <main className="max-w-2xl mx-auto p-6 relative z-10">
-        <h1 className="text-2xl font-bold mb-6">⚙️ Pengaturan</h1>
+      <main className="max-w-4xl mx-auto p-6 relative z-10">
+        {/* Page Header */}
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-black mb-3 bg-gradient-to-r from-purple-400 via-pink-400 to-violet-400 bg-clip-text text-transparent">
+            Pengaturan Akun
+          </h1>
+          <p className="text-zinc-400">Kelola profil, keamanan, dan preferensi kamu</p>
+        </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 flex-wrap">
+        <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800 rounded-2xl p-2 mb-8 inline-flex gap-2 animate-fadeIn">
           <button
             onClick={() => setActiveTab('profile')}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+            className={`px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${
               activeTab === 'profile'
-                ? 'bg-purple-500 text-white'
-                : 'bg-gray-800 text-gray-400 hover:text-white'
+                ? 'bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-lg shadow-purple-500/50'
+                : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
             }`}
           >
-            👤 Profil
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            Profil
           </button>
           <button
             onClick={() => setActiveTab('security')}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+            className={`px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${
               activeTab === 'security'
-                ? 'bg-purple-500 text-white'
-                : 'bg-gray-800 text-gray-400 hover:text-white'
+                ? 'bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-lg shadow-purple-500/50'
+                : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
             }`}
           >
-            🔒 Keamanan
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            Keamanan
           </button>
           <button
             onClick={() => setActiveTab('blocked')}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+            className={`px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${
               activeTab === 'blocked'
-                ? 'bg-purple-500 text-white'
-                : 'bg-gray-800 text-gray-400 hover:text-white'
+                ? 'bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-lg shadow-purple-500/50'
+                : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
+            }`}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+            Blocked
             }`}
           >
             🚫 Diblokir {blockedUsers.length > 0 && `(${blockedUsers.length})`}
@@ -434,44 +529,219 @@ export default function SettingsPage() {
 
         {/* Creator Verification */}
         {profile?.user_type === 'creator' && (
-          <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 mb-6">
-            <h3 className="text-lg font-semibold mb-4">🔐 Verifikasi Creator</h3>
+          <div className="bg-gradient-to-br from-zinc-900/50 to-zinc-800/30 backdrop-blur-xl border border-zinc-700/50 rounded-2xl p-8 mb-6 shadow-2xl">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-3xl shadow-lg shadow-purple-500/50">
+                🔐
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                  Verifikasi Creator
+                </h3>
+                <p className="text-zinc-400 text-sm mt-1">Dapatkan badge verified dan akses penuh</p>
+              </div>
+            </div>
             
             {profile?.is_verified ? (
-              <div className="bg-[#1da1f2]/10 border border-[#1da1f2]/30 rounded-lg p-4">
-                <p className="text-[#1da1f2] flex items-center gap-2">
-                  <span className="text-xl">✓</span>
-                  <span>Akun sudah terverifikasi!</span>
-                </p>
+              <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-xl p-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-green-400 font-bold text-lg">Akun Terverifikasi!</p>
+                    <p className="text-green-300/70 text-sm">Kamu bisa menggunakan semua fitur creator</p>
+                  </div>
+                </div>
               </div>
             ) : profile?.status === 'pending_verification' ? (
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
-                <p className="text-yellow-400 flex items-center gap-2">
-                  <span className="text-xl">⏳</span>
-                  <span>Menunggu verifikasi admin...</span>
-                </p>
-                <p className="text-gray-500 text-sm mt-2">Biasanya 1-2 hari kerja</p>
+              <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center animate-pulse">
+                    <svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-yellow-400 font-bold text-lg">Menunggu Verifikasi Admin</p>
+                    <p className="text-yellow-300/70 text-sm">Biasanya diproses dalam 1-2 hari kerja</p>
+                  </div>
+                </div>
+                <div className="mt-4 p-4 bg-zinc-800/50 rounded-lg">
+                  <p className="text-zinc-400 text-sm">
+                    💡 <span className="font-semibold">Tips:</span> Pastikan dokumen yang kamu upload jelas dan tidak blur agar proses verifikasi lebih cepat!
+                  </p>
+                </div>
               </div>
             ) : (
-              <div>
-                <p className="text-gray-400 text-sm mb-4">
-                  Upload foto KTP untuk verifikasi. Setelah diverifikasi, kamu bisa:
-                </p>
-                <ul className="text-gray-500 text-sm mb-4 space-y-1">
-                  <li>• Set harga chat</li>
-                  <li>• Withdraw pendapatan</li>
-                  <li>• Dapat badge verified ✓</li>
-                </ul>
-                <label className="px-4 py-2 bg-yellow-500 text-black rounded-lg cursor-pointer hover:bg-yellow-600 inline-block font-semibold">
-                  {ktpUploading ? 'Uploading...' : '📤 Upload KTP'}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleKtpUpload}
-                    className="hidden"
-                    disabled={ktpUploading}
-                  />
-                </label>
+              <div className="space-y-6">
+                {/* Benefits */}
+                <div className="bg-zinc-800/30 rounded-xl p-5 border border-zinc-700/30">
+                  <p className="text-zinc-300 font-semibold mb-3 flex items-center gap-2">
+                    <span className="text-xl">✨</span>
+                    Keuntungan Verifikasi:
+                  </p>
+                  <ul className="space-y-2">
+                    <li className="flex items-center gap-3 text-zinc-400">
+                      <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Badge verified ✓ di profil kamu</span>
+                    </li>
+                    <li className="flex items-center gap-3 text-zinc-400">
+                      <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Set harga chat sesuai keinginan</span>
+                    </li>
+                    <li className="flex items-center gap-3 text-zinc-400">
+                      <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Withdraw pendapatan kapan saja</span>
+                    </li>
+                    <li className="flex items-center gap-3 text-zinc-400">
+                      <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Tingkatkan kepercayaan pengguna</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Upload Section */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* KTP Upload */}
+                  <div className="space-y-3">
+                    <label className="block">
+                      <span className="text-zinc-300 font-semibold mb-2 block">📄 Upload KTP</span>
+                      <div className={`relative border-2 border-dashed rounded-xl p-6 transition-all cursor-pointer ${
+                        ktpPreview 
+                          ? 'border-green-500/50 bg-green-500/5' 
+                          : 'border-zinc-700 hover:border-purple-500/50 bg-zinc-800/30 hover:bg-zinc-800/50'
+                      }`}>
+                        {ktpPreview ? (
+                          <div className="space-y-3">
+                            <img src={ktpPreview} alt="KTP Preview" className="w-full h-48 object-cover rounded-lg" />
+                            <p className="text-green-400 text-sm font-medium flex items-center gap-2">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              KTP siap diupload
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="text-center">
+                            <svg className="w-12 h-12 mx-auto text-zinc-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                            </svg>
+                            <p className="text-zinc-400 text-sm">Klik untuk upload KTP</p>
+                            <p className="text-zinc-600 text-xs mt-1">JPG, PNG max 5MB</p>
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleKtpSelect}
+                          className="hidden"
+                        />
+                      </div>
+                    </label>
+                  </div>
+
+                  {/* Selfie with KTP Upload */}
+                  <div className="space-y-3">
+                    <label className="block">
+                      <span className="text-zinc-300 font-semibold mb-2 block">🤳 Selfie dengan KTP</span>
+                      <div className={`relative border-2 border-dashed rounded-xl p-6 transition-all cursor-pointer ${
+                        selfiePreview 
+                          ? 'border-green-500/50 bg-green-500/5' 
+                          : 'border-zinc-700 hover:border-purple-500/50 bg-zinc-800/30 hover:bg-zinc-800/50'
+                      }`}>
+                        {selfiePreview ? (
+                          <div className="space-y-3">
+                            <img src={selfiePreview} alt="Selfie Preview" className="w-full h-48 object-cover rounded-lg" />
+                            <p className="text-green-400 text-sm font-medium flex items-center gap-2">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              Selfie siap diupload
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="text-center">
+                            <svg className="w-12 h-12 mx-auto text-zinc-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <p className="text-zinc-400 text-sm">Klik untuk upload selfie</p>
+                            <p className="text-zinc-600 text-xs mt-1">JPG, PNG max 5MB</p>
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleSelfieSelect}
+                          className="hidden"
+                        />
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Requirements */}
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-5">
+                  <p className="text-blue-400 font-semibold mb-3 flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Persyaratan Foto:
+                  </p>
+                  <ul className="space-y-2 text-blue-300/80 text-sm">
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400 mt-0.5">•</span>
+                      <span>Foto KTP harus jelas, tidak blur, dan semua text terbaca</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400 mt-0.5">•</span>
+                      <span>Selfie harus menunjukkan wajah kamu dengan jelas sambil memegang KTP</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400 mt-0.5">•</span>
+                      <span>Pastikan KTP yang kamu pegang di selfie sama dengan foto KTP yang diupload</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400 mt-0.5">•</span>
+                      <span>Format: JPG atau PNG, maksimal 5MB per file</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  onClick={handleVerificationSubmit}
+                  disabled={!ktpFile || !selfieFile || ktpUploading}
+                  className="w-full py-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 rounded-xl font-bold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/50 hover:shadow-purple-500/75 hover:scale-[1.02] flex items-center justify-center gap-3"
+                >
+                  {ktpUploading ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                      </svg>
+                      Mengupload...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Kirim Verifikasi
+                    </>
+                  )}
+                </button>
               </div>
             )}
           </div>

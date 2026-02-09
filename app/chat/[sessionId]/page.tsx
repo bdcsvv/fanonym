@@ -532,13 +532,13 @@ export default function ChatRoom() {
       </div>
 
       {/* Header */}
-      <nav className="fixed top-0 left-0 right-0 border-b border-purple-500/20 px-4 py-3 bg-[#0c0a14]/95 backdrop-blur-md z-50 animate-fadeInDown">
+      <nav className="fixed top-0 left-0 right-0 px-4 py-3 bg-[#0c0a14]/80 backdrop-blur-xl z-50 animate-fadeInDown">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
             {/* Back Button */}
             <button 
               onClick={() => router.back()} 
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-800/80 hover:bg-purple-600/20 text-zinc-300 hover:text-white transition-all border border-zinc-700 hover:border-purple-500/50"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-800/80 hover:bg-purple-600/20 text-zinc-300 hover:text-white transition-all border border-zinc-700 hover:border-purple-500/50 hover:shadow-lg hover:shadow-purple-500/20"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
