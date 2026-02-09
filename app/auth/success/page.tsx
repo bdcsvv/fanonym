@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import GalaxyBackground from '@/app/components/GalaxyBackground'
 
-export default function RegistrationSuccessPage() {
+function SuccessContent() {
   const searchParams = useSearchParams()
   const email = searchParams.get('email')
   const userType = searchParams.get('type') // 'creator' or 'sender'
@@ -190,5 +190,13 @@ export default function RegistrationSuccessPage() {
         }
       `}</style>
     </div>
+  )
+}
+
+export default function RegistrationSuccessPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0c0a14]" />}>
+      <SuccessContent />
+    </Suspense>
   )
 }
