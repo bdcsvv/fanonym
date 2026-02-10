@@ -37,6 +37,7 @@ export default function ChatRoom() {
   const [uploading, setUploading] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
+  const [isBlockedChat, setIsBlockedChat] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -90,6 +91,16 @@ export default function ChatRoom() {
         .eq('id', otherId)
         .single()
       setOtherUser(otherProfile)
+
+      // Check if either user blocked the other
+      const { data: blockCheck } = await supabase
+        .from('blocks')
+        .select('id')
+        .or(`and(blocker_id.eq.${user.id},blocked_id.eq.${otherId}),and(blocker_id.eq.${otherId},blocked_id.eq.${user.id})`)
+      
+      if (blockCheck && blockCheck.length > 0) {
+        setIsBlockedChat(true)
+      }
 
       const { data: messagesData } = await supabase
         .from('messages')
@@ -634,6 +645,12 @@ export default function ChatRoom() {
                 </button>
               </div>
             )}
+            {isBlockedChat ? (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-2xl px-4 py-4 text-center">
+                <p className="text-red-400 font-medium">🚫 Chat diblokir</p>
+                <p className="text-zinc-500 text-sm mt-1">Salah satu pihak telah memblokir. Pesan tidak bisa dikirim.</p>
+              </div>
+            ) : (
             <form onSubmit={sendMessage} className="flex items-center gap-3 bg-zinc-900/50 border border-zinc-800 rounded-2xl px-4 py-2">
               <input 
                 type="file" 
@@ -678,6 +695,7 @@ export default function ChatRoom() {
                 </svg>
               </button>
             </form>
+            )}
 
             {/* Encryption Notice */}
             <p className="text-center text-xs text-zinc-600 mt-3 flex items-center justify-center gap-1">
