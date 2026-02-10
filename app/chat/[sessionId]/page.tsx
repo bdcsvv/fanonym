@@ -767,7 +767,7 @@ export default function ChatRoom() {
         </div>
       )}
 
-      {/* Report Modal */}
+      {/* Report/Block Modal - creators get both, senders only report */}
       <ReportBlockModal
         isOpen={showReportModal}
         onClose={() => setShowReportModal(false)}
@@ -775,7 +775,7 @@ export default function ChatRoom() {
         targetUsername={otherUser?.username || ''}
         sessionId={sessionId}
         currentUserId={currentUser?.id || ''}
-        mode="both"
+        mode={isCreator ? 'both' : 'report'}
       />
       
       {/* Toast Notification */}

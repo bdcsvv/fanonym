@@ -19,6 +19,13 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
+  const validatePassword = (pw: string) => {
+    if (pw.length < 8) return 'Password minimal 8 karakter'
+    if (!/[A-Z]/.test(pw)) return 'Password harus mengandung huruf besar'
+    if (!/[0-9]/.test(pw)) return 'Password harus mengandung angka'
+    return null
+  }
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -30,6 +37,13 @@ export default function RegisterPage() {
       return
     }
 
+    const pwError = validatePassword(password)
+    if (pwError) {
+      setError(pwError)
+      setLoading(false)
+      return
+    }
+
     if (!agreeTerms) {
       setError('Anda harus menyetujui syarat dan ketentuan')
       setLoading(false)
@@ -37,6 +51,19 @@ export default function RegisterPage() {
     }
 
     try {
+      // Check username uniqueness
+      const { data: existingUser } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', username)
+        .single()
+
+      if (existingUser) {
+        setError('Username sudah dipakai, pilih yang lain')
+        setLoading(false)
+        return
+      }
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -74,7 +101,16 @@ export default function RegisterPage() {
         router.push(`/auth/success?email=${encodeURIComponent(email)}&type=${userType}`)
       }
     } catch (err: any) {
-      setError(err.message)
+      const msg = err.message?.toLowerCase() || ''
+      if (msg.includes('already registered') || msg.includes('already been registered')) {
+        setError('Email ini sudah terdaftar. Gunakan email lain atau login dengan akun yang sudah ada.')
+      } else if (msg.includes('rate limit') || msg.includes('email rate')) {
+        setError('Terlalu banyak percobaan pendaftaran. Coba lagi dalam beberapa menit.')
+      } else if (msg.includes('invalid email')) {
+        setError('Format email tidak valid.')
+      } else {
+        setError(err.message)
+      }
     } finally {
       setLoading(false)
     }
@@ -177,22 +213,25 @@ export default function RegisterPage() {
             )}
 
             {/* Password */}
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              placeholder="Password"
-              className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white"
-            />
+            <div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                placeholder="Password"
+                className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white"
+              />
+              <p className="text-zinc-500 text-xs mt-1">Min. 8 karakter, huruf besar & angka</p>
+            </div>
 
             <input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              minLength={6}
+              minLength={8}
               placeholder="Konfirmasi Password"
               className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white"
             />

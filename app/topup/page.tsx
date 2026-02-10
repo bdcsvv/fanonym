@@ -130,21 +130,31 @@ export default function TopupPage() {
 
     // Upload file to Supabase Storage
     const fileExt = proofFile.name.split('.').pop()
-    const fileName = `${user.id}_${currentTopup.id}_${Date.now()}.${fileExt}`
+    const fileName = `proof-${user.id}-${currentTopup.id}-${Date.now()}.${fileExt}`
 
-    const { error: uploadError } = await supabase.storage
-      .from('payment-proofs')
+    // Try payment-proofs bucket first, fallback to avatars
+    let uploadBucket = 'payment-proofs'
+    let { error: uploadError } = await supabase.storage
+      .from(uploadBucket)
       .upload(fileName, proofFile)
 
     if (uploadError) {
-      alert('Gagal upload bukti: ' + uploadError.message)
-      setUploading(false)
-      return
+      // Fallback to avatars bucket
+      uploadBucket = 'avatars'
+      const { error: fallbackError } = await supabase.storage
+        .from(uploadBucket)
+        .upload(fileName, proofFile)
+      
+      if (fallbackError) {
+        alert('Gagal upload bukti: ' + fallbackError.message + '\n\nPastikan bucket storage "payment-proofs" sudah dibuat di Supabase.')
+        setUploading(false)
+        return
+      }
     }
 
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
-      .from('payment-proofs')
+      .from(uploadBucket)
       .getPublicUrl(fileName)
 
     // Update topup request with proof URL and status

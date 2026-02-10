@@ -273,8 +273,18 @@ export default function SettingsPage() {
     setPasswordError('')
     setPasswordSuccess(false)
 
-    if (newPassword.length < 6) {
-      setPasswordError('Password baru minimal 6 karakter')
+    if (newPassword.length < 8) {
+      setPasswordError('Password baru minimal 8 karakter')
+      return
+    }
+
+    if (!/[A-Z]/.test(newPassword)) {
+      setPasswordError('Password harus mengandung huruf besar')
+      return
+    }
+
+    if (!/[0-9]/.test(newPassword)) {
+      setPasswordError('Password harus mengandung angka')
       return
     }
 
@@ -308,7 +318,6 @@ export default function SettingsPage() {
       .from('profiles')
       .update({
         full_name: fullName,
-        username: username,
         bio: bio,
         phone: phone,
         avatar_url: avatarUrl,
@@ -321,7 +330,7 @@ export default function SettingsPage() {
       alert('Gagal menyimpan: ' + error.message)
     } else {
       alert('Profil berhasil disimpan!')
-      setProfile({ ...profile, full_name: fullName, username, bio, phone, avatar_url: avatarUrl, cover_photo_url: coverPhotoUrl })
+      setProfile({ ...profile, full_name: fullName, bio, phone, avatar_url: avatarUrl, cover_photo_url: coverPhotoUrl })
     }
     setSaving(false)
   }
@@ -387,6 +396,7 @@ export default function SettingsPage() {
             </svg>
             Keamanan
           </button>
+          {profile?.user_type === 'creator' && (
           <button
             onClick={() => setActiveTab('blocked')}
             className={`px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${
@@ -400,6 +410,7 @@ export default function SettingsPage() {
             </svg>
             Blocked
           </button>
+          )}
         </div>
 
         {activeTab === 'profile' && (
@@ -456,11 +467,10 @@ export default function SettingsPage() {
               <input
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                placeholder="username"
-                className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg focus:border-purple-500 outline-none"
+                disabled
+                className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-500 cursor-not-allowed"
               />
-              <p className="text-gray-500 text-xs mt-1">fanonym.vercel.app/creator/{username || 'username'}</p>
+              <p className="text-gray-500 text-xs mt-1">Username tidak bisa diubah</p>
             </div>
             <div>
               <label className="text-sm text-gray-400 block mb-1">Bio</label>

@@ -20,6 +20,7 @@ export default function CreatorProfilePage() {
   const [currentUserProfile, setCurrentUserProfile] = useState<any>(null)
   const [credits, setCredits] = useState<number>(0)
   const [unlocking, setUnlocking] = useState(false)
+  const [isBlocked, setIsBlocked] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,6 +58,20 @@ export default function CreatorProfilePage() {
       }
 
       setCreator(creatorData)
+
+      // Check if creator blocked current user
+      if (user) {
+        const { data: blockData } = await supabase
+          .from('blocks')
+          .select('id')
+          .eq('blocker_id', creatorData.id)
+          .eq('blocked_id', user.id)
+          .single()
+        
+        if (blockData) {
+          setIsBlocked(true)
+        }
+      }
 
       // Get pricing
       const { data: pricingData } = await supabase
@@ -293,6 +308,18 @@ export default function CreatorProfilePage() {
         {/* Unlock Chat Section - Only for non-owner */}
         {!isOwnProfile && (
           <>
+            {isBlocked ? (
+              <div className="text-center py-12 animate-fadeIn">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+                  <svg className="w-10 h-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-bold text-red-400 mb-2">Anda Telah Diblokir</h2>
+                <p className="text-zinc-500">Anda tidak dapat mengirim pesan ke creator ini.</p>
+              </div>
+            ) : (
+            <>
             {/* Section Header */}
             <div className="text-center mb-8 animate-fadeIn">
               <h2 className="text-2xl md:text-3xl font-bold mb-2">
@@ -427,6 +454,8 @@ export default function CreatorProfilePage() {
             <p className="text-center text-zinc-600 text-xs uppercase tracking-wider">
               Powered by Fanonym - Connecting Creators Privately
             </p>
+          </>
+            )}
           </>
         )}
       </main>
