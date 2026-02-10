@@ -51,6 +51,19 @@ export default function RegisterPage() {
     }
 
     try {
+      // Check if email already registered (via profiles table)
+      const { data: existingEmail } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .single()
+
+      if (existingEmail) {
+        setError('Email ini sudah terdaftar. Gunakan email lain atau login dengan akun yang sudah ada.')
+        setLoading(false)
+        return
+      }
+
       // Check username uniqueness
       const { data: existingUser } = await supabase
         .from('profiles')
@@ -70,9 +83,17 @@ export default function RegisterPage() {
       })
       if (authError) throw authError
 
+      // Supabase returns user but no session when email already exists (fake success)
+      if (authData.user && !authData.session && authData.user.identities?.length === 0) {
+        setError('Email ini sudah terdaftar. Gunakan email lain atau login dengan akun yang sudah ada.')
+        setLoading(false)
+        return
+      }
+
       if (authData.user) {
         const { error: profileError } = await supabase.from('profiles').insert({
           id: authData.user.id,
+          email: email,
           username,
           full_name: fullName,
           phone: userType === 'creator' ? phone : null,
