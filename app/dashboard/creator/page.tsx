@@ -458,14 +458,22 @@ export default function CreatorDashboard() {
     return `${hours}j ${minutes}m`
   }
 
-  const updatePricing = async (id: string, newPriceValue: number) => {
-    const { error } = await supabase
-      .from('creator_pricing')
-      .update({ price_credits: newPriceValue })
-      .eq('id', id)
-    
-    if (!error) {
-      setPricing(pricing.map(p => p.id === id ? { ...p, price_credits: newPriceValue } : p))
+  const updatePricing = (id: string, newPriceValue: number) => {
+    setPricing(pricing.map(p => p.id === id ? { ...p, price_credits: newPriceValue } : p))
+  }
+
+  const savePricing = async () => {
+    try {
+      for (const p of pricing) {
+        const { error } = await supabase
+          .from('creator_pricing')
+          .update({ price_credits: p.price_credits })
+          .eq('id', p.id)
+        if (error) throw error
+      }
+      alert('✅ Harga berhasil disimpan!')
+    } catch (err: any) {
+      alert('Gagal menyimpan: ' + err.message)
     }
   }
 
@@ -909,7 +917,7 @@ export default function CreatorDashboard() {
                         })}
                       </p>
                       <p className="text-zinc-400 text-sm">
-                        ≈ Rp {(w.amount * KREDIT_TO_IDR * (1 - PLATFORM_FEE)).toLocaleString('id-ID')}
+                        ≈ Rp {(w.amount * KREDIT_TO_IDR * (1 - PLATFORM_FEE)).toLocaleString('id-ID')} (setelah fee 20%)
                       </p>
                     </div>
                   </div>
@@ -1040,7 +1048,7 @@ export default function CreatorDashboard() {
               <span className="text-xs text-zinc-400 uppercase tracking-wider">Saldo</span>
             </div>
             <p className="text-3xl font-bold text-purple-400">{earnings?.available_balance || 0}</p>
-            <p className="text-xs text-zinc-500 mt-1">≈ Rp {((earnings?.available_balance || 0) * KREDIT_TO_IDR * (1 - PLATFORM_FEE)).toLocaleString('id-ID')}</p>
+            <p className="text-xs text-zinc-500 mt-1">≈ Rp {((earnings?.available_balance || 0) * KREDIT_TO_IDR).toLocaleString('id-ID')}</p>
           </div>
 
           {/* Chat Aktif */}
@@ -1457,6 +1465,15 @@ export default function CreatorDashboard() {
                   + Tambah
                 </button>
               </div>
+
+              {pricing.length > 0 && (
+                <button
+                  onClick={savePricing}
+                  className="w-full mt-4 py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-xl transition-colors"
+                >
+                  💾 Simpan Harga
+                </button>
+              )}
             </div>
           )}
 
@@ -1469,7 +1486,7 @@ export default function CreatorDashboard() {
                 <p className="text-sm text-purple-300">
                   Saldo tersedia: <span className="font-bold text-purple-400">{earnings?.available_balance || 0} Kredit</span>
                   <span className="text-purple-400/60 ml-2">
-                    (≈ Rp {((earnings?.available_balance || 0) * KREDIT_TO_IDR * (1 - PLATFORM_FEE)).toLocaleString('id-ID')})
+                    (≈ Rp {((earnings?.available_balance || 0) * KREDIT_TO_IDR).toLocaleString('id-ID')})
                   </span>
                 </p>
               </div>
