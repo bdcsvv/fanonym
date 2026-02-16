@@ -16,6 +16,7 @@ export default function FreeMessagePage() {
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
+  const [isBlocked, setIsBlocked] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -33,6 +34,19 @@ export default function FreeMessagePage() {
         .single()
 
       setCreator(creatorData)
+
+      // Check block in both directions
+      if (creatorData) {
+        const { data: blockCheck } = await supabase
+          .from('blocks')
+          .select('id')
+          .or(`and(blocker_id.eq.${user.id},blocked_id.eq.${creatorId}),and(blocker_id.eq.${creatorId},blocked_id.eq.${user.id})`)
+        
+        if (blockCheck && blockCheck.length > 0) {
+          setIsBlocked(true)
+        }
+      }
+
       setLoading(false)
     }
 
@@ -98,6 +112,25 @@ export default function FreeMessagePage() {
               Explore Creator
             </Link>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (isBlocked) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-6">
+        <div className="text-center">
+          <div className="w-20 h-20 bg-red-500/10 border border-red-500/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-10 h-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+          </div>
+          <h1 className="text-xl font-bold text-red-400 mb-2">Tidak Dapat Mengirim Pesan</h1>
+          <p className="text-zinc-500 mb-6">Salah satu pihak telah memblokir. Anda tidak bisa mengirim pesan.</p>
+          <Link href="/explore" className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-white font-medium transition-colors inline-block">
+            ← Kembali
+          </Link>
         </div>
       </div>
     )

@@ -49,11 +49,11 @@ export default function AdminPanel() {
   }, [router])
 
   const loadData = async () => {
-    // Pending topups
+    // Pending topups (pending + waiting_verification)
     const { data: topups } = await supabase
       .from('topup_requests')
       .select('*, user:user_id(id, username, full_name)')
-      .eq('status', 'pending')
+      .in('status', ['pending', 'waiting_verification'])
       .order('created_at', { ascending: false })
 
     // Pending withdraws
@@ -606,13 +606,31 @@ export default function AdminPanel() {
                       <div className="text-right">
                         <p className="text-xl font-bold text-green-400">{topup.amount_credits} Kredit</p>
                         <p className="text-gray-400 text-sm">Rp {topup.amount_rupiah?.toLocaleString('id-ID')}</p>
+                        <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs font-medium ${
+                          topup.status === 'waiting_verification' 
+                            ? 'bg-blue-500/20 text-blue-400' 
+                            : 'bg-yellow-500/20 text-yellow-400'
+                        }`}>
+                          {topup.status === 'waiting_verification' ? '📸 Bukti dikirim' : '⏳ Menunggu bukti'}
+                        </span>
                       </div>
                     </div>
                     <div className="text-sm text-gray-400 mb-3">
                       <p>Payment: {topup.payment_code}</p>
-                      <p>Bukti: {topup.payment_proof_url || 'No proof'}</p>
                       <p>Waktu: {new Date(topup.created_at).toLocaleString('id-ID')}</p>
                     </div>
+                    {topup.payment_proof_url && (
+                      <div className="mb-3">
+                        <p className="text-sm text-gray-400 mb-2">📸 Bukti Transfer:</p>
+                        <a href={topup.payment_proof_url} target="_blank" rel="noopener noreferrer">
+                          <img 
+                            src={topup.payment_proof_url} 
+                            alt="Bukti Transfer" 
+                            className="max-w-xs rounded-lg border border-gray-700 hover:border-green-500 transition-colors"
+                          />
+                        </a>
+                      </div>
+                    )}
                     <div className="flex gap-2">
                       <button
                         onClick={() => approveTopup(topup.id, topup.user_id, topup.amount_credits)}
