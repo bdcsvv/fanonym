@@ -466,3 +466,111 @@ body {
 .bg-radial-vignette {
   background: radial-gradient(ellipse at center, transparent 0%, transparent 50%, rgba(12, 10, 20, 0.8) 100%);
 }
+
+/* ========== CAROUSEL SWIPE HINT ANIMATIONS ========== */
+
+@keyframes bounceX {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-4px);
+  }
+}
+
+@keyframes bounceXReverse {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+}
+
+.animate-bounce-x {
+  animation: bounceX 1s ease-in-out infinite;
+}
+
+.animate-bounce-x-reverse {
+  animation: bounceXReverse 1s ease-in-out infinite;
+}
+
+/* ========== GRADIENT ANIMATIONS ========== */
+
+@keyframes gradient-x {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-x {
+  background-size: 200% 100%;
+  animation: gradient-x 3s ease infinite;
+}
+
+/* ========== SCROLLBAR HIDE ========== */
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ========== PROGRESS BAR ANIMATION ========== */
+
+@keyframes progress {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-progress {
+  animation: progress 3s linear forwards;
+}
+
+/* ========== BOUNCE IN ANIMATION ========== */
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-bounceIn {
+  animation: bounceIn 0.6s ease-out forwards;
+}
+
+/* ========== FLOAT ANIMATION ========== */
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
