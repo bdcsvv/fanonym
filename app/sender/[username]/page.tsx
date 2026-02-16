@@ -19,6 +19,10 @@ export default function SenderProfilePage() {
   const [currentUserProfile, setCurrentUserProfile] = useState<any>(null)
   const [hasReviewed, setHasReviewed] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [isBlockedByThem, setIsBlockedByThem] = useState(false)
+  const [iBlockedThem, setIBlockedThem] = useState(false)
+  const [myBlockId, setMyBlockId] = useState<string | null>(null)
+  const [unblocking, setUnblocking] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -49,6 +53,32 @@ export default function SenderProfilePage() {
       }
 
       setSender(senderData)
+
+      // Check blocks in both directions
+      if (user) {
+        // They blocked me?
+        const { data: blockedByThem } = await supabase
+          .from('blocks')
+          .select('id')
+          .eq('blocker_id', senderData.id)
+          .eq('blocked_id', user.id)
+          .single()
+        
+        if (blockedByThem) setIsBlockedByThem(true)
+
+        // I blocked them?
+        const { data: iBlocked } = await supabase
+          .from('blocks')
+          .select('id')
+          .eq('blocker_id', user.id)
+          .eq('blocked_id', senderData.id)
+          .single()
+        
+        if (iBlocked) {
+          setIBlockedThem(true)
+          setMyBlockId(iBlocked.id)
+        }
+      }
 
       // Get reviews count
       const { data: reviewsData } = await supabase
@@ -144,6 +174,72 @@ export default function SenderProfilePage() {
   const isOwnProfile = currentUser?.id === sender.id
   const totalReviews = reviews.good + reviews.bad
   const trustScore = totalReviews > 0 ? Math.round((reviews.good / totalReviews) * 100) : 100
+
+  const handleUnblock = async () => {
+    if (!myBlockId) return
+    if (!confirm('Yakin ingin membuka blokir?')) return
+    
+    setUnblocking(true)
+    const { error } = await supabase
+      .from('blocks')
+      .delete()
+      .eq('id', myBlockId)
+    
+    if (error) {
+      alert('Gagal membuka blokir: ' + error.message)
+    } else {
+      setIBlockedThem(false)
+      setMyBlockId(null)
+      alert('Blokir berhasil dibuka!')
+    }
+    setUnblocking(false)
+  }
+
+  // Show blocked state
+  if (!isOwnProfile && (isBlockedByThem || iBlockedThem)) {
+    return (
+      <div className="min-h-screen bg-[#0c0a14] text-white relative">
+        <GalaxyBackground />
+        <nav className="sticky top-0 z-50 border-b border-purple-500/20 bg-[#0c0a14]/95 backdrop-blur-md">
+          <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <Link href={currentUserProfile?.user_type === 'creator' ? '/dashboard/creator' : '/dashboard/sender'} className="font-black text-2xl bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)]">
+              fanonym
+            </Link>
+            <Link href={currentUserProfile?.user_type === 'creator' ? '/dashboard/creator' : '/dashboard/sender'} className="text-zinc-400 hover:text-white text-sm">
+              Dashboard
+            </Link>
+          </div>
+        </nav>
+        <main className="max-w-4xl mx-auto px-6 py-24 relative z-10">
+          <div className="text-center">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+              <svg className="w-10 h-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+            </div>
+            {iBlockedThem ? (
+              <>
+                <h2 className="text-xl font-bold text-red-400 mb-2">Anda Memblokir Profil Ini</h2>
+                <p className="text-zinc-500 mb-6">Anda tidak dapat berinteraksi dengan user ini selama masih diblokir.</p>
+                <button
+                  onClick={handleUnblock}
+                  disabled={unblocking}
+                  className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 rounded-xl text-white font-medium transition-colors disabled:opacity-50"
+                >
+                  {unblocking ? 'Membuka blokir...' : '🔓 Buka Blokir'}
+                </button>
+              </>
+            ) : (
+              <>
+                <h2 className="text-xl font-bold text-red-400 mb-2">User Ini Telah Memblokir Anda</h2>
+                <p className="text-zinc-500">Anda tidak dapat melihat profil ini.</p>
+              </>
+            )}
+          </div>
+        </main>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-[#0c0a14] text-white relative">

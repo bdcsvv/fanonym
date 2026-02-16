@@ -90,24 +90,24 @@ export default function FreeMessagePage() {
     return (
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-6">
         <div className="text-center">
-          <div className="w-20 h-20 bg-teal-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-20 h-20 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-4xl">✉️</span>
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">Pesan Terkirim!</h1>
-          <p className="text-gray-400 mb-6">
+          <p className="text-zinc-400 mb-6">
             Pesan kamu masuk ke folder spam {creator?.full_name || creator?.username}.<br />
             Creator akan memutuskan apakah ingin membalas.
           </p>
           <div className="space-x-4">
             <Link
               href={`/creator/${creator?.username}`}
-              className="inline-block px-6 py-3 bg-teal-500 rounded-lg font-semibold hover:bg-teal-600"
+              className="inline-block px-6 py-3 bg-purple-600 rounded-xl font-semibold hover:bg-purple-500 transition-colors"
             >
               Kembali ke Profil
             </Link>
             <Link
               href="/explore"
-              className="inline-block px-6 py-3 border border-gray-600 rounded-lg text-gray-300 hover:border-teal-500"
+              className="inline-block px-6 py-3 border border-zinc-700 rounded-xl text-zinc-300 hover:border-purple-500 transition-colors"
             >
               Explore Creator
             </Link>
@@ -138,25 +138,25 @@ export default function FreeMessagePage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white">
-      <nav className="border-b border-gray-800 p-4">
+      <nav className="border-b border-purple-500/20 bg-[#0a0a0f]/95 backdrop-blur-md p-4">
         <div className="max-w-2xl mx-auto flex justify-between items-center">
-          <Link href={`/creator/${creator?.username}`} className="text-gray-400 hover:text-white">← Kembali</Link>
-          <span className="text-xl font-bold text-teal-400">Fanonym</span>
+          <Link href={`/creator/${creator?.username}`} className="text-zinc-400 hover:text-white transition-colors">← Kembali</Link>
+          <span className="text-xl font-bold bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent">fanonym</span>
           <div></div>
         </div>
       </nav>
 
       <main className="max-w-2xl mx-auto p-6">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold">
+          <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-violet-600 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold">
             {creator?.full_name?.[0] || creator?.username?.[0] || '?'}
           </div>
           <h1 className="text-xl font-bold">Kirim Pesan Gratis ke {creator?.full_name || creator?.username}</h1>
-          <p className="text-gray-400 text-sm mt-2">Pesan akan masuk ke folder spam. Creator bisa memilih untuk membalas atau tidak.</p>
+          <p className="text-zinc-400 text-sm mt-2">Pesan akan masuk ke folder spam. Creator bisa memilih untuk membalas atau tidak.</p>
         </div>
 
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6">
-          <p className="text-yellow-400 text-sm">
+        <div className="bg-purple-600/10 border border-purple-500/30 rounded-xl p-4 mb-6">
+          <p className="text-purple-300 text-sm">
             ⚠️ Pesan gratis memiliki prioritas rendah. Untuk response yang lebih cepat, pertimbangkan untuk unlock chat berbayar.
           </p>
         </div>
@@ -168,16 +168,16 @@ export default function FreeMessagePage() {
             placeholder="Tulis pesan kamu di sini..."
             rows={6}
             maxLength={500}
-            className="w-full p-4 bg-gray-800 border border-gray-700 rounded-xl focus:border-teal-500 outline-none resize-none mb-2"
+            className="w-full p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl focus:border-purple-500 outline-none resize-none mb-2 text-white placeholder-zinc-500"
           />
-          <p className="text-gray-500 text-sm mb-4">{message.length}/500 karakter</p>
+          <p className="text-zinc-500 text-sm mb-4">{message.length}/500 karakter</p>
 
           <button
             type="submit"
             disabled={!message.trim() || sending}
-            className="w-full py-3 bg-gradient-to-r from-teal-500 to-teal-600 rounded-xl font-semibold hover:from-teal-600 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 bg-gradient-to-r from-purple-600 to-violet-600 rounded-xl font-semibold hover:from-purple-500 hover:to-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
-            {sending ? 'Mengirim...' : 'Kirim Pesan Gratis'}
+            {sending ? 'Mengirim...' : '💬 Kirim Pesan Gratis'}
           </button>
         </form>
       </main>
