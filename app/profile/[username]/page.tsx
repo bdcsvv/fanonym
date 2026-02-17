@@ -25,6 +25,7 @@ export default function CreatorProfilePage() {
   const [myBlockId, setMyBlockId] = useState<string | null>(null)
   const [unblocking, setUnblocking] = useState(false)
   const [creatorRating, setCreatorRating] = useState({ average: 0, count: 0 })
+  const [recentReviews, setRecentReviews] = useState<any[]>([])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -114,12 +115,15 @@ export default function CreatorProfilePage() {
       // Get creator ratings
       const { data: ratingsData } = await supabase
         .from('creator_reviews')
-        .select('rating')
+        .select('rating, comment, created_at')
         .eq('creator_id', creatorData.id)
+        .order('created_at', { ascending: false })
 
       if (ratingsData && ratingsData.length > 0) {
         const avg = ratingsData.reduce((sum, r) => sum + r.rating, 0) / ratingsData.length
         setCreatorRating({ average: Math.round(avg * 10) / 10, count: ratingsData.length })
+        // Get reviews with comments (max 5 most recent)
+        setRecentReviews(ratingsData.filter(r => r.comment).slice(0, 5))
       }
 
       setLoading(false)
@@ -324,26 +328,25 @@ export default function CreatorProfilePage() {
 
       {/* Profile Content */}
       <main className="max-w-4xl mx-auto px-6 py-12 relative z-10">
-        {/* Avatar Section */}
-        <div className="flex flex-col items-center mb-12 animate-fadeInDown">
-          {/* Avatar with Border */}
-          <div className="relative mb-6">
-            <div className="absolute -inset-2 bg-gradient-to-r from-purple-600 to-violet-600 rounded-full opacity-50 blur"></div>
+        {/* Avatar + Info Section */}
+        <div className="flex flex-col items-center mb-12">
+          {/* Avatar with Glow */}
+          <div className="relative mb-6 animate-fadeInDown">
+            <div className="absolute -inset-3 bg-gradient-to-r from-purple-600 to-violet-600 rounded-full opacity-40 blur-lg animate-pulse"></div>
             <div className="relative">
               {creator.avatar_url ? (
                 <img 
                   src={creator.avatar_url} 
                   alt={creator.full_name || creator.username}
-                  className="w-40 h-40 rounded-full object-cover border-4 border-[#0c0a14]"
+                  className="w-36 h-36 rounded-full object-cover border-4 border-[#0c0a14] shadow-2xl"
                 />
               ) : (
-                <div className="w-40 h-40 rounded-full bg-gradient-to-br from-purple-600/50 to-violet-600/50 flex items-center justify-center text-5xl font-bold border-4 border-[#0c0a14]">
+                <div className="w-36 h-36 rounded-full bg-gradient-to-br from-purple-600/50 to-violet-600/50 flex items-center justify-center text-5xl font-bold border-4 border-[#0c0a14]">
                   {creator.full_name?.[0] || creator.username?.[0] || '?'}
                 </div>
               )}
-              {/* Verified Badge on Avatar */}
               {creator.is_verified && (
-                <div className="absolute bottom-2 right-2 w-10 h-10 bg-[#1da1f2] rounded-full flex items-center justify-center border-4 border-[#0c0a14]">
+                <div className="absolute bottom-1 right-1 w-10 h-10 bg-[#1da1f2] rounded-full flex items-center justify-center border-4 border-[#0c0a14] shadow-lg shadow-blue-500/30">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
@@ -353,73 +356,108 @@ export default function CreatorProfilePage() {
           </div>
 
           {/* Name & Username */}
-          <h1 className="text-4xl md:text-5xl font-bold text-center mb-2">
+          <h1 className="text-4xl md:text-5xl font-bold text-center mb-2 animate-fadeInUp" style={{animationDelay: '0.1s'}}>
             {creator.full_name || creator.username}
           </h1>
-          <p className="text-purple-400 font-mono text-lg mb-4">@{creator.username}</p>
+          <p className="text-purple-400 font-mono text-lg mb-3 animate-fadeInUp" style={{animationDelay: '0.15s'}}>@{creator.username}</p>
           
           {/* Verified Badge */}
           {creator.is_verified && (
-            <div className="flex items-center gap-2 px-4 py-2 bg-purple-600/20 border border-purple-500/30 rounded-full">
+            <div className="flex items-center gap-2 px-4 py-2 bg-purple-600/20 border border-purple-500/30 rounded-full mb-4 animate-fadeInUp" style={{animationDelay: '0.2s'}}>
               <svg className="w-4 h-4 text-purple-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
               <span className="text-purple-400 text-sm font-medium">Verified Creator</span>
             </div>
           )}
+
+          {/* Bio - inline under username */}
+          {creator.bio && (
+            <p className="text-zinc-400 text-center max-w-lg italic animate-fadeInUp" style={{animationDelay: '0.25s'}}>
+              &ldquo;{creator.bio}&rdquo;
+            </p>
+          )}
         </div>
 
-        {/* Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          {/* Bio Card */}
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 animate-fadeInUp stagger-1">
-            <div className="flex items-center gap-2 text-zinc-400 mb-4">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-              </svg>
-              <span className="text-xs uppercase tracking-wider font-medium">Creator Bio</span>
+        {/* Stats Row */}
+        <div className="grid grid-cols-3 gap-4 mb-8">
+          {/* Rating */}
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 text-center animate-fadeInUp hover:border-yellow-500/30 transition-colors" style={{animationDelay: '0.3s'}}>
+            <div className="flex justify-center gap-0.5 mb-2">
+              {creatorRating.count > 0 ? (
+                [1, 2, 3, 4, 5].map((star) => (
+                  <span key={star} className="text-base">
+                    {star <= Math.round(creatorRating.average) ? '⭐' : '☆'}
+                  </span>
+                ))
+              ) : (
+                <span className="text-2xl">⭐</span>
+              )}
             </div>
-            <p className="text-zinc-300 italic">
-              {creator.bio ? `"${creator.bio}"` : 'Belum ada bio'}
-            </p>
+            <p className="text-2xl font-bold text-white">{creatorRating.count > 0 ? creatorRating.average : '—'}</p>
+            <p className="text-zinc-500 text-xs mt-1">{creatorRating.count > 0 ? `${creatorRating.count} review${creatorRating.count > 1 ? 's' : ''}` : 'Belum ada'}</p>
           </div>
 
-          {/* Rating Card */}
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 text-center animate-fadeInUp stagger-2">
-            <div className="w-14 h-14 bg-yellow-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">⭐</span>
-            </div>
-            {creatorRating.count > 0 ? (
-              <>
-                <p className="text-5xl font-bold text-white mb-1">{creatorRating.average}</p>
-                <div className="flex justify-center gap-0.5 mb-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <span key={star} className="text-lg">
-                      {star <= Math.round(creatorRating.average) ? '⭐' : '☆'}
-                    </span>
-                  ))}
-                </div>
-                <p className="text-zinc-500 text-sm">{creatorRating.count} review{creatorRating.count > 1 ? 's' : ''}</p>
-              </>
-            ) : (
-              <>
-                <p className="text-2xl font-bold text-zinc-500 mb-2">—</p>
-                <p className="text-zinc-500 text-sm">Belum ada rating</p>
-              </>
-            )}
-          </div>
-
-          {/* Total Anonymous Card */}
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 text-center animate-fadeInUp stagger-3">
-            <div className="w-14 h-14 bg-purple-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <svg className="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {/* Total Anonymous */}
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 text-center animate-fadeInUp hover:border-purple-500/30 transition-colors" style={{animationDelay: '0.35s'}}>
+            <div className="flex justify-center mb-2">
+              <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
-            <p className="text-5xl font-bold text-white mb-2">{totalAnons}</p>
-            <p className="text-zinc-500 text-sm">Total Anonymous</p>
+            <p className="text-2xl font-bold text-white">{totalAnons}</p>
+            <p className="text-zinc-500 text-xs mt-1">Anonymous</p>
+          </div>
+
+          {/* Pricing Range */}
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 text-center animate-fadeInUp hover:border-violet-500/30 transition-colors" style={{animationDelay: '0.4s'}}>
+            <div className="flex justify-center mb-2">
+              <svg className="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <p className="text-2xl font-bold text-white">
+              {pricing.length > 0 ? `${Math.min(...pricing.map(p => p.price_credits || p.credits || 0))}` : '—'}
+            </p>
+            <p className="text-zinc-500 text-xs mt-1">{pricing.length > 0 ? 'Kredit mulai dari' : 'Belum set harga'}</p>
           </div>
         </div>
+
+        {/* Recent Reviews */}
+        {recentReviews.length > 0 && (
+          <div className="mb-12 animate-fadeInUp" style={{animationDelay: '0.45s'}}>
+            <h3 className="text-sm uppercase tracking-wider text-zinc-500 mb-4 flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              Kata Mereka
+            </h3>
+            <div className="space-y-3">
+              {recentReviews.map((review, idx) => (
+                <div 
+                  key={idx} 
+                  className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 animate-fadeInUp hover:border-zinc-700 transition-colors"
+                  style={{animationDelay: `${0.5 + idx * 0.1}s`}}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <span key={star} className="text-sm">
+                          {star <= review.rating ? '⭐' : '☆'}
+                        </span>
+                      ))}
+                    </div>
+                    <span className="text-zinc-600 text-xs">
+                      {new Date(review.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                  </div>
+                  <p className="text-zinc-300 text-sm italic">&ldquo;{review.comment}&rdquo;</p>
+                  <p className="text-zinc-600 text-xs mt-2">— Anonymous Sender</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Edit Profile - Only for own profile */}
         {isOwnProfile && (
