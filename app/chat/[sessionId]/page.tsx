@@ -38,6 +38,12 @@ export default function ChatRoom() {
   const [showReportModal, setShowReportModal] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
   const [isBlockedChat, setIsBlockedChat] = useState(false)
+  const [showRating, setShowRating] = useState(false)
+  const [ratingScore, setRatingScore] = useState(0)
+  const [ratingHover, setRatingHover] = useState(0)
+  const [ratingComment, setRatingComment] = useState('')
+  const [ratingSubmitted, setRatingSubmitted] = useState(false)
+  const [ratingLoading, setRatingLoading] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -109,6 +115,20 @@ export default function ChatRoom() {
         .order('created_at', { ascending: true })
       setMessages(messagesData || [])
 
+      // Check if sender already rated this session
+      if (sessionData.sender_id === user.id) {
+        const { data: existingRating } = await supabase
+          .from('creator_reviews')
+          .select('id')
+          .eq('session_id', sessionId)
+          .eq('reviewer_id', user.id)
+          .single()
+        
+        if (existingRating) {
+          setRatingSubmitted(true)
+        }
+      }
+
       setLoading(false)
     }
 
@@ -156,6 +176,30 @@ export default function ChatRoom() {
 
     return () => clearInterval(interval)
   }, [session])
+
+  const submitRating = async () => {
+    if (!ratingScore || !session || !currentUser) return
+    setRatingLoading(true)
+
+    try {
+      const { error } = await supabase.from('creator_reviews').insert({
+        creator_id: session.creator_id,
+        reviewer_id: currentUser.id,
+        session_id: sessionId,
+        rating: ratingScore,
+        comment: ratingComment.trim() || null,
+      })
+
+      if (error) throw error
+      setRatingSubmitted(true)
+      setShowRating(false)
+      setToast({ message: '⭐ Rating berhasil dikirim!', type: 'success' })
+    } catch (err: any) {
+      setToast({ message: 'Gagal mengirim rating: ' + err.message, type: 'error' })
+    } finally {
+      setRatingLoading(false)
+    }
+  }
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -621,12 +665,94 @@ export default function ChatRoom() {
         <div className="border-t border-red-500/30 p-4 bg-red-500/10 animate-fadeInUp">
           <div className="max-w-4xl mx-auto text-center">
             <p className="text-red-400 mb-3">⏰ Chat sudah expired. Perpanjang untuk lanjut chat!</p>
-            <button 
-              onClick={() => setShowExtendModal(true)} 
-              className="px-6 py-3 bg-purple-600 hover:bg-purple-500 rounded-xl font-semibold transition-colors"
-            >
-              🔄 Perpanjang Chat
-            </button>
+            <div className="flex items-center justify-center gap-3">
+              <button 
+                onClick={() => setShowExtendModal(true)} 
+                className="px-6 py-3 bg-purple-600 hover:bg-purple-500 rounded-xl font-semibold transition-colors"
+              >
+                🔄 Perpanjang Chat
+              </button>
+              {!ratingSubmitted && (
+                <button 
+                  onClick={() => setShowRating(true)} 
+                  className="px-6 py-3 bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/30 rounded-xl font-semibold text-yellow-400 transition-colors"
+                >
+                  ⭐ Beri Rating
+                </button>
+              )}
+              {ratingSubmitted && (
+                <span className="px-4 py-3 text-green-400 text-sm">✅ Sudah dirating</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rating Modal */}
+      {showRating && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50" onClick={() => setShowRating(false)}>
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="h-2 bg-gradient-to-r from-yellow-500 to-orange-500" />
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-500/20 flex items-center justify-center text-3xl">
+                  ⭐
+                </div>
+                <h2 className="text-xl font-bold text-white mb-1">Rate Creator</h2>
+                <p className="text-zinc-400 text-sm">Bagaimana pengalaman chat kamu?</p>
+              </div>
+
+              {/* Stars */}
+              <div className="flex justify-center gap-2 mb-6">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    onClick={() => setRatingScore(star)}
+                    onMouseEnter={() => setRatingHover(star)}
+                    onMouseLeave={() => setRatingHover(0)}
+                    className="text-4xl transition-transform hover:scale-110"
+                  >
+                    {star <= (ratingHover || ratingScore) ? '⭐' : '☆'}
+                  </button>
+                ))}
+              </div>
+
+              {ratingScore > 0 && (
+                <p className="text-center text-sm text-zinc-400 mb-4">
+                  {ratingScore === 1 && '😞 Sangat Buruk'}
+                  {ratingScore === 2 && '😕 Buruk'}
+                  {ratingScore === 3 && '😐 Biasa'}
+                  {ratingScore === 4 && '😊 Bagus'}
+                  {ratingScore === 5 && '🤩 Sangat Bagus!'}
+                </p>
+              )}
+
+              {/* Comment */}
+              <textarea
+                value={ratingComment}
+                onChange={(e) => setRatingComment(e.target.value)}
+                placeholder="Tulis komentar (opsional)..."
+                maxLength={200}
+                rows={3}
+                className="w-full p-3 bg-zinc-800 border border-zinc-700 rounded-xl text-white placeholder-zinc-500 resize-none outline-none focus:border-purple-500 mb-4"
+              />
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowRating(false)}
+                  className="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl font-medium transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={submitRating}
+                  disabled={!ratingScore || ratingLoading}
+                  className="flex-1 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl font-semibold transition-all disabled:opacity-50"
+                >
+                  {ratingLoading ? 'Mengirim...' : '⭐ Kirim Rating'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

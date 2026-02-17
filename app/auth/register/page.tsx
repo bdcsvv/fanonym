@@ -64,38 +64,30 @@ export default function RegisterPage() {
         return
       }
 
-      // Check username uniqueness (allow reuse if old account has no activity)
+      // Check username uniqueness (only verified accounts in profiles table)
       const { data: existingUser } = await supabase
         .from('profiles')
-        .select('id, created_at')
+        .select('id')
         .eq('username', username)
         .single()
 
       if (existingUser) {
-        // Check if existing account has any chat activity
-        const { data: hasChats } = await supabase
-          .from('chat_sessions')
-          .select('id')
-          .or(`sender_id.eq.${existingUser.id},creator_id.eq.${existingUser.id}`)
-          .limit(1)
-
-        const createdAt = new Date(existingUser.created_at)
-        const hoursOld = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60)
-
-        // If account is >24h old and has no chats, allow username reuse by deleting old profile
-        if (hoursOld > 24 && (!hasChats || hasChats.length === 0)) {
-          // Old inactive account - will be replaced
-          await supabase.from('profiles').delete().eq('id', existingUser.id)
-        } else {
-          setError('Username sudah dipakai, pilih yang lain')
-          setLoading(false)
-          return
-        }
+        setError('Username sudah dipakai, pilih yang lain')
+        setLoading(false)
+        return
       }
 
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            username,
+            full_name: fullName,
+            phone: userType === 'creator' ? phone : null,
+            user_type: userType,
+          }
+        }
       })
       if (authError) throw authError
 
@@ -107,33 +99,7 @@ export default function RegisterPage() {
       }
 
       if (authData.user) {
-        const { error: profileError } = await supabase.from('profiles').insert({
-          id: authData.user.id,
-          email: email,
-          username,
-          full_name: fullName,
-          phone: userType === 'creator' ? phone : null,
-          user_type: userType,
-        })
-
-        if (profileError) throw profileError
-
-        if (userType === 'sender') {
-          await supabase.from('credits').insert({
-            user_id: authData.user.id,
-            balance: 0,
-          })
-        }
-
-        if (userType === 'creator') {
-          await supabase.from('earnings').insert({
-            creator_id: authData.user.id,
-            total_earned: 0,
-            available_balance: 0,
-            pending_balance: 0,
-          })
-        }
-
+        // Profile will be created on first login after email verification
         // Redirect to success page
         router.push(`/auth/success?email=${encodeURIComponent(email)}&type=${userType}`)
       }

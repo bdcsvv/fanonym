@@ -30,16 +30,69 @@ export default function LoginPage() {
         throw error
       }
 
+      // Check if profile exists - if not, create from user metadata (first login after email verify)
       const { data: profile } = await supabase
         .from('profiles')
         .select('user_type')
         .eq('id', data.user.id)
         .single()
 
-      if (profile?.user_type === 'creator') {
-        router.push('/dashboard/creator')
+      if (!profile) {
+        // First login - create profile from metadata
+        const meta = data.user.user_metadata
+        if (!meta?.username || !meta?.user_type) {
+          throw new Error('Data registrasi tidak ditemukan. Silakan daftar ulang.')
+        }
+
+        // Check username still available
+        const { data: usernameTaken } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', meta.username)
+          .single()
+
+        if (usernameTaken) {
+          throw new Error(`Username "${meta.username}" sudah diambil orang lain. Silakan daftar ulang dengan username baru.`)
+        }
+
+        const { error: profileError } = await supabase.from('profiles').insert({
+          id: data.user.id,
+          email: data.user.email,
+          username: meta.username,
+          full_name: meta.full_name,
+          phone: meta.phone || null,
+          user_type: meta.user_type,
+        })
+
+        if (profileError) throw profileError
+
+        if (meta.user_type === 'sender') {
+          await supabase.from('credits').insert({
+            user_id: data.user.id,
+            balance: 0,
+          })
+        }
+
+        if (meta.user_type === 'creator') {
+          await supabase.from('earnings').insert({
+            creator_id: data.user.id,
+            total_earned: 0,
+            available_balance: 0,
+            pending_balance: 0,
+          })
+        }
+
+        if (meta.user_type === 'creator') {
+          router.push('/dashboard/creator')
+        } else {
+          router.push('/dashboard/sender')
+        }
       } else {
-        router.push('/dashboard/sender')
+        if (profile.user_type === 'creator') {
+          router.push('/dashboard/creator')
+        } else {
+          router.push('/dashboard/sender')
+        }
       }
     } catch (err: any) {
       console.error('Login error:', err)
