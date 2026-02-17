@@ -982,7 +982,7 @@ export default function SettingsPage() {
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Minimal 6 karakter"
+                  placeholder="Minimal 8 karakter"
                   className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl focus:border-purple-500 outline-none transition-colors"
                 />
               </div>
@@ -1005,13 +1005,19 @@ export default function SettingsPage() {
               </button>
             </div>
 
-            <div className="mt-6 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30">
-              <p className="text-yellow-400 text-sm font-medium mb-1">ℹ️ Tips Keamanan</p>
-              <ul className="text-gray-400 text-sm space-y-1">
-                <li>• Gunakan password minimal 6 karakter</li>
-                <li>• Kombinasikan huruf, angka, dan simbol</li>
-                <li>• Jangan gunakan password yang sama dengan akun lain</li>
-              </ul>
+            <div className="mt-6 p-4 rounded-xl bg-purple-500/10 border border-purple-500/30">
+              <p className="text-purple-400 text-sm font-medium mb-2">📋 Syarat Password</p>
+              <div className="space-y-1.5">
+                <p className={`text-sm flex items-center gap-2 ${newPassword.length >= 8 ? 'text-green-400' : 'text-gray-400'}`}>
+                  {newPassword.length >= 8 ? '✅' : '○'} Minimal 8 karakter
+                </p>
+                <p className={`text-sm flex items-center gap-2 ${/[A-Z]/.test(newPassword) ? 'text-green-400' : 'text-gray-400'}`}>
+                  {/[A-Z]/.test(newPassword) ? '✅' : '○'} Mengandung huruf besar (A-Z)
+                </p>
+                <p className={`text-sm flex items-center gap-2 ${/[0-9]/.test(newPassword) ? 'text-green-400' : 'text-gray-400'}`}>
+                  {/[0-9]/.test(newPassword) ? '✅' : '○'} Mengandung angka (0-9)
+                </p>
+              </div>
             </div>
           </div>
         )}

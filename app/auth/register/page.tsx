@@ -64,17 +64,33 @@ export default function RegisterPage() {
         return
       }
 
-      // Check username uniqueness
+      // Check username uniqueness (allow reuse if old account has no activity)
       const { data: existingUser } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, created_at')
         .eq('username', username)
         .single()
 
       if (existingUser) {
-        setError('Username sudah dipakai, pilih yang lain')
-        setLoading(false)
-        return
+        // Check if existing account has any chat activity
+        const { data: hasChats } = await supabase
+          .from('chat_sessions')
+          .select('id')
+          .or(`sender_id.eq.${existingUser.id},creator_id.eq.${existingUser.id}`)
+          .limit(1)
+
+        const createdAt = new Date(existingUser.created_at)
+        const hoursOld = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60)
+
+        // If account is >24h old and has no chats, allow username reuse by deleting old profile
+        if (hoursOld > 24 && (!hasChats || hasChats.length === 0)) {
+          // Old inactive account - will be replaced
+          await supabase.from('profiles').delete().eq('id', existingUser.id)
+        } else {
+          setError('Username sudah dipakai, pilih yang lain')
+          setLoading(false)
+          return
+        }
       }
 
       const { data: authData, error: authError } = await supabase.auth.signUp({
