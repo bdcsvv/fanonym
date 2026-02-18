@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import GalaxyBackground from '@/app/components/GalaxyBackground'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -120,12 +121,9 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0f] via-[#0f0a1a] to-[#0a0a0f] flex items-center justify-center p-4 py-12">
-      {/* Background glow */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute left-1/2 top-1/4 h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 h-[250px] w-[250px] rounded-full bg-violet-500/10 blur-[100px]" />
-      </div>
+    <div className="min-h-screen flex items-center justify-center p-4 py-12 relative overflow-hidden">
+      {/* Galaxy Background */}
+      <GalaxyBackground />
 
       <div className="w-full max-w-xl relative z-10">
         {/* Fanonym Title */}
@@ -146,12 +144,12 @@ export default function RegisterPage() {
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex bg-white/[0.03] border border-white/10 rounded-full p-1 mb-6">
+        <div className="flex bg-zinc-900/60 backdrop-blur-xl border border-white/10 rounded-full p-1.5 mb-6">
           <button
             onClick={() => setUserType('sender')}
-            className={`flex-1 py-3 rounded-full font-medium ${
+            className={`flex-1 py-3 rounded-full font-medium transition-all ${
               userType === 'sender'
-                ? 'bg-gradient-to-r from-purple-500 to-violet-600 text-white'
+                ? 'bg-gradient-to-r from-purple-500 to-violet-600 text-white shadow-lg shadow-purple-500/25'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -159,9 +157,9 @@ export default function RegisterPage() {
           </button>
           <button
             onClick={() => setUserType('creator')}
-            className={`flex-1 py-3 rounded-full font-medium ${
+            className={`flex-1 py-3 rounded-full font-medium transition-all ${
               userType === 'creator'
-                ? 'bg-gradient-to-r from-purple-500 to-violet-600 text-white'
+                ? 'bg-gradient-to-r from-purple-500 to-violet-600 text-white shadow-lg shadow-purple-500/25'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -170,7 +168,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Form Card */}
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
+        <div className="bg-zinc-900/60 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl">
           <form onSubmit={handleRegister} className="space-y-4">
             {/* Email */}
             <input
@@ -179,7 +177,7 @@ export default function RegisterPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="email@example.com"
-              className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white"
+              className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder-zinc-500 focus:border-purple-500/50 focus:outline-none transition-colors"
             />
 
             {/* Username */}
@@ -191,7 +189,7 @@ export default function RegisterPage() {
               }
               required
               placeholder="username"
-              className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white"
+              className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder-zinc-500 focus:border-purple-500/50 focus:outline-none transition-colors"
             />
 
             {/* Display Name */}
@@ -201,7 +199,7 @@ export default function RegisterPage() {
               onChange={(e) => setFullName(e.target.value)}
               required
               placeholder="Nama Anda"
-              className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white"
+              className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder-zinc-500 focus:border-purple-500/50 focus:outline-none transition-colors"
             />
 
             {userType === 'creator' && (
@@ -211,7 +209,7 @@ export default function RegisterPage() {
                 onChange={(e) => setPhone(e.target.value)}
                 required
                 placeholder="0812..."
-                className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white"
+                className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder-zinc-500 focus:border-purple-500/50 focus:outline-none transition-colors"
               />
             )}
 
@@ -224,7 +222,7 @@ export default function RegisterPage() {
                 required
                 minLength={8}
                 placeholder="Password"
-                className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white"
+                className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder-zinc-500 focus:border-purple-500/50 focus:outline-none transition-colors"
               />
               <p className="text-zinc-500 text-xs mt-1">Min. 8 karakter, huruf besar & angka</p>
             </div>
@@ -236,7 +234,7 @@ export default function RegisterPage() {
               required
               minLength={8}
               placeholder="Konfirmasi Password"
-              className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white"
+              className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder-zinc-500 focus:border-purple-500/50 focus:outline-none transition-colors"
             />
 
             {/* Terms */}
@@ -245,7 +243,7 @@ export default function RegisterPage() {
                 type="checkbox"
                 checked={agreeTerms}
                 onChange={(e) => setAgreeTerms(e.target.checked)}
-                className="mt-1 rounded border-gray-600"
+                className="mt-1 rounded border-gray-600 bg-transparent"
               />
               <span>
                 Saya berusia minimal 18 tahun dan setuju dengan{' '}
@@ -268,7 +266,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-gradient-to-r from-purple-500 to-violet-600 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 bg-gradient-to-r from-purple-500 to-violet-600 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-lg hover:shadow-purple-500/25 flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
@@ -286,13 +284,12 @@ export default function RegisterPage() {
             Sudah punya akun?{' '}
             <Link
               href="/auth/login"
-              className="text-purple-400 hover:text-purple-300 font-medium"
+              className="text-purple-400 hover:text-purple-300 font-medium transition-colors"
             >
               Masuk di sini
             </Link>
           </p>
 
-          {/* TAMBAHAN */}
           <Link
             href="/"
             className="block text-center text-gray-500 hover:text-gray-300 mt-4 text-sm transition-colors"

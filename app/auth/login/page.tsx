@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import GalaxyBackground from '@/app/components/GalaxyBackground'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -121,11 +122,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0f] via-[#0f0a1a] to-[#0a0a0f] flex items-center justify-center p-4">
-      {/* Background glow */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute left-1/2 top-1/3 h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[120px]" />
-      </div>
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Galaxy Background */}
+      <GalaxyBackground />
 
       <div className="w-full max-w-md relative z-10">
         {/* Fanonym Title */}
@@ -146,10 +145,14 @@ export default function LoginPage() {
         </div>
 
         {/* Form Card */}
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
+        <div className="bg-zinc-900/60 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl">
           {forgotSent ? (
             <div className="text-center py-4">
-              <div className="text-5xl mb-4">📧</div>
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-600/20 flex items-center justify-center">
+                <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
               <h2 className="text-xl font-semibold text-white mb-2">Cek Email Anda</h2>
               <p className="text-gray-400 mb-6">
                 Link reset password telah dikirim ke{' '}
@@ -180,7 +183,7 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="email@example.com"
-                  className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white"
+                  className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder-zinc-500 focus:border-purple-500/50 focus:outline-none transition-colors"
                 />
 
                 {error && (
@@ -192,7 +195,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 bg-gradient-to-r from-purple-500 to-violet-600 text-white font-semibold rounded-xl"
+                  className="w-full py-3.5 bg-gradient-to-r from-purple-500 to-violet-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-purple-500/25 transition-all disabled:opacity-50"
                 >
                   {loading ? 'Mengirim...' : 'Kirim Link Reset'}
                 </button>
@@ -203,7 +206,7 @@ export default function LoginPage() {
                   setForgotMode(false)
                   setError('')
                 }}
-                className="w-full text-center text-gray-400 hover:text-white mt-4"
+                className="w-full text-center text-gray-400 hover:text-white mt-4 transition-colors"
               >
                 ← Kembali ke Login
               </button>
@@ -222,7 +225,7 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="email@example.com"
-                  className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white"
+                  className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder-zinc-500 focus:border-purple-500/50 focus:outline-none transition-colors"
                 />
 
                 <div>
@@ -232,12 +235,12 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     placeholder="••••••••"
-                    className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white"
+                    className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder-zinc-500 focus:border-purple-500/50 focus:outline-none transition-colors"
                   />
                   <button
                     type="button"
                     onClick={() => setForgotMode(true)}
-                    className="text-purple-400 hover:text-purple-300 text-sm mt-2 float-right"
+                    className="text-purple-400 hover:text-purple-300 text-sm mt-2 float-right transition-colors"
                   >
                     Lupa password?
                   </button>
@@ -254,7 +257,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 bg-gradient-to-r from-purple-500 to-violet-600 text-white font-semibold rounded-xl"
+                  className="w-full py-3.5 bg-gradient-to-r from-purple-500 to-violet-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-purple-500/25 transition-all disabled:opacity-50"
                 >
                   {loading ? 'Memproses...' : 'Masuk Sekarang'}
                 </button>
@@ -264,13 +267,12 @@ export default function LoginPage() {
                 Belum punya akun?{' '}
                 <Link
                   href="/auth/register"
-                  className="text-purple-400 hover:text-purple-300 font-medium"
+                  className="text-purple-400 hover:text-purple-300 font-medium transition-colors"
                 >
                   Daftar di sini
                 </Link>
               </p>
 
-              {/* TAMBAHAN */}
               <Link
                 href="/"
                 className="block text-center text-gray-500 hover:text-gray-300 mt-4 text-sm transition-colors"

@@ -1,41 +1,10 @@
 import Link from "next/link";
 import FloatingEmojis from "@/app/components/FloatingEmojis";
-import InteractiveCards from "@/app/components/InteractiveCards";
 import AnimatedStats from "@/app/components/AnimatedStats";
 import AnimatedCTA from "@/app/components/AnimatedCTA";
 import AnimatedChatMockup from "@/app/components/AnimatedChatMockup";
 import CaraKerjaTabs from "@/app/components/CaraKerjaTabs";
-
-// Card data for "Kenapa Fanonym" section
-const kenapaFanonymCards = [
-  {
-    icon: (
-      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-      </svg>
-    ),
-    title: "Aman",
-    description: "Data dan identitasmu dilindungi dengan enkripsi tingkat tinggi. Tidak ada yang bisa melacak pesanmu."
-  },
-  {
-    icon: (
-      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-      </svg>
-    ),
-    title: "Anonim",
-    description: "Identitasmu 100% tersembunyi. Kirim pesan tanpa rasa khawatir identitasmu akan terungkap."
-  },
-  {
-    icon: (
-      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-      </svg>
-    ),
-    title: "Mudah",
-    description: "Proses yang simpel dan sangat cepat. Daftar, beli kredit, dan langsung kirim pesan perdanamu."
-  }
-]
+import KenapaFanonymCards from "@/app/components/KenapaFanonymCards";
 
 export default function Home() {
   return (
@@ -138,7 +107,7 @@ export default function Home() {
             <p className="text-zinc-400">Platform yang dirancang untuk kenyamanan dan keamananmu</p>
           </div>
 
-          <InteractiveCards cards={kenapaFanonymCards} variant="features" horizontalScroll={false} />
+          <KenapaFanonymCards />
         </div>
       </section>
 

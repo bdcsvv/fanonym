@@ -58,17 +58,17 @@ export default function GalaxyBackground() {
 
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none">
-      {/* Base gradient */}
+      {/* Base gradient - darker to match homepage */}
       <div className="absolute inset-0 bg-[#0c0a14]" />
       
-      {/* Nebula gradients */}
-      <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-[150px] animate-nebula1" />
-      <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-violet-500/15 rounded-full blur-[130px] animate-nebula2" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-purple-800/10 rounded-full blur-[160px] animate-nebula3" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-600/10 rounded-full blur-[120px] animate-nebula1" />
-      <div className="absolute top-1/4 right-0 w-[350px] h-[350px] bg-fuchsia-600/10 rounded-full blur-[100px] animate-nebula2" />
+      {/* Nebula gradients - reduced opacity for darker feel */}
+      <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[150px] animate-nebula1" />
+      <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-violet-500/8 rounded-full blur-[130px] animate-nebula2" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-purple-800/5 rounded-full blur-[160px] animate-nebula3" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-600/5 rounded-full blur-[120px] animate-nebula1" />
+      <div className="absolute top-1/4 right-0 w-[350px] h-[350px] bg-fuchsia-600/5 rounded-full blur-[100px] animate-nebula2" />
       
-      {/* Stars */}
+      {/* Stars - reduced opacity */}
       {stars.map((star) => (
         <div
           key={star.id}
@@ -78,18 +78,18 @@ export default function GalaxyBackground() {
             top: `${star.y}%`,
             width: `${star.size}px`,
             height: `${star.size}px`,
-            opacity: star.opacity,
+            opacity: star.opacity * 0.6,
             animationDuration: `${star.duration}s`,
             animationDelay: `${star.delay}s`
           }}
         />
       ))}
       
-      {/* Floating particles */}
+      {/* Floating particles - reduced opacity */}
       {particles.map((particle) => (
         <div
           key={particle.id}
-          className="absolute rounded-full bg-purple-400/30 animate-floatParticle"
+          className="absolute rounded-full bg-purple-400/20 animate-floatParticle"
           style={{
             left: `${particle.x}%`,
             top: `${particle.y}%`,
@@ -101,16 +101,16 @@ export default function GalaxyBackground() {
         />
       ))}
       
-      {/* Shooting star effect (occasional) */}
-      <div className="absolute top-20 left-1/4 w-1 h-1 bg-white rounded-full animate-shootingStar opacity-0" style={{ animationDelay: '0s' }} />
-      <div className="absolute top-40 right-1/3 w-1 h-1 bg-white rounded-full animate-shootingStar opacity-0" style={{ animationDelay: '7s' }} />
-      <div className="absolute top-1/3 left-1/2 w-1 h-1 bg-white rounded-full animate-shootingStar opacity-0" style={{ animationDelay: '14s' }} />
+      {/* Shooting star effect (occasional) - reduced opacity */}
+      <div className="absolute top-20 left-1/4 w-1 h-1 bg-white/70 rounded-full animate-shootingStar opacity-0" style={{ animationDelay: '0s' }} />
+      <div className="absolute top-40 right-1/3 w-1 h-1 bg-white/70 rounded-full animate-shootingStar opacity-0" style={{ animationDelay: '7s' }} />
+      <div className="absolute top-1/3 left-1/2 w-1 h-1 bg-white/70 rounded-full animate-shootingStar opacity-0" style={{ animationDelay: '14s' }} />
       
-      {/* Mesh gradient overlay for depth */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-900/5 to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-violet-900/5 to-transparent" />
+      {/* Mesh gradient overlay for depth - darker */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-900/3 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-violet-900/3 to-transparent" />
       
-      {/* Vignette effect */}
+      {/* Vignette effect - stronger for darker edges */}
       <div className="absolute inset-0 bg-radial-vignette" />
     </div>
   )

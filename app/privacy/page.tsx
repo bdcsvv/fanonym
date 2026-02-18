@@ -1,212 +1,302 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useState, useRef } from 'react'
+
+interface SectionProps {
+  title: string
+  children: React.ReactNode
+  index: number
+  isVisible: boolean
+}
+
+const Section = ({ title, children, index, isVisible }: SectionProps) => (
+  <section 
+    className={`
+      transition-all duration-700 ease-out
+      ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
+    `}
+    style={{ transitionDelay: `${index * 100}ms` }}
+  >
+    <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-3">
+      <span className="w-8 h-8 rounded-lg bg-purple-600/20 flex items-center justify-center text-purple-400 text-sm font-bold">
+        {index}
+      </span>
+      {title}
+    </h2>
+    <div className="pl-11 text-zinc-400 leading-relaxed space-y-3">
+      {children}
+    </div>
+  </section>
+)
 
 export default function PrivacyPolicy() {
+  const [isVisible, setIsVisible] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 100)
+    return () => clearTimeout(timer)
+  }, [])
+
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white relative">
+    <div className="min-h-screen bg-[#0c0a14] text-white relative">
       {/* Background gradient orbs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 h-[300px] w-[300px] rounded-full bg-violet-500/10 blur-[100px]" />
+        <div className="absolute left-1/4 top-1/4 h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-purple-600/10 blur-[150px]" />
+        <div className="absolute bottom-1/4 right-1/4 h-[300px] w-[300px] rounded-full bg-purple-500/5 blur-[120px]" />
       </div>
 
-      <nav className="border-b border-purple-500/20 p-4 relative z-10 bg-[#0a0a0f]/80 backdrop-blur-md">
+      {/* Navbar */}
+      <nav className="sticky top-0 border-b border-zinc-800/50 p-4 relative z-50 bg-[#0c0a14]/80 backdrop-blur-xl">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <Link href="/" className="text-2xl font-black bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent">
             fanonym
           </Link>
-          <Link href="/" className="text-gray-400 hover:text-white transition-colors">
-            ← Kembali
+          <Link href="/" className="text-zinc-400 hover:text-white transition-colors flex items-center gap-2 text-sm">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Kembali
           </Link>
         </div>
       </nav>
 
-      <main className="max-w-4xl mx-auto p-6 relative z-10 page-transition">
-        <h1 className="text-3xl font-bold mb-2 animate-fadeInDown">🔒 Kebijakan Privasi</h1>
-        <p className="text-gray-400 mb-8 animate-fadeIn">Terakhir diperbarui: Februari 2026</p>
-
-        <div className="space-y-8 text-gray-300">
+      <main ref={containerRef} className="max-w-4xl mx-auto px-6 py-12 relative z-10">
+        {/* Header */}
+        <div className={`
+          mb-12 transition-all duration-700
+          ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
+        `}>
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 rounded-2xl bg-purple-600/20 flex items-center justify-center">
+              <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold">Kebijakan Privasi</h1>
+              <p className="text-zinc-500 text-sm mt-1">Terakhir diperbarui: Februari 2026</p>
+            </div>
+          </div>
+          
           {/* Intro */}
-          <section className="animate-fadeInUp">
-            <p className="leading-relaxed">
-              Fanonym ("kami", "kita", atau "platform") berkomitmen untuk melindungi privasi Anda. 
-              Kebijakan Privasi ini menjelaskan bagaimana kami mengumpulkan, menggunakan, menyimpan, 
-              dan melindungi informasi pribadi Anda saat menggunakan layanan kami.
+          <div className="mt-8 p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800">
+            <p className="text-zinc-300 leading-relaxed">
+              Fanonym menghargai privasi dan keamanan informasi pribadi Anda. Dokumen ini menjelaskan 
+              bagaimana kami mengelola data saat Anda menggunakan layanan Fanonym.
             </p>
-          </section>
+            <p className="text-zinc-400 text-sm mt-4">
+              Dengan membuat akun atau menggunakan Platform, Anda menyetujui praktik yang dijelaskan dalam Kebijakan ini.
+            </p>
+          </div>
+        </div>
 
-          {/* Section 1 */}
-          <section className="animate-fadeInUp stagger-1">
-            <h2 className="text-xl font-semibold text-white mb-3">1. Informasi yang Kami Kumpulkan</h2>
+        {/* Content Sections */}
+        <div className="space-y-10">
+          <Section title="Prinsip Dasar Pengelolaan Data" index={1} isVisible={isVisible}>
+            <p>Kami memproses data pribadi berdasarkan prinsip berikut:</p>
+            <ul className="space-y-2 mt-3">
+              <li className="flex items-start gap-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 flex-shrink-0" />
+                <span><strong className="text-zinc-300">Transparansi</strong> — Anda mengetahui data apa yang diproses dan untuk tujuan apa</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 flex-shrink-0" />
+                <span><strong className="text-zinc-300">Pembatasan tujuan</strong> — Data hanya digunakan untuk kebutuhan layanan</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 flex-shrink-0" />
+                <span><strong className="text-zinc-300">Minimalisasi</strong> — Kami hanya mengumpulkan data yang benar-benar diperlukan</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 flex-shrink-0" />
+                <span><strong className="text-zinc-300">Keamanan</strong> — Data dilindungi dengan standar yang wajar dan sesuai praktik industri</span>
+              </li>
+            </ul>
+          </Section>
+
+          <Section title="Informasi yang Dikelola oleh Fanonym" index={2} isVisible={isVisible}>
+            <p>Dalam menjalankan layanan, kami dapat mengelola:</p>
             
-            <h3 className="text-lg font-medium text-purple-400 mt-4 mb-2">A. Informasi yang Anda Berikan</h3>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li><strong>Informasi Akun:</strong> Nama, email, username, password (terenkripsi), nomor telepon</li>
-              <li><strong>Informasi Profil:</strong> Foto profil, bio, foto sampul</li>
-              <li><strong>Informasi Verifikasi (Creator):</strong> Foto KTP untuk verifikasi identitas</li>
-              <li><strong>Informasi Pembayaran:</strong> Nama bank, nomor rekening untuk penarikan dana</li>
-              <li><strong>Konten:</strong> Pesan, foto, dan video yang Anda kirim melalui platform</li>
-            </ul>
-
-            <h3 className="text-lg font-medium text-purple-400 mt-4 mb-2">B. Informasi yang Dikumpulkan Otomatis</h3>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li><strong>Data Penggunaan:</strong> Halaman yang dikunjungi, waktu akses, fitur yang digunakan</li>
-              <li><strong>Informasi Perangkat:</strong> Jenis browser, sistem operasi, IP address</li>
-              <li><strong>Cookies:</strong> Untuk menjaga sesi login dan preferensi</li>
-            </ul>
-          </section>
-
-          {/* Section 2 */}
-          <section className="animate-fadeInUp stagger-2">
-            <h2 className="text-xl font-semibold text-white mb-3">2. Bagaimana Kami Menggunakan Informasi</h2>
-            <p className="mb-3">Kami menggunakan informasi Anda untuk:</p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li>Menyediakan dan mengelola layanan platform</li>
-              <li>Memproses transaksi dan pembayaran</li>
-              <li>Memverifikasi identitas Creator</li>
-              <li>Mengirim notifikasi terkait akun dan transaksi</li>
-              <li>Meningkatkan pengalaman pengguna dan layanan</li>
-              <li>Mencegah penipuan dan penyalahgunaan platform</li>
-              <li>Mematuhi kewajiban hukum</li>
-              <li>Menanggapi pertanyaan dan keluhan</li>
-            </ul>
-          </section>
-
-          {/* Section 3 */}
-          <section className="animate-fadeInUp stagger-3">
-            <h2 className="text-xl font-semibold text-white mb-3">3. Penyimpanan & Keamanan Data</h2>
+            <div className="mt-4 space-y-4">
+              <div className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-800">
+                <h4 className="font-medium text-zinc-200 mb-2">Informasi Akun</h4>
+                <p className="text-sm">Nama, email, username, nomor telepon, serta informasi profil yang Anda isi secara sukarela.</p>
+              </div>
+              
+              <div className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-800">
+                <h4 className="font-medium text-zinc-200 mb-2">Informasi Verifikasi (Creator)</h4>
+                <p className="text-sm">Data identitas yang diperlukan untuk memastikan keabsahan akun Creator dan menjaga keamanan Platform.</p>
+              </div>
+              
+              <div className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-800">
+                <h4 className="font-medium text-zinc-200 mb-2">Informasi Transaksi</h4>
+                <p className="text-sm">Data terkait aktivitas transaksi dan pencairan dana, termasuk informasi rekening yang diberikan oleh pengguna.</p>
+              </div>
+              
+              <div className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-800">
+                <h4 className="font-medium text-zinc-200 mb-2">Informasi Aktivitas & Teknis</h4>
+                <p className="text-sm">Data teknis seperti alamat IP, jenis perangkat, sistem operasi, serta aktivitas penggunaan fitur.</p>
+              </div>
+              
+              <div className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-800">
+                <h4 className="font-medium text-zinc-200 mb-2">Konten dalam Platform</h4>
+                <p className="text-sm">Pesan, foto, atau konten lain yang Anda kirimkan melalui layanan.</p>
+              </div>
+            </div>
             
-            <h3 className="text-lg font-medium text-purple-400 mt-4 mb-2">A. Penyimpanan</h3>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li>Data disimpan di server yang aman (Supabase - berbasis di Singapore/US)</li>
-              <li>Data disimpan selama akun Anda aktif atau sesuai kebutuhan hukum</li>
-              <li>Foto KTP akan dihapus setelah verifikasi selesai (maksimal 30 hari)</li>
-            </ul>
+            <p className="text-sm text-zinc-500 mt-4">
+              Kami tidak menyimpan informasi kartu pembayaran secara langsung.
+            </p>
+          </Section>
 
-            <h3 className="text-lg font-medium text-purple-400 mt-4 mb-2">B. Keamanan</h3>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li>Password dienkripsi menggunakan standar industri</li>
-              <li>Koneksi menggunakan HTTPS/SSL</li>
-              <li>Akses ke data dibatasi hanya untuk pihak yang berwenang</li>
-              <li>Row Level Security (RLS) untuk melindungi data antar pengguna</li>
+          <Section title="Alasan Kami Memproses Data" index={3} isVisible={isVisible}>
+            <p>Data digunakan untuk memastikan Platform dapat berfungsi dengan baik, termasuk:</p>
+            <ul className="space-y-2 mt-3">
+              <li className="flex items-start gap-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 flex-shrink-0" />
+                <span>Mengelola akun dan autentikasi pengguna</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 flex-shrink-0" />
+                <span>Memfasilitasi transaksi</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 flex-shrink-0" />
+                <span>Melakukan verifikasi identitas</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 flex-shrink-0" />
+                <span>Menjaga keamanan sistem dan mencegah pelanggaran</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 flex-shrink-0" />
+                <span>Menyediakan dukungan pelanggan</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 flex-shrink-0" />
+                <span>Memenuhi kewajiban hukum dan administratif</span>
+              </li>
             </ul>
-          </section>
+            <p className="mt-4 p-4 rounded-xl bg-purple-600/10 border border-purple-500/20 text-zinc-300">
+              Kami tidak menjual data pribadi Anda kepada pihak mana pun.
+            </p>
+          </Section>
 
-          {/* Section 4 */}
-          <section className="animate-fadeInUp stagger-4">
-            <h2 className="text-xl font-semibold text-white mb-3">4. Berbagi Informasi</h2>
-            <p className="mb-3">Kami <strong>TIDAK</strong> menjual data pribadi Anda. Kami hanya membagikan informasi dalam kondisi berikut:</p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li><strong>Dengan Pengguna Lain:</strong> Username, foto profil, dan bio Anda terlihat publik. Pesan dikirim secara anonim (identity Sender tersembunyi dari Creator)</li>
-              <li><strong>Penyedia Layanan:</strong> Pihak ketiga yang membantu operasional (hosting, pembayaran) dengan perjanjian kerahasiaan</li>
-              <li><strong>Kewajiban Hukum:</strong> Jika diwajibkan oleh hukum, proses pengadilan, atau permintaan pemerintah yang sah</li>
-              <li><strong>Keamanan:</strong> Untuk mencegah penipuan, pelanggaran, atau melindungi hak kami</li>
-            </ul>
-          </section>
-
-          {/* Section 5 */}
-          <section className="animate-fadeInUp stagger-5">
-            <h2 className="text-xl font-semibold text-white mb-3">5. Anonimitas</h2>
-            <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl">
-              <p className="leading-relaxed">
-                <strong>🎭 Fitur Anonim:</strong> Ketika Sender mengirim pesan ke Creator, identitas Sender 
-                (nama, username, foto) <strong>TIDAK ditampilkan</strong> kepada Creator. Hanya isi pesan yang terlihat.
-              </p>
-              <p className="mt-3 text-yellow-400 text-sm">
-                ⚠️ Namun, untuk keperluan keamanan dan hukum, kami tetap menyimpan data siapa yang mengirim pesan. 
-                Data ini hanya akan dibuka jika ada laporan pelanggaran serius atau permintaan dari pihak berwenang.
-              </p>
-            </div>
-          </section>
-
-          {/* Section 6 */}
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3">6. Hak Anda</h2>
-            <p className="mb-3">Anda memiliki hak untuk:</p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li><strong>Mengakses:</strong> Meminta salinan data pribadi Anda</li>
-              <li><strong>Memperbaiki:</strong> Memperbarui informasi yang tidak akurat</li>
-              <li><strong>Menghapus:</strong> Meminta penghapusan akun dan data Anda</li>
-              <li><strong>Membatasi:</strong> Meminta pembatasan pemrosesan data tertentu</li>
-              <li><strong>Portabilitas:</strong> Meminta data dalam format yang dapat dibaca mesin</li>
-            </ul>
+          <Section title="Kerahasiaan & Keamanan" index={4} isVisible={isVisible}>
+            <p>
+              Kami menerapkan langkah-langkah perlindungan teknis dan organisasi yang dirancang untuk 
+              melindungi informasi dari akses yang tidak sah, perubahan, pengungkapan, atau perusakan.
+            </p>
             <p className="mt-3">
-              Untuk menggunakan hak-hak ini, hubungi kami di <a href="mailto:privacy@fanonym.id" className="text-purple-400 hover:text-purple-300">privacy@fanonym.id</a>
+              Akses terhadap data dibatasi hanya untuk pihak internal yang memiliki kebutuhan operasional 
+              dan kewajiban menjaga kerahasiaan.
             </p>
-          </section>
+            <p className="mt-3 text-zinc-500 text-sm">
+              Meskipun demikian, tidak ada sistem yang sepenuhnya bebas risiko. Anda juga bertanggung jawab 
+              menjaga keamanan akun Anda.
+            </p>
+          </Section>
 
-          {/* Section 7 */}
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3">7. Cookies</h2>
-            <p className="leading-relaxed mb-3">
-              Kami menggunakan cookies dan teknologi serupa untuk:
+          <Section title="Kerja Sama dengan Pihak Ketiga" index={5} isVisible={isVisible}>
+            <p>
+              Dalam menjalankan layanan, kami dapat bekerja sama dengan penyedia layanan pihak ketiga 
+              untuk kebutuhan operasional seperti infrastruktur, pemrosesan pembayaran, dan dukungan teknis.
             </p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li>Menjaga sesi login Anda</li>
-              <li>Mengingat preferensi Anda</li>
-              <li>Menganalisis penggunaan platform</li>
-            </ul>
             <p className="mt-3">
-              Anda dapat mengatur browser untuk menolak cookies, namun beberapa fitur mungkin tidak berfungsi dengan baik.
+              Pihak tersebut hanya memproses data sesuai instruksi kami dan terikat kewajiban kerahasiaan.
             </p>
-          </section>
+            <p className="mt-3">
+              Kami juga dapat mengungkapkan informasi apabila diwajibkan oleh hukum atau untuk melindungi 
+              hak serta keamanan Platform.
+            </p>
+          </Section>
 
-          {/* Section 8 */}
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3">8. Anak di Bawah Umur</h2>
-            <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
-              <p className="leading-relaxed">
-                🚫 Layanan Fanonym <strong>TIDAK ditujukan untuk anak di bawah 18 tahun</strong>. 
-                Kami tidak dengan sengaja mengumpulkan informasi dari anak-anak. Jika Anda mengetahui 
-                ada anak yang menggunakan platform kami, silakan hubungi kami untuk penghapusan akun.
+          <Section title="Retensi Data" index={6} isVisible={isVisible}>
+            <p>
+              Data pribadi disimpan selama akun Anda aktif atau selama diperlukan untuk menjalankan 
+              layanan dan memenuhi kewajiban hukum.
+            </p>
+            <p className="mt-3">
+              Setelah periode tersebut berakhir, data dapat dihapus atau diproses secara anonim sesuai 
+              kebijakan internal kami.
+            </p>
+          </Section>
+
+          <Section title="Batasan Usia" index={7} isVisible={isVisible}>
+            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+              <p className="text-zinc-300">
+                Fanonym diperuntukkan bagi pengguna berusia minimal <strong>18 tahun</strong>. 
+                Jika ditemukan pelanggaran terhadap ketentuan usia ini, kami berhak melakukan 
+                pembatasan atau penghentian akun.
               </p>
             </div>
-          </section>
+          </Section>
 
-          {/* Section 9 */}
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3">9. Transfer Data Internasional</h2>
-            <p className="leading-relaxed">
-              Data Anda mungkin disimpan dan diproses di server yang berlokasi di luar Indonesia 
-              (seperti Singapore atau Amerika Serikat). Dengan menggunakan layanan kami, Anda menyetujui 
-              transfer data ini. Kami memastikan perlindungan yang memadai sesuai standar internasional.
+          <Section title="Perubahan Kebijakan" index={8} isVisible={isVisible}>
+            <p>
+              Kami dapat memperbarui Kebijakan ini sewaktu-waktu untuk menyesuaikan dengan 
+              perkembangan layanan atau ketentuan hukum.
             </p>
-          </section>
+            <p className="mt-3">
+              Versi terbaru akan selalu tersedia di Platform.
+            </p>
+          </Section>
 
-          {/* Section 10 */}
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3">10. Perubahan Kebijakan</h2>
-            <p className="leading-relaxed">
-              Kami dapat memperbarui Kebijakan Privasi ini dari waktu ke waktu. Perubahan signifikan 
-              akan diberitahukan melalui email atau notifikasi di platform. Tanggal "Terakhir diperbarui" 
-              di atas menunjukkan kapan revisi terakhir dilakukan.
-            </p>
-          </section>
-
-          {/* Section 11 */}
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3">11. Hubungi Kami</h2>
-            <p className="leading-relaxed mb-3">
-              Jika Anda memiliki pertanyaan atau keluhan tentang Kebijakan Privasi ini, silakan hubungi:
-            </p>
-            <div className="p-4 bg-gray-800/50 rounded-xl border border-gray-700">
-              <p className="font-semibold text-white">Fanonym Privacy Team</p>
-              <p className="mt-2">📧 Email: <a href="mailto:privacy@fanonym.id" className="text-purple-400 hover:text-purple-300">privacy@fanonym.id</a></p>
-              <p className="mt-1">📧 Umum: <a href="mailto:support@fanonym.id" className="text-purple-400 hover:text-purple-300">support@fanonym.id</a></p>
-              <p className="mt-1">📱 Instagram: <a href="https://instagram.com/fanonym.id" target="_blank" className="text-purple-400 hover:text-purple-300">@fanonym.id</a></p>
+          <Section title="Kontak" index={9} isVisible={isVisible}>
+            <p>Jika Anda memiliki pertanyaan atau permintaan terkait privasi, silakan hubungi:</p>
+            <div className="mt-4 p-6 rounded-xl bg-zinc-800/50 border border-zinc-700 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-purple-600/20 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm text-zinc-500">Email Privasi</p>
+                  <a href="mailto:privacy@fanonym.id" className="text-purple-400 hover:text-purple-300 transition-colors">
+                    privacy@fanonym.id
+                  </a>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-purple-600/20 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm text-zinc-500">Email Support</p>
+                  <a href="mailto:support@fanonym.id" className="text-purple-400 hover:text-purple-300 transition-colors">
+                    support@fanonym.id
+                  </a>
+                </div>
+              </div>
             </div>
-          </section>
+          </Section>
         </div>
 
         {/* Footer */}
-        <div className="mt-12 pt-8 border-t border-gray-800">
-          <p className="text-gray-500 text-sm text-center">
+        <div className={`
+          mt-16 pt-8 border-t border-zinc-800 transition-all duration-700 delay-1000
+          ${isVisible ? 'opacity-100' : 'opacity-0'}
+        `}>
+          <p className="text-zinc-500 text-sm text-center">
             Dengan menggunakan Fanonym, Anda menyatakan telah membaca dan memahami Kebijakan Privasi ini.
           </p>
-          <div className="flex justify-center gap-4 mt-4">
-            <Link href="/terms" className="text-purple-400 hover:text-purple-300 text-sm">
-              ← Syarat dan Ketentuan
+          <div className="flex justify-center gap-6 mt-6">
+            <Link href="/terms" className="text-purple-400 hover:text-purple-300 text-sm transition-colors flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Syarat dan Ketentuan
+            </Link>
+            <Link href="/" className="text-zinc-400 hover:text-white text-sm transition-colors flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              Kembali ke Beranda
             </Link>
           </div>
         </div>

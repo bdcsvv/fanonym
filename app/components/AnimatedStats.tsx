@@ -10,10 +10,10 @@ interface StatItem {
 }
 
 const stats: StatItem[] = [
-  { value: '1M+', numericValue: 1, suffix: 'M+', label: 'Pesan Terkirim' },
-  { value: '50K+', numericValue: 50, suffix: 'K+', label: 'Creator Aktif' },
-  { value: '100K+', numericValue: 100, suffix: 'K+', label: 'Fans Bergabung' },
-  { value: '4.9/5', numericValue: 4.9, suffix: '/5', label: 'Rating Kepuasan' },
+  { value: '5K+', numericValue: 5, suffix: 'K+', label: 'Pesan Terkirim' },
+  { value: '120+', numericValue: 120, suffix: '+', label: 'Creator Aktif' },
+  { value: '1.2K+', numericValue: 1.2, suffix: 'K+', label: 'Fans Bergabung' },
+  { value: '4.8/5', numericValue: 4.8, suffix: '/5', label: 'Rating Kepuasan' },
 ]
 
 export default function AnimatedStats() {
