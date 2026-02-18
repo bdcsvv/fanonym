@@ -260,6 +260,40 @@ export default function CreatorDashboard() {
   }
 
     getData()
+
+    // Real-time subscription for new messages
+    const messagesChannel = supabase
+      .channel('creator-messages')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        (payload) => {
+          const newMsg = payload.new as any
+          // Update the active chats to show "Pesan baru"
+          setActiveChats(prev => prev.map(chat => {
+            if (chat.id === newMsg.session_id) {
+              return {
+                ...chat,
+                messages: [...(chat.messages || []), newMsg]
+              }
+            }
+            return chat
+          }))
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'chat_sessions' },
+        () => {
+          // New chat request - reload pending
+          getData()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(messagesChannel)
+    }
   }, [router])
 
   // Helper function to check if chat has unread messages

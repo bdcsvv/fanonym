@@ -238,6 +238,7 @@ export default function SettingsPage() {
         .from('profiles')
         .update({ 
           ktp_url: ktpUrl,
+          selfie_ktp_url: selfieUrl,
           status: 'pending_verification',
           updated_at: new Date().toISOString()
         })
@@ -248,6 +249,7 @@ export default function SettingsPage() {
       setProfile({ 
         ...profile, 
         ktp_url: ktpUrl, 
+        selfie_ktp_url: selfieUrl,
         status: 'pending_verification'
       })
       

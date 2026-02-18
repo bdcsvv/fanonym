@@ -95,6 +95,43 @@ export default function SenderDashboard() {
     }
 
     getProfile()
+
+    // Real-time subscription for new messages
+    const messagesChannel = supabase
+      .channel('sender-messages')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        (payload) => {
+          const newMsg = payload.new as any
+          setActiveChats(prev => prev.map(chat => {
+            if (chat.id === newMsg.session_id) {
+              return {
+                ...chat,
+                messages: [...(chat.messages || []), newMsg]
+              }
+            }
+            return chat
+          }))
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'chat_sessions' },
+        (payload) => {
+          const updated = payload.new as any
+          // Chat accepted - move from pending to active
+          if (updated.is_accepted) {
+            setPendingChats(prev => prev.filter(c => c.id !== updated.id))
+            getProfile() // Reload to get full data
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(messagesChannel)
+    }
   }, [router])
 
   const handleLogout = async () => {
