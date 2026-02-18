@@ -5,6 +5,7 @@ import { supabase } from '@/app/lib/supabase'
 import { useRouter } from 'next/navigation'
 import FanonymLoader from '@/app/components/FanonymLoader'
 import { sendNotification } from '@/app/lib/notifications'
+import { sendEmail } from '@/app/lib/email'
 
 export default function AdminPanel() {
   const router = useRouter()
@@ -229,6 +230,25 @@ export default function AdminPanel() {
       link: '/dashboard/sender',
     })
 
+    // Send email notification
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('email, full_name, username')
+      .eq('id', userId)
+      .single()
+    
+    if (userProfile?.email) {
+      await sendEmail({
+        to: userProfile.email,
+        type: 'topup_approved',
+        data: {
+          name: userProfile.full_name || userProfile.username,
+          amount,
+          dashboardUrl: `${window.location.origin}/dashboard/sender`,
+        },
+      })
+    }
+
     loadData()
   }
 
@@ -246,6 +266,23 @@ export default function AdminPanel() {
         message: 'Request topup kamu ditolak. Cek kembali bukti pembayaran.',
         link: '/topup',
       })
+
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('email, full_name, username')
+        .eq('id', userId)
+        .single()
+
+      if (userProfile?.email) {
+        await sendEmail({
+          to: userProfile.email,
+          type: 'topup_rejected',
+          data: {
+            name: userProfile.full_name || userProfile.username,
+            topupUrl: `${window.location.origin}/topup`,
+          },
+        })
+      }
     }
 
     alert('Topup rejected!')
@@ -266,6 +303,24 @@ export default function AdminPanel() {
         message: `Withdraw ${amount || 0} kredit telah diproses ke rekening kamu`,
         link: '/dashboard/creator',
       })
+
+      const { data: creatorProfile } = await supabase
+        .from('profiles')
+        .select('email, full_name, username')
+        .eq('id', creatorId)
+        .single()
+
+      if (creatorProfile?.email) {
+        await sendEmail({
+          to: creatorProfile.email,
+          type: 'withdraw_success',
+          data: {
+            name: creatorProfile.full_name || creatorProfile.username,
+            amount: amount || 0,
+            bank: 'Rekening terdaftar',
+          },
+        })
+      }
     }
 
     alert('Withdraw approved!')
@@ -321,6 +376,23 @@ export default function AdminPanel() {
       link: '/dashboard/creator',
     })
 
+    const { data: creatorProfile } = await supabase
+      .from('profiles')
+      .select('email, full_name, username')
+      .eq('id', creatorId)
+      .single()
+
+    if (creatorProfile?.email) {
+      await sendEmail({
+        to: creatorProfile.email,
+        type: 'verification_approved',
+        data: {
+          name: creatorProfile.full_name || creatorProfile.username,
+          dashboardUrl: `${window.location.origin}/dashboard/creator`,
+        },
+      })
+    }
+
     alert('Creator verified!')
     loadData()
   }
@@ -365,6 +437,23 @@ export default function AdminPanel() {
         message: 'Verifikasi kamu ditolak. Silakan upload ulang KTP dan selfie yang jelas.',
         link: '/settings',
       })
+
+      const { data: creatorProfile } = await supabase
+        .from('profiles')
+        .select('email, full_name, username')
+        .eq('id', creatorId)
+        .single()
+
+      if (creatorProfile?.email) {
+        await sendEmail({
+          to: creatorProfile.email,
+          type: 'verification_rejected',
+          data: {
+            name: creatorProfile.full_name || creatorProfile.username,
+            settingsUrl: `${window.location.origin}/settings`,
+          },
+        })
+      }
 
       alert('✅ Verification rejected! Status berubah ke: ' + data[0]?.status)
       loadData()

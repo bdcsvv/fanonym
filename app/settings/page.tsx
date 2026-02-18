@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Logo from '@/app/components/Logo'
 import FanonymLoader from '@/app/components/FanonymLoader'
+import { sendEmail } from '@/app/lib/email'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -306,6 +307,15 @@ export default function SettingsPage() {
       setCurrentPassword('')
       setNewPassword('')
       setConfirmNewPassword('')
+
+      // Email notification about password change
+      if (profile?.email) {
+        await sendEmail({
+          to: profile.email,
+          type: 'reset_password',
+          data: { name: profile.full_name || profile.username },
+        })
+      }
     } catch (err: any) {
       setPasswordError(err.message)
     } finally {

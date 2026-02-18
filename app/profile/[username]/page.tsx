@@ -7,6 +7,7 @@ import Link from 'next/link'
 import FanonymLoader from '@/app/components/FanonymLoader'
 import GalaxyBackground from '@/app/components/GalaxyBackground'
 import { sendNotification } from '@/app/lib/notifications'
+import { sendEmail } from '@/app/lib/email'
 
 export default function CreatorProfilePage() {
   const params = useParams()
@@ -191,6 +192,20 @@ export default function CreatorProfilePage() {
         message: `Seseorang ingin chat ${priceOption.duration_hours} jam (${creditsCost} kredit)`,
         link: '/dashboard/creator',
       })
+
+      // Email creator
+      if (creator.email) {
+        await sendEmail({
+          to: creator.email,
+          type: 'chat_unlocked',
+          data: {
+            name: creator.full_name || creator.username,
+            duration: priceOption.duration_hours,
+            credits: creditsCost,
+            dashboardUrl: `${window.location.origin}/dashboard/creator`,
+          },
+        })
+      }
 
       alert('Chat request dikirim! Menunggu creator accept. Kredit akan dipotong setelah creator menerima.')
       router.push(`/chat/${session.id}`)

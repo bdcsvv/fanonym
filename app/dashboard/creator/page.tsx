@@ -12,6 +12,7 @@ import NotificationBadge from '@/app/components/NotificationBadge'
 import NotificationBell from '@/app/components/NotificationBell'
 import { handleError } from '@/app/lib/errorHandler'
 import { sendNotification } from '@/app/lib/notifications'
+import { sendEmail } from '@/app/lib/email'
 
 export default function CreatorDashboard() {
   const router = useRouter()
@@ -473,6 +474,25 @@ export default function CreatorDashboard() {
         message: `${profile?.full_name || profile?.username} menerima chat kamu. Mulai chat sekarang!`,
         link: `/chat/${chatId}`,
       })
+
+      // Email sender
+      const { data: senderProfile } = await supabase
+        .from('profiles')
+        .select('email, full_name, username')
+        .eq('id', senderId)
+        .single()
+
+      if (senderProfile?.email) {
+        await sendEmail({
+          to: senderProfile.email,
+          type: 'chat_accepted',
+          data: {
+            name: senderProfile.full_name || senderProfile.username,
+            creatorName: profile?.full_name || profile?.username,
+            chatUrl: `${window.location.origin}/chat/${chatId}`,
+          },
+        })
+      }
       
       // Refresh data after short delay
       setTimeout(() => {
