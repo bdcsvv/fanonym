@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { sendNotification } from '@/app/lib/notifications'
 
 export default function FreeMessagePage() {
   const params = useParams()
@@ -76,6 +77,15 @@ export default function FreeMessagePage() {
 
     setSent(true)
     setSending(false)
+
+    // Notify creator about free message
+    await sendNotification({
+      userId: creator.id,
+      type: 'free_chat',
+      title: 'Pesan gratis masuk! 📨',
+      message: `Ada pesan gratis baru di filter spam kamu`,
+      link: '/dashboard/creator',
+    })
   }
 
   if (loading) {

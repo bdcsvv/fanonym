@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import { useRouter } from 'next/navigation'
 import FanonymLoader from '@/app/components/FanonymLoader'
+import { sendNotification } from '@/app/lib/notifications'
 
 export default function AdminPanel() {
   const router = useRouter()
@@ -219,24 +220,53 @@ export default function AdminPanel() {
     }
 
     alert(`Topup approved! ${amount} kredit telah ditambahkan ke user.`)
+    
+    await sendNotification({
+      userId,
+      type: 'topup_approved',
+      title: 'Topup berhasil! ✅',
+      message: `${amount} kredit telah ditambahkan ke saldo kamu`,
+      link: '/dashboard/sender',
+    })
+
     loadData()
   }
 
-  const rejectTopup = async (topupId: string) => {
+  const rejectTopup = async (topupId: string, userId?: string) => {
     await supabase
       .from('topup_requests')
       .update({ status: 'rejected' })
       .eq('id', topupId)
 
+    if (userId) {
+      await sendNotification({
+        userId,
+        type: 'topup_rejected',
+        title: 'Topup ditolak ❌',
+        message: 'Request topup kamu ditolak. Cek kembali bukti pembayaran.',
+        link: '/topup',
+      })
+    }
+
     alert('Topup rejected!')
     loadData()
   }
 
-  const approveWithdraw = async (withdrawId: string) => {
+  const approveWithdraw = async (withdrawId: string, creatorId?: string, amount?: number) => {
     await supabase
       .from('withdrawals')
       .update({ status: 'completed', processed_at: new Date().toISOString() })
       .eq('id', withdrawId)
+
+    if (creatorId) {
+      await sendNotification({
+        userId: creatorId,
+        type: 'withdraw_success',
+        title: 'Withdraw berhasil! 🏦',
+        message: `Withdraw ${amount || 0} kredit telah diproses ke rekening kamu`,
+        link: '/dashboard/creator',
+      })
+    }
 
     alert('Withdraw approved!')
     loadData()
@@ -261,6 +291,14 @@ export default function AdminPanel() {
       .update({ status: 'rejected' })
       .eq('id', withdrawId)
 
+    await sendNotification({
+      userId: creatorId,
+      type: 'withdraw_rejected',
+      title: 'Withdraw ditolak ❌',
+      message: `Withdraw ${amount} kredit ditolak. Saldo dikembalikan.`,
+      link: '/dashboard/creator',
+    })
+
     alert('Withdraw rejected & credits returned!')
     loadData()
   }
@@ -274,6 +312,14 @@ export default function AdminPanel() {
         updated_at: new Date().toISOString()
       })
       .eq('id', creatorId)
+
+    await sendNotification({
+      userId: creatorId,
+      type: 'verification_approved',
+      title: 'Verifikasi disetujui! 🎉',
+      message: 'Selamat! Akun kamu sekarang Verified Creator. Kamu bisa withdraw dana.',
+      link: '/dashboard/creator',
+    })
 
     alert('Creator verified!')
     loadData()
@@ -311,6 +357,14 @@ export default function AdminPanel() {
 
       // Step 2: Remove from local state
       setPendingVerify(prev => prev.filter(c => c.id !== creatorId))
+
+      await sendNotification({
+        userId: creatorId,
+        type: 'verification_rejected',
+        title: 'Verifikasi ditolak 😔',
+        message: 'Verifikasi kamu ditolak. Silakan upload ulang KTP dan selfie yang jelas.',
+        link: '/settings',
+      })
 
       alert('✅ Verification rejected! Status berubah ke: ' + data[0]?.status)
       loadData()
@@ -639,7 +693,7 @@ export default function AdminPanel() {
                         ✓ Approve
                       </button>
                       <button
-                        onClick={() => rejectTopup(topup.id)}
+                        onClick={() => rejectTopup(topup.id, topup.user_id)}
                         className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"
                       >
                         ✗ Reject
@@ -685,7 +739,7 @@ export default function AdminPanel() {
                       </div>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => approveWithdraw(withdraw.id)}
+                          onClick={() => approveWithdraw(withdraw.id, withdraw.creator_id, withdraw.amount)}
                           className="px-4 py-2 bg-green-500 rounded-lg hover:bg-green-600 font-semibold"
                         >
                           ✓ Sudah Transfer

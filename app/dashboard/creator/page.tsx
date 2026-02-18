@@ -9,7 +9,9 @@ import HelpButton from '@/app/components/HelpButton'
 import GalaxyBackground from '@/app/components/GalaxyBackground'
 import Toast from '@/app/components/Toast'
 import NotificationBadge from '@/app/components/NotificationBadge'
+import NotificationBell from '@/app/components/NotificationBell'
 import { handleError } from '@/app/lib/errorHandler'
+import { sendNotification } from '@/app/lib/notifications'
 
 export default function CreatorDashboard() {
   const router = useRouter()
@@ -34,7 +36,6 @@ export default function CreatorDashboard() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
   
   // Notifications
-  const [showNotifications, setShowNotifications] = useState(false)
   const [notifications, setNotifications] = useState<any[]>([])
   
   // Analytics stats
@@ -429,6 +430,15 @@ export default function CreatorDashboard() {
       }
 
       setToast({ message: 'Chat diterima! Kredit sudah ditransfer.', type: 'success' })
+
+      // Notify sender that chat was accepted
+      await sendNotification({
+        userId: senderId,
+        type: 'chat_accepted',
+        title: 'Chat diterima! 🎉',
+        message: `${profile?.full_name || profile?.username} menerima chat kamu. Mulai chat sekarang!`,
+        link: `/chat/${chatId}`,
+      })
       
       // Refresh data after short delay
       setTimeout(() => {
@@ -697,78 +707,7 @@ export default function CreatorDashboard() {
           </div>
 
           {/* Right - Notification */}
-          <div className="relative">
-            <button 
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 hover:bg-zinc-800/50 rounded-full transition-all hover:shadow-lg hover:shadow-purple-500/20"
-            >
-              <svg className="w-6 h-6 text-zinc-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              <NotificationBadge 
-                count={pendingChats.length + unreadInboxCount + notifications.length}
-                size="sm"
-                color="red"
-              />
-            </button>
-            
-            {/* Notification Dropdown */}
-            {showNotifications && (
-              <div className="absolute right-0 top-12 w-80 bg-zinc-900 border border-zinc-700 rounded-xl shadow-xl z-50 overflow-hidden">
-                <div className="p-3 border-b border-zinc-700 flex justify-between items-center">
-                  <h4 className="font-semibold">Notifikasi</h4>
-                  <button onClick={() => setShowNotifications(false)} className="text-zinc-500 hover:text-white">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="max-h-80 overflow-y-auto">
-                  {notifications.length === 0 && pendingChats.length === 0 ? (
-                    <p className="text-zinc-500 text-center py-8 text-sm">Tidak ada notifikasi</p>
-                  ) : (
-                    <div className="divide-y divide-zinc-800">
-                      {pendingChats.length > 0 && (
-                        <div className="p-3 hover:bg-zinc-800/50 cursor-pointer" onClick={() => { setNavTab('dashboard'); setActiveTab('pending'); setShowNotifications(false); }}>
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-yellow-500/20 rounded-full flex items-center justify-center">
-                              <span className="text-yellow-400 text-sm">💬</span>
-                            </div>
-                            <div>
-                              <p className="text-sm">{pendingChats.length} pesan pending</p>
-                              <p className="text-xs text-zinc-500">Menunggu response</p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      {notifications.map(notif => (
-                        <div key={notif.id} className="p-3 hover:bg-zinc-800/50">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                              notif.type === 'withdraw_success' ? 'bg-green-500/20' :
-                              notif.type === 'withdraw_failed' ? 'bg-red-500/20' :
-                              'bg-purple-500/20'
-                            }`}>
-                              <span className="text-sm">
-                                {notif.type === 'withdraw_success' ? '✅' :
-                                 notif.type === 'withdraw_failed' ? '❌' : '💬'}
-                              </span>
-                            </div>
-                            <div>
-                              <p className="text-sm">{notif.message}</p>
-                              <p className="text-xs text-zinc-500">
-                                {new Date(notif.time).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
+          <NotificationBell userId={profile?.id} />
         </div>
       </nav>
 

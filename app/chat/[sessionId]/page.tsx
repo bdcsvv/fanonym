@@ -8,6 +8,7 @@ import FanonymLoader from '@/app/components/FanonymLoader'
 import Toast from '@/app/components/Toast'
 import { calculateTimeLeft, getTimeWarningLevel, getTimeColorClass } from '@/app/lib/timerUtils'
 import { validateImage, validateMessage } from '@/app/lib/validation'
+import { sendNotification } from '@/app/lib/notifications'
 import { compressImage } from '@/app/lib/mobileUtils'
 import { handleError } from '@/app/lib/errorHandler'
 
@@ -194,6 +195,15 @@ export default function ChatRoom() {
       setRatingSubmitted(true)
       setShowRating(false)
       setToast({ message: '⭐ Rating berhasil dikirim!', type: 'success' })
+
+      // Notify creator about new rating
+      await sendNotification({
+        userId: session.creator_id,
+        type: 'rating_received',
+        title: 'Rating baru! ⭐',
+        message: `Seseorang memberi rating ${ratingScore}/5${ratingComment ? ': "' + ratingComment.slice(0, 50) + '"' : ''}`,
+        link: `/profile/${session.creator?.username || ''}`,
+      })
     } catch (err: any) {
       setToast({ message: 'Gagal mengirim rating: ' + err.message, type: 'error' })
     } finally {
@@ -411,6 +421,15 @@ export default function ChatRoom() {
       }))
 
       setToast({ message: '✅ Pembayaran berhasil!', type: 'success' })
+
+      // Notify creator about payment received
+      await sendNotification({
+        userId: session.creator_id,
+        type: 'payment_received',
+        title: 'Pembayaran diterima! 💸',
+        message: `Kamu menerima ${amount} kredit dari payment request`,
+        link: `/chat/${sessionId}`,
+      })
     } catch (err: any) {
       setToast({ message: 'Gagal bayar: ' + err.message, type: 'error' })
     } finally {

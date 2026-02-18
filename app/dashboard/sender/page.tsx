@@ -7,6 +7,7 @@ import Link from 'next/link'
 import FanonymLoader from '@/app/components/FanonymLoader'
 import HelpButton from '@/app/components/HelpButton'
 import GalaxyBackground from '@/app/components/GalaxyBackground'
+import NotificationBell from '@/app/components/NotificationBell'
 import { EmptyChats, EmptyPendingChats, EmptySearchResults } from '@/app/components/EmptyState'
 import EmptyState from '@/app/components/EmptyState'
 import Toast from '@/app/components/Toast'
@@ -197,7 +198,8 @@ export default function SenderDashboard() {
           </Link>
 
           {/* Nav Links */}
-          <div className="flex items-center gap-6 text-sm">
+          <div className="flex items-center gap-4 text-sm">
+            <NotificationBell userId={profile?.id} />
             <Link 
               href={`/sender/${profile?.username}`} 
               className="flex items-center gap-2 text-zinc-400 hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] transition-all"

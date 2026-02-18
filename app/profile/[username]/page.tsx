@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import FanonymLoader from '@/app/components/FanonymLoader'
 import GalaxyBackground from '@/app/components/GalaxyBackground'
+import { sendNotification } from '@/app/lib/notifications'
 
 export default function CreatorProfilePage() {
   const params = useParams()
@@ -182,7 +183,14 @@ export default function CreatorProfilePage() {
 
       if (error) throw error
 
-      // DON'T update earnings yet - wait for creator to accept
+      // Notify creator about new chat request
+      await sendNotification({
+        userId: creator.id,
+        type: 'chat_new',
+        title: 'Chat request baru!',
+        message: `Seseorang ingin chat ${priceOption.duration_hours} jam (${creditsCost} kredit)`,
+        link: '/dashboard/creator',
+      })
 
       alert('Chat request dikirim! Menunggu creator accept. Kredit akan dipotong setelah creator menerima.')
       router.push(`/chat/${session.id}`)
