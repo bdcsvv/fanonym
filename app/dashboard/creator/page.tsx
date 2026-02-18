@@ -559,6 +559,12 @@ export default function CreatorDashboard() {
   }
 
   const handleWithdraw = async () => {
+    // Check if creator is verified
+    if (!profile?.is_verified) {
+      alert('⚠️ Anda harus verifikasi KTP dan selfie terlebih dahulu sebelum bisa withdraw. Silakan verifikasi di menu Settings → Keamanan.')
+      return
+    }
+
     const amount = parseFloat(withdrawAmount)
     
     if (!amount || amount < MIN_WITHDRAW) {
@@ -1481,6 +1487,21 @@ export default function CreatorDashboard() {
           {activeTab === 'withdraw' && (
             <div>
               <h3 className="text-lg font-semibold mb-4">Tarik Saldo</h3>
+
+              {!profile?.is_verified && (
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6">
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl">⚠️</span>
+                    <div>
+                      <p className="text-yellow-400 font-medium text-sm mb-1">Verifikasi Diperlukan</p>
+                      <p className="text-zinc-400 text-sm">Anda harus verifikasi KTP dan selfie sebelum bisa withdraw. Fitur lain seperti set harga dan terima pesan tetap bisa digunakan.</p>
+                      <Link href="/settings" className="text-purple-400 text-sm hover:text-purple-300 mt-2 inline-block">
+                        → Verifikasi Sekarang
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               <div className="bg-purple-600/10 border border-purple-500/30 rounded-xl p-4 mb-6">
                 <p className="text-sm text-purple-300">
