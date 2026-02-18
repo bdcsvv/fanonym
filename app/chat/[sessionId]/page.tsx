@@ -307,64 +307,115 @@ export default function ChatRoom() {
     setPaymentDesc('')
   }
 
+  const [payingMessageId, setPayingMessageId] = useState<string | null>(null)
+
   const handlePayment = async (messageId: string, amount: number) => {
-    const { data: credits } = await supabase
-      .from('credits')
-      .select('balance')
-      .eq('user_id', currentUser.id)
-      .single()
+    // Prevent double click
+    if (payingMessageId) return
+    setPayingMessageId(messageId)
 
-    if (!credits || credits.balance < amount) {
-      alert('Kredit tidak cukup! Silakan top up dulu.')
-      return
-    }
-
-    await supabase
-      .from('credits')
-      .update({ balance: credits.balance - amount })
-      .eq('user_id', currentUser.id)
-
-    const { data: existingEarnings } = await supabase
-      .from('earnings')
-      .select('*')
-      .eq('creator_id', session.creator_id)
-      .single()
-
-    if (existingEarnings) {
-      await supabase
-        .from('earnings')
-        .update({
-          total_earned: existingEarnings.total_earned + amount,
-          available_balance: (existingEarnings.available_balance || 0) + amount
-        })
-        .eq('creator_id', session.creator_id)
-    } else {
-      await supabase
-        .from('earnings')
-        .insert({
-          creator_id: session.creator_id,
-          total_earned: amount,
-          pending_balance: 0,
-          available_balance: amount
-        })
-    }
-
-    const { data: msgData } = await supabase
-      .from('messages')
-      .select('content')
-      .eq('id', messageId)
-      .single()
-
-    if (msgData) {
-      const content = JSON.parse(msgData.content)
-      content.status = 'paid'
-      await supabase
+    try {
+      // Re-check if already paid (prevent spam)
+      const { data: msgCheck } = await supabase
         .from('messages')
-        .update({ content: JSON.stringify(content) })
+        .select('content')
         .eq('id', messageId)
-    }
+        .single()
 
-    alert('Pembayaran berhasil!')
+      if (msgCheck) {
+        const checkContent = JSON.parse(msgCheck.content)
+        if (checkContent.status === 'paid') {
+          setToast({ message: 'Pembayaran sudah dilakukan sebelumnya', type: 'info' })
+          // Update local state
+          setMessages(prev => prev.map(m => {
+            if (m.id === messageId) {
+              const content = JSON.parse(m.content)
+              content.status = 'paid'
+              return { ...m, content: JSON.stringify(content) }
+            }
+            return m
+          }))
+          setPayingMessageId(null)
+          return
+        }
+      }
+
+      const { data: credits } = await supabase
+        .from('credits')
+        .select('balance')
+        .eq('user_id', currentUser.id)
+        .single()
+
+      if (!credits || credits.balance < amount) {
+        alert('Kredit tidak cukup! Silakan top up dulu.')
+        setPayingMessageId(null)
+        return
+      }
+
+      // Deduct credits
+      await supabase
+        .from('credits')
+        .update({ balance: credits.balance - amount })
+        .eq('user_id', currentUser.id)
+
+      // Add to creator earnings
+      const { data: existingEarnings } = await supabase
+        .from('earnings')
+        .select('*')
+        .eq('creator_id', session.creator_id)
+        .single()
+
+      if (existingEarnings) {
+        await supabase
+          .from('earnings')
+          .update({
+            total_earned: existingEarnings.total_earned + amount,
+            available_balance: (existingEarnings.available_balance || 0) + amount
+          })
+          .eq('creator_id', session.creator_id)
+      } else {
+        await supabase
+          .from('earnings')
+          .insert({
+            creator_id: session.creator_id,
+            total_earned: amount,
+            pending_balance: 0,
+            available_balance: amount
+          })
+      }
+
+      // Update message status to paid in DB
+      const { data: msgData } = await supabase
+        .from('messages')
+        .select('content')
+        .eq('id', messageId)
+        .single()
+
+      if (msgData) {
+        const content = JSON.parse(msgData.content)
+        content.status = 'paid'
+        await supabase
+          .from('messages')
+          .update({ content: JSON.stringify(content) })
+          .eq('id', messageId)
+      }
+
+      // Update local state immediately so button changes to "Sudah Dibayar"
+      setMessages(prev => prev.map(m => {
+        if (m.id === messageId) {
+          const content = JSON.parse(m.content)
+          content.status = 'paid'
+          return { ...m, content: JSON.stringify(content) }
+        }
+        return m
+      }))
+
+      setToast({ message: '✅ Pembayaran berhasil!', type: 'success' })
+    } catch (err: any) {
+      setToast({ message: 'Gagal bayar: ' + err.message, type: 'error' })
+    } finally {
+      setPayingMessageId(null)
+    }
   }
 
   const handleExtendChat = async (pricingOption: any) => {
@@ -502,7 +553,13 @@ export default function ChatRoom() {
             {isPaid ? (
               <div className="px-3 py-2 bg-green-500/30 rounded-lg text-green-300 text-center text-sm">✅ Sudah Dibayar</div>
             ) : !isFromMe ? (
-              <button onClick={() => handlePayment(msg.id, paymentData.amount)} className="w-full px-4 py-2 bg-purple-500 rounded-lg font-semibold hover:bg-purple-400 transition-colors">Bayar Sekarang</button>
+              <button 
+                onClick={() => handlePayment(msg.id, paymentData.amount)} 
+                disabled={payingMessageId === msg.id}
+                className="w-full px-4 py-2 bg-purple-500 rounded-lg font-semibold hover:bg-purple-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {payingMessageId === msg.id ? '⏳ Memproses...' : 'Bayar Sekarang'}
+              </button>
             ) : (
               <div className="px-3 py-2 bg-yellow-500/30 rounded-lg text-yellow-300 text-center text-sm">⏳ Menunggu Pembayaran</div>
             )}
