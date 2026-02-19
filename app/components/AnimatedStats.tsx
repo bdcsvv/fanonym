@@ -3,17 +3,16 @@
 import { useEffect, useRef, useState } from 'react'
 
 interface StatItem {
-  value: string
   numericValue: number
   suffix: string
   label: string
 }
 
 const stats: StatItem[] = [
-  { value: '5K+', numericValue: 5, suffix: 'K+', label: 'Pesan Terkirim' },
-  { value: '120+', numericValue: 120, suffix: '+', label: 'Creator Aktif' },
-  { value: '1.2K+', numericValue: 1.2, suffix: 'K+', label: 'Fans Bergabung' },
-  { value: '4.8/5', numericValue: 4.8, suffix: '/5', label: 'Rating Kepuasan' },
+  { numericValue: 5, suffix: 'K+', label: 'Pesan Terkirim' },
+  { numericValue: 120, suffix: '+', label: 'Creator Aktif' },
+  { numericValue: 1.2, suffix: 'K+', label: 'Fans Bergabung' },
+  { numericValue: 4.8, suffix: '/5', label: 'Rating' },
 ]
 
 export default function AnimatedStats() {
@@ -30,7 +29,7 @@ export default function AnimatedStats() {
           hasAnimated.current = true
         }
       },
-      { threshold: 0.3 }
+      { threshold: 0.1 }
     )
 
     if (containerRef.current) {
@@ -43,8 +42,8 @@ export default function AnimatedStats() {
   useEffect(() => {
     if (!isVisible) return
 
-    const duration = 2000 // 2 seconds
-    const steps = 60
+    const duration = 2500
+    const steps = 80
     const interval = duration / steps
 
     let currentStep = 0
@@ -52,12 +51,10 @@ export default function AnimatedStats() {
     const timer = setInterval(() => {
       currentStep++
       const progress = currentStep / steps
-      // Easing function - ease out cubic
-      const easedProgress = 1 - Math.pow(1 - progress, 3)
+      const easedProgress = 1 - Math.pow(1 - progress, 4)
 
       setCounts(stats.map(stat => {
         const value = stat.numericValue * easedProgress
-        // For decimal values like 4.9
         if (stat.numericValue % 1 !== 0) {
           return Math.round(value * 10) / 10
         }
@@ -74,73 +71,88 @@ export default function AnimatedStats() {
   }, [isVisible])
 
   return (
-    <section ref={containerRef} className="relative py-20 px-6 border-t border-zinc-800/50 overflow-hidden">
-      {/* Animated background gradient */}
-      <div className="absolute inset-0 pointer-events-none">
+    <section ref={containerRef} className="relative py-24 px-6 overflow-hidden">
+      {/* Background */}
+      <div className="pointer-events-none absolute inset-0">
         <div className={`
-          absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-          w-[800px] h-[300px] rounded-full blur-[120px]
-          bg-gradient-to-r from-purple-600/10 via-purple-500/5 to-purple-600/10
-          transition-opacity duration-1000
-          ${isVisible ? 'opacity-100' : 'opacity-0'}
+          absolute top-0 left-1/4 w-[500px] h-[500px] rounded-full blur-[200px]
+          bg-purple-600/10 transition-all duration-1500
+          ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}
         `} />
       </div>
 
       <div className="mx-auto max-w-6xl relative z-10">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          {stats.map((stat, index) => (
-            <div
-              key={index}
-              className={`
-                text-center transform transition-all duration-700 ease-out
-                ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
-              `}
-              style={{ transitionDelay: `${index * 150}ms` }}
-            >
-              {/* Stat card with hover effect */}
-              <div className="group relative py-6 px-4 rounded-2xl transition-all duration-300 hover:bg-zinc-800/30">
-                {/* Glow on hover */}
-                <div className="absolute inset-0 rounded-2xl bg-purple-600/0 group-hover:bg-purple-600/5 transition-colors duration-300" />
-                
-                {/* Number */}
-                <div className="relative">
-                  <p className={`
-                    text-4xl sm:text-5xl font-bold mb-2
-                    bg-gradient-to-b from-white via-white to-zinc-400 bg-clip-text text-transparent
-                    group-hover:from-purple-300 group-hover:via-white group-hover:to-purple-300
-                    transition-all duration-300
-                  `}>
-                    {stat.numericValue % 1 !== 0 
-                      ? counts[index].toFixed(1) 
-                      : counts[index]}
-                    {stat.suffix}
-                  </p>
-                  
-                  {/* Animated underline */}
-                  <div className={`
-                    h-1 mx-auto rounded-full bg-gradient-to-r from-transparent via-purple-500 to-transparent
-                    transition-all duration-500 ease-out
-                    ${isVisible ? 'w-12 opacity-100' : 'w-0 opacity-0'}
-                  `} 
-                  style={{ transitionDelay: `${index * 150 + 500}ms` }}
-                  />
-                </div>
-                
-                {/* Label */}
-                <p className="text-sm text-zinc-400 uppercase tracking-wider mt-3 group-hover:text-zinc-300 transition-colors">
-                  {stat.label}
-                </p>
+        {/* Creative layout - Title on left, stats flowing right */}
+        <div className="grid lg:grid-cols-12 gap-12 items-end">
+          {/* Left - Title */}
+          <div className={`
+            lg:col-span-5
+            transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+            ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-20'}
+          `}>
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">
+              Dipercaya oleh
+              <span className="block bg-gradient-to-r from-purple-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">
+                ribuan pengguna.
+              </span>
+            </h2>
+          </div>
 
-                {/* Floating particles on hover */}
-                <div className="absolute inset-0 overflow-hidden rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  <div className="absolute top-1/4 left-1/4 w-1 h-1 bg-purple-400 rounded-full animate-ping" />
-                  <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-purple-500 rounded-full animate-ping" style={{ animationDelay: '0.5s' }} />
-                  <div className="absolute bottom-1/3 left-1/3 w-1 h-1 bg-purple-300 rounded-full animate-ping" style={{ animationDelay: '1s' }} />
+          {/* Right - Stats in creative positions */}
+          <div className="lg:col-span-7">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
+              {stats.map((stat, index) => (
+                <div
+                  key={index}
+                  className={`
+                    relative group
+                    ${index % 2 === 1 ? 'sm:translate-y-8' : ''}
+                    transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                    ${isVisible 
+                      ? 'opacity-100 translate-y-0' 
+                      : 'opacity-0 translate-y-16'
+                    }
+                  `}
+                  style={{ transitionDelay: `${300 + index * 150}ms` }}
+                >
+                  {/* Glowing dot */}
+                  <div className={`
+                    absolute -top-2 left-0 w-2 h-2 rounded-full
+                    transition-all duration-700 delay-500
+                    ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}
+                    ${index === 0 ? 'bg-purple-400' : index === 1 ? 'bg-violet-400' : index === 2 ? 'bg-fuchsia-400' : 'bg-pink-400'}
+                  `}>
+                    <div className="absolute inset-0 rounded-full animate-ping opacity-50 bg-inherit" />
+                  </div>
+
+                  {/* Number */}
+                  <div className="relative">
+                    <span className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white group-hover:text-purple-200 transition-colors duration-300">
+                      {stat.numericValue % 1 !== 0 
+                        ? counts[index].toFixed(1) 
+                        : counts[index]}
+                    </span>
+                    <span className="text-3xl sm:text-4xl lg:text-5xl font-bold text-purple-400">
+                      {stat.suffix}
+                    </span>
+                  </div>
+
+                  {/* Label */}
+                  <p className="text-sm text-zinc-500 mt-1 group-hover:text-zinc-400 transition-colors">
+                    {stat.label}
+                  </p>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
+
+        {/* Decorative line */}
+        <div className={`
+          mt-16 h-[1px] bg-gradient-to-r from-purple-500/30 via-violet-500/20 to-transparent
+          transition-all duration-1500 delay-700
+          ${isVisible ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'}
+        `} style={{ transformOrigin: 'left' }} />
       </div>
     </section>
   )
