@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import GalaxyBackground from '@/app/components/GalaxyBackground'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -104,63 +105,82 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#0c0a14] text-white flex">
+      {/* Galaxy background - full screen */}
+      <GalaxyBackground />
+
       {/* Left Side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0">
-          <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] rounded-full bg-purple-600/20 blur-[150px]" />
-          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-violet-500/20 blur-[120px]" />
+        {/* Extra deep glow for left panel */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full bg-purple-600/25 blur-[160px] animate-pulse" style={{animationDuration:'4s'}} />
+          <div className="absolute bottom-1/4 right-0 w-[350px] h-[350px] rounded-full bg-violet-500/20 blur-[130px] animate-pulse" style={{animationDuration:'6s', animationDelay:'2s'}} />
+          {/* Grid lines */}
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.04)_1px,transparent_1px)] bg-[size:60px_60px]" />
+          {/* Radial mask */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,#0c0a14_85%)]" />
         </div>
 
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           {/* Logo */}
-          <Link href="/" className="font-black text-3xl bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">
+          <Link href="/" className={`font-black text-3xl bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(147,51,234,0.4)] transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
             fanonym
           </Link>
 
           {/* Main content */}
           <div className="max-w-md">
-            <h1 className={`
-              text-5xl font-bold leading-tight mb-6
-              transition-all duration-1000 ease-out
-              ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
-            `}>
-              Selamat Datang
-              <span className="block text-purple-400">Kembali</span>
-            </h1>
-            <p className={`
-              text-xl text-zinc-400 leading-relaxed
-              transition-all duration-1000 ease-out delay-150
-              ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
-            `}>
+            {/* Eyebrow badge */}
+            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-purple-500/25 bg-purple-500/10 mb-8 transition-all duration-700 delay-100 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
+              </span>
+              <span className="text-xs font-medium text-purple-200">Platform aktif 24/7</span>
+            </div>
+
+            {/* Heading with word-by-word reveal */}
+            <div className="overflow-hidden mb-3">
+              <h1 className={`text-5xl xl:text-6xl font-bold leading-tight transition-all duration-700 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'}`}>
+                Selamat Datang
+              </h1>
+            </div>
+            <div className="overflow-hidden mb-6">
+              <h1 className={`text-5xl xl:text-6xl font-bold leading-tight bg-gradient-to-r from-purple-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent transition-all duration-700 delay-350 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'}`}>
+                Kembali 👋
+              </h1>
+            </div>
+
+            <p className={`text-lg text-zinc-400 leading-relaxed mb-10 transition-all duration-700 delay-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
               Kirim pesan anonim ke creator favoritmu dengan aman dan mudah.
             </p>
+
+            {/* Stats mini */}
+            <div className={`flex gap-8 transition-all duration-700 delay-600 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
+              {[
+                { val: '5K+', label: 'Pesan Terkirim' },
+                { val: '120+', label: 'Creator Aktif' },
+                { val: '4.8', label: 'Rating Pengguna' },
+              ].map((s, i) => (
+                <div key={i}>
+                  <div className="text-2xl font-bold text-white">{s.val}</div>
+                  <div className="text-xs text-zinc-500 mt-0.5">{s.label}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Bottom decoration */}
-          <div className={`
-            flex items-center gap-4 text-zinc-500 text-sm
-            transition-all duration-1000 ease-out delay-300
-            ${mounted ? 'opacity-100' : 'opacity-0'}
-          `}>
+          <div className={`flex items-center gap-4 text-zinc-500 text-sm transition-all duration-700 delay-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
             <span>Platform pesan anonim terpercaya</span>
             <div className="h-1 w-1 rounded-full bg-purple-500" />
             <span>Enkripsi end-to-end</span>
           </div>
         </div>
 
-        {/* Decorative elements */}
-        <div className={`
-          absolute bottom-20 right-20 w-32 h-32 rounded-3xl rotate-12 border border-purple-500/20
-          transition-all duration-1000 ease-out delay-500
-          ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}
-        `} />
-        <div className={`
-          absolute top-32 right-32 w-20 h-20 rounded-2xl -rotate-12 border border-violet-500/20
-          transition-all duration-1000 ease-out delay-700
-          ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-12'}
-        `} />
+        {/* Floating decorative cards */}
+        <div className={`absolute bottom-24 right-16 w-28 h-28 rounded-3xl rotate-12 border border-purple-500/20 bg-purple-500/5 backdrop-blur-sm transition-all duration-1000 delay-600 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`} />
+        <div className={`absolute top-28 right-28 w-16 h-16 rounded-2xl -rotate-12 border border-violet-500/20 bg-violet-500/5 backdrop-blur-sm transition-all duration-1000 delay-800 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-12'}`} />
+        <div className={`absolute top-1/2 right-10 w-10 h-10 rounded-xl rotate-45 border border-fuchsia-500/15 bg-fuchsia-500/5 transition-all duration-1000 delay-1000 ${mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`} />
       </div>
 
       {/* Right Side - Form */}
@@ -172,7 +192,7 @@ export default function LoginPage() {
         `}>
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
-            <Link href="/" className="font-black text-3xl bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">
+            <Link href="/" className="font-black text-3xl bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(147,51,234,0.4)]">
               fanonym
             </Link>
           </div>

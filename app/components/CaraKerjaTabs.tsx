@@ -129,10 +129,10 @@ export default function CaraKerjaTabs() {
     <section 
       ref={containerRef} 
       id="cara-kerja" 
-      className="relative py-20 px-6 overflow-hidden"
+      className="relative py-20"
     >
       {/* Background */}
-      <div className="pointer-events-none absolute inset-0">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className={`
           absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
           w-[800px] h-[800px] rounded-full blur-[200px]
@@ -141,15 +141,12 @@ export default function CaraKerjaTabs() {
         `} />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-6xl">
-        {/* Header */}
+      {/* Header + Tabs - padded */}
+      <div className="relative z-10 mx-auto max-w-6xl px-6">
         <div className={`
           text-center mb-12 
           transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-          ${isVisible 
-            ? 'opacity-100 translate-y-0 scale-100 blur-0' 
-            : 'opacity-0 translate-y-20 scale-90 blur-sm'
-          }
+          ${isVisible ? 'opacity-100 translate-y-0 scale-100 blur-0' : 'opacity-0 translate-y-20 scale-90 blur-sm'}
         `}>
           <h2 className="text-4xl sm:text-5xl font-bold mb-4">Cara Kerja</h2>
           <p className="text-zinc-400 text-lg">
@@ -157,51 +154,30 @@ export default function CaraKerjaTabs() {
           </p>
         </div>
 
-        {/* Tab Switcher */}
         <div className={`
           flex justify-center mb-12 
           transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] delay-150
-          ${isVisible 
-            ? 'opacity-100 translate-y-0 scale-100' 
-            : 'opacity-0 translate-y-16 scale-75'
-          }
+          ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-16 scale-75'}
         `}>
           <div className="inline-flex p-1.5 bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-white/10">
             <button
               onClick={() => handleTabSwitch('sender')}
-              className={`
-                relative px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300
-                ${activeRole === 'sender' 
-                  ? 'text-white' 
-                  : 'text-zinc-400 hover:text-zinc-200'
-                }
-              `}
+              className={`relative px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${activeRole === 'sender' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
             >
-              {activeRole === 'sender' && (
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-500 rounded-xl animate-scale-in" />
-              )}
+              {activeRole === 'sender' && <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-500 rounded-xl animate-scale-in" />}
               <span className="relative z-10">Sebagai Pengirim</span>
             </button>
-            
             <button
               onClick={() => handleTabSwitch('creator')}
-              className={`
-                relative px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300
-                ${activeRole === 'creator' 
-                  ? 'text-white' 
-                  : 'text-zinc-400 hover:text-zinc-200'
-                }
-              `}
+              className={`relative px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${activeRole === 'creator' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
             >
-              {activeRole === 'creator' && (
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-cyan-500 rounded-xl animate-scale-in" />
-              )}
+              {activeRole === 'creator' && <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-cyan-500 rounded-xl animate-scale-in" />}
               <span className="relative z-10">Sebagai Creator</span>
             </button>
           </div>
         </div>
 
-        {/* Desktop - Steps Grid */}
+        {/* Desktop Steps Grid */}
         <div className="hidden md:grid md:grid-cols-3 gap-6">
           {currentSteps.map((step, index) => (
             <div
@@ -209,176 +185,81 @@ export default function CaraKerjaTabs() {
               className={`
                 group relative cursor-pointer
                 transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-                ${isVisible 
-                  ? 'opacity-100 translate-y-0 rotate-0 scale-100 blur-0' 
-                  : 'opacity-0 translate-y-24 rotate-3 scale-75 blur-sm'
-                }
+                ${isVisible ? 'opacity-100 translate-y-0 rotate-0 scale-100 blur-0' : 'opacity-0 translate-y-24 rotate-3 scale-75 blur-sm'}
               `}
               style={{ transitionDelay: `${300 + index * 150}ms` }}
               onMouseEnter={() => setActiveStep(index)}
             >
-              {/* Step number */}
-              <div className={`
-                absolute -top-3 -left-3 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold z-20
-                transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-                ${activeStep === index 
-                  ? activeRole === 'sender'
-                    ? 'bg-purple-600 shadow-lg shadow-purple-600/50 scale-125'
-                    : 'bg-cyan-600 shadow-lg shadow-cyan-600/50 scale-125'
-                  : 'bg-zinc-700 scale-100'
-                }
-              `}>
+              <div className={`absolute -top-3 -left-3 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold z-20 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${activeStep === index ? activeRole === 'sender' ? 'bg-purple-600 shadow-lg shadow-purple-600/50 scale-125' : 'bg-cyan-600 shadow-lg shadow-cyan-600/50 scale-125' : 'bg-zinc-700 scale-100'}`}>
                 {index + 1}
               </div>
-
-              {/* Card */}
-              <div className={`
-                relative rounded-2xl p-6 border transition-all duration-500 h-full
-                hover:-translate-y-2 hover:shadow-2xl
-                ${activeStep === index
-                  ? activeRole === 'sender'
-                    ? 'bg-purple-600/10 border-purple-500/30 shadow-xl shadow-purple-600/10 -translate-y-1'
-                    : 'bg-cyan-600/10 border-cyan-500/30 shadow-xl shadow-cyan-600/10 -translate-y-1'
-                  : 'bg-white/[0.02] border-white/10 hover:bg-white/[0.05]'
-                }
-              `}>
-                {/* Icon */}
-                <div className={`
-                  w-12 h-12 rounded-xl flex items-center justify-center mb-4
-                  transition-all duration-500
-                  ${activeStep === index
-                    ? activeRole === 'sender'
-                      ? 'bg-purple-600/30 text-purple-300'
-                      : 'bg-cyan-600/30 text-cyan-300'
-                    : 'bg-zinc-800 text-zinc-400'
-                  }
-                `}>
+              <div className={`relative rounded-2xl p-6 border transition-all duration-500 h-full hover:-translate-y-2 hover:shadow-2xl ${activeStep === index ? activeRole === 'sender' ? 'bg-purple-600/10 border-purple-500/30 shadow-xl shadow-purple-600/10 -translate-y-1' : 'bg-cyan-600/10 border-cyan-500/30 shadow-xl shadow-cyan-600/10 -translate-y-1' : 'bg-white/[0.02] border-white/10 hover:bg-white/[0.05]'}`}>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-all duration-500 ${activeStep === index ? activeRole === 'sender' ? 'bg-purple-600/30 text-purple-300' : 'bg-cyan-600/30 text-cyan-300' : 'bg-zinc-800 text-zinc-400'}`}>
                   {step.icon}
                 </div>
-
-                <h3 className={`
-                  text-lg font-semibold mb-2 transition-colors duration-300
-                  ${activeStep === index
-                    ? activeRole === 'sender' ? 'text-purple-300' : 'text-cyan-300'
-                    : 'text-white'
-                  }
-                `}>
+                <h3 className={`text-lg font-semibold mb-2 transition-colors duration-300 ${activeStep === index ? activeRole === 'sender' ? 'text-purple-300' : 'text-cyan-300' : 'text-white'}`}>
                   {step.title}
                 </h3>
-
-                <p className="text-zinc-400 text-sm leading-relaxed">
-                  {step.description}
-                </p>
-
-                {/* Progress bar */}
+                <p className="text-zinc-400 text-sm leading-relaxed">{step.description}</p>
                 {activeStep === index && (
                   <div className="mt-4 h-1 bg-zinc-800 rounded-full overflow-hidden">
-                    <div 
-                      className={`
-                        h-full rounded-full animate-progress-bar
-                        ${activeRole === 'sender' ? 'bg-purple-500' : 'bg-cyan-500'}
-                      `}
-                    />
+                    <div className={`h-full rounded-full animate-progress-bar ${activeRole === 'sender' ? 'bg-purple-500' : 'bg-cyan-500'}`} />
                   </div>
                 )}
               </div>
             </div>
           ))}
         </div>
+      </div>
 
-        {/* Mobile - Swipeable Carousel */}
-        <div className="md:hidden">
-          <div 
-            ref={scrollContainerRef}
-            onScroll={handleMobileScroll}
-            className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 -mx-6 px-6"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
-            {currentSteps.map((step, index) => (
-              <div
-                key={`mobile-${activeRole}-${index}`}
-                className={`
-                  flex-shrink-0 w-[85%] snap-center
-                  transition-all duration-500
-                  ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
-                `}
-                style={{ transitionDelay: `${index * 100}ms` }}
-              >
-                <div className={`
-                  relative rounded-2xl p-6 border h-full
-                  ${mobileActiveStep === index
-                    ? activeRole === 'sender'
-                      ? 'bg-purple-600/10 border-purple-500/30'
-                      : 'bg-cyan-600/10 border-cyan-500/30'
-                    : 'bg-white/[0.02] border-white/10'
-                  }
-                `}>
-                  {/* Step number */}
-                  <div className={`
-                    absolute -top-3 -left-3 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
-                    ${activeRole === 'sender' ? 'bg-purple-600' : 'bg-cyan-600'}
-                  `}>
-                    {index + 1}
-                  </div>
-
-                  {/* Icon */}
-                  <div className={`
-                    w-12 h-12 rounded-xl flex items-center justify-center mb-4
-                    ${activeRole === 'sender' ? 'bg-purple-600/30 text-purple-300' : 'bg-cyan-600/30 text-cyan-300'}
-                  `}>
-                    {step.icon}
-                  </div>
-
-                  <h3 className={`
-                    text-lg font-semibold mb-2
-                    ${activeRole === 'sender' ? 'text-purple-300' : 'text-cyan-300'}
-                  `}>
-                    {step.title}
-                  </h3>
-
-                  <p className="text-zinc-400 text-sm leading-relaxed">
-                    {step.description}
-                  </p>
+      {/* Mobile Carousel - OUTSIDE padded container, full width */}
+      <div className="md:hidden relative z-10 mt-0">
+        <div 
+          ref={scrollContainerRef}
+          onScroll={handleMobileScroll}
+          className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch', paddingLeft: '24px', paddingRight: '24px' }}
+        >
+          {currentSteps.map((step, index) => (
+            <div
+              key={`mobile-${activeRole}-${index}`}
+              className={`flex-shrink-0 snap-center transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+              style={{ width: 'calc(100vw - 72px)', transitionDelay: `${index * 100}ms` }}
+            >
+              <div className={`relative rounded-2xl p-6 border h-full ${mobileActiveStep === index ? activeRole === 'sender' ? 'bg-purple-600/10 border-purple-500/30' : 'bg-cyan-600/10 border-cyan-500/30' : 'bg-white/[0.02] border-white/10'}`}>
+                <div className={`absolute -top-3 -left-3 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${activeRole === 'sender' ? 'bg-purple-600' : 'bg-cyan-600'}`}>
+                  {index + 1}
                 </div>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${activeRole === 'sender' ? 'bg-purple-600/30 text-purple-300' : 'bg-cyan-600/30 text-cyan-300'}`}>
+                  {step.icon}
+                </div>
+                <h3 className={`text-lg font-semibold mb-2 ${activeRole === 'sender' ? 'text-purple-300' : 'text-cyan-300'}`}>
+                  {step.title}
+                </h3>
+                <p className="text-zinc-400 text-sm leading-relaxed">{step.description}</p>
               </div>
-            ))}
-          </div>
-
-          {/* Mobile dot indicators */}
-          <div className="flex justify-center gap-2 mt-4">
-            {currentSteps.map((_, index) => (
-              <div
-                key={index}
-                className={`
-                  h-2 rounded-full transition-all duration-300
-                  ${mobileActiveStep === index 
-                    ? `w-6 ${activeRole === 'sender' ? 'bg-purple-500' : 'bg-cyan-500'}` 
-                    : 'w-2 bg-zinc-700'
-                  }
-                `}
-              />
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
 
-        {/* CTA Button */}
-        <div className={`
-          text-center mt-12 
-          transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-          ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-90'}
-        `}
-        style={{ transitionDelay: '700ms' }}
+        <div className="flex justify-center gap-2 mt-4">
+          {currentSteps.map((_, index) => (
+            <div
+              key={index}
+              className={`h-2 rounded-full transition-all duration-300 ${mobileActiveStep === index ? `w-6 ${activeRole === 'sender' ? 'bg-purple-500' : 'bg-cyan-500'}` : 'w-2 bg-zinc-700'}`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* CTA Button - padded */}
+      <div className="relative z-10 mx-auto max-w-6xl px-6">
+        <div className={`text-center mt-12 transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-90'}`}
+          style={{ transitionDelay: '700ms' }}
         >
           <Link
-            href={activeRole === 'sender' ? '/explore' : '/auth/register'}
-            className={`
-              group inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold
-              transition-all duration-500 hover:scale-110 hover:shadow-2xl hover:-translate-y-1
-              ${activeRole === 'sender'
-                ? 'bg-purple-600 hover:bg-purple-500 hover:shadow-purple-500/40'
-                : 'bg-cyan-600 hover:bg-cyan-500 hover:shadow-cyan-500/40'
-              }
-            `}
+            href={activeRole === 'sender' ? '/auth/login' : '/auth/register'}
+            className={`group inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold transition-all duration-500 hover:scale-110 hover:shadow-2xl hover:-translate-y-1 ${activeRole === 'sender' ? 'bg-purple-600 hover:bg-purple-500 hover:shadow-purple-500/40' : 'bg-cyan-600 hover:bg-cyan-500 hover:shadow-cyan-500/40'}`}
           >
             {activeRole === 'sender' ? 'Cari Creator Sekarang' : 'Daftar Jadi Creator'}
             <svg className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

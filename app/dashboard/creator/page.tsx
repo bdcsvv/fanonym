@@ -61,6 +61,7 @@ export default function CreatorDashboard() {
   const [accountNumber, setAccountNumber] = useState('')
   const [accountName, setAccountName] = useState('')
   const [withdrawLoading, setWithdrawLoading] = useState(false)
+  const [selectedExpired, setSelectedExpired] = useState<string[]>([])
 
   const KREDIT_TO_IDR = 10000
   const PLATFORM_FEE = 0.1
@@ -123,7 +124,7 @@ export default function CreatorDashboard() {
       // Get chat sessions with messages for unread detection
       const { data: chatsData } = await supabase
         .from('chat_sessions')
-        .select('*, sender:sender_id(id, username, full_name, avatar_url), messages(id, sender_id, created_at)')
+        .select('*, sender:sender_id(id, username, full_name, avatar_url), messages(id, sender_id, is_read, created_at)')
         .eq('creator_id', user.id)
         .order('started_at', { ascending: false })
 
@@ -355,13 +356,10 @@ export default function CreatorDashboard() {
   }, [router])
 
   // Helper function to check if chat has unread messages
+  // True if there are messages from sender (not creator) that are unread
   const hasUnreadMessages = (chat: any) => {
     if (!chat.messages || chat.messages.length === 0) return false
-    const sortedMessages = [...chat.messages].sort((a, b) => 
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    )
-    const latestMessage = sortedMessages[0]
-    return latestMessage.sender_id !== profile?.id
+    return chat.messages.some((m: any) => m.sender_id !== profile?.id && m.is_read === false)
   }
 
   const unreadInboxCount = activeChats.filter(chat => hasUnreadMessages(chat)).length
@@ -423,7 +421,7 @@ export default function CreatorDashboard() {
         if (user) {
           const { data: chatsData } = await supabase
             .from('chat_sessions')
-            .select('*, sender:sender_id(id, username, full_name, avatar_url), messages(id, sender_id, created_at)')
+            .select('*, sender:sender_id(id, username, full_name, avatar_url), messages(id, sender_id, is_read, created_at)')
             .eq('creator_id', user.id)
             .order('started_at', { ascending: false })
           
@@ -592,7 +590,7 @@ export default function CreatorDashboard() {
           .eq('id', p.id)
         if (error) throw error
       }
-      alert('✅ Harga berhasil disimpan!')
+      alert('Harga berhasil disimpan!')
     } catch (err: any) {
       alert('Gagal menyimpan: ' + err.message)
     }
@@ -751,7 +749,7 @@ export default function CreatorDashboard() {
   }
 
   const copyProfileLink = () => {
-    const link = `${window.location.origin}/profile/${profile?.username}`
+    const link = `${window.location.origin}/${profile?.username}`
     navigator.clipboard.writeText(link)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -785,7 +783,7 @@ export default function CreatorDashboard() {
       <nav className="sticky top-0 z-50 bg-[#0c0a14]/80 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           {/* Logo */}
-          <Link href="/dashboard/creator" className="font-black text-2xl bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)]">
+          <Link href="/dashboard/creator" className="font-black text-2xl bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)]">
             fanonym
           </Link>
 
@@ -1242,7 +1240,7 @@ export default function CreatorDashboard() {
             </div>
             <div className="flex items-center gap-3">
               <span className="text-sm text-purple-400 font-mono bg-zinc-800 px-4 py-2 rounded-lg border border-zinc-700">
-                fanonym.vercel.app/profile/{profile?.username}
+                fanonym.id/{profile?.username}
               </span>
               <button
                 onClick={copyProfileLink}
@@ -1475,48 +1473,90 @@ export default function CreatorDashboard() {
           {/* Expired Tab */}
           {activeTab === 'expired' && (
             <div>
-              <h3 className="text-lg font-semibold mb-4">Chat Expired</h3>
               {expiredChats.length === 0 ? (
                 <p className="text-zinc-500 text-center py-8">Tidak ada chat expired</p>
               ) : (
-                <div className="space-y-3">
-                  {expiredChats.map((chat) => {
-                    const senderName = chat.sender?.full_name || chat.sender?.username || 'Anonim'
-                    return (
-                      <div key={chat.id} className="bg-zinc-800/50 border border-zinc-700 rounded-xl p-4">
-                        <div className="flex items-center justify-between">
+                <>
+                  {/* Select All Bar */}
+                  <div className="flex items-center justify-between mb-4 p-3 bg-zinc-900/50 border border-zinc-800 rounded-xl">
+                    <label className="flex items-center gap-3 cursor-pointer select-none">
+                      <div
+                        onClick={() => {
+                          const allIds = expiredChats.map(c => c.id)
+                          setSelectedExpired(prev => prev.length === allIds.length ? [] : allIds)
+                        }}
+                        className={`w-5 h-5 rounded flex items-center justify-center border-2 cursor-pointer transition-colors ${
+                          selectedExpired.length === expiredChats.length && expiredChats.length > 0
+                            ? 'bg-purple-600 border-purple-600'
+                            : 'border-zinc-600 hover:border-purple-500'
+                        }`}
+                      >
+                        {selectedExpired.length === expiredChats.length && expiredChats.length > 0 && (
+                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="text-sm text-zinc-400">
+                        {selectedExpired.length > 0 ? `${selectedExpired.length} dipilih` : `Pilih Semua (${expiredChats.length})`}
+                      </span>
+                    </label>
+                    {selectedExpired.length > 0 && (
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`Hapus ${selectedExpired.length} chat?`)) return
+                          await Promise.all(selectedExpired.map(id => supabase.from('chat_sessions').delete().eq('id', id)))
+                          setExpiredChats(prev => prev.filter(c => !selectedExpired.includes(c.id)))
+                          setSelectedExpired([])
+                        }}
+                        className="px-4 py-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 text-sm font-medium rounded-lg transition-colors"
+                      >
+                        Hapus {selectedExpired.length} Chat
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    {expiredChats.map((chat) => {
+                      const senderName = chat.sender?.full_name || chat.sender?.username || 'Anonim'
+                      const isSelected = selectedExpired.includes(chat.id)
+                      return (
+                        <div key={chat.id} className={`bg-zinc-800/50 border rounded-xl p-4 transition-colors ${isSelected ? 'border-purple-500/40 bg-purple-600/5' : 'border-zinc-700'}`}>
                           <div className="flex items-center gap-3">
-                            {chat.sender?.avatar_url ? (
-                              <img src={chat.sender.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover opacity-50" />
-                            ) : (
-                              <div className="w-10 h-10 bg-zinc-700 rounded-full flex items-center justify-center">
-                                <span className="text-zinc-500 font-medium">{senderName[0]?.toUpperCase()}</span>
+                            {/* Checkbox */}
+                            <div
+                              onClick={() => setSelectedExpired(prev => isSelected ? prev.filter(id => id !== chat.id) : [...prev, chat.id])}
+                              className={`w-5 h-5 rounded flex items-center justify-center border-2 cursor-pointer flex-shrink-0 transition-colors ${isSelected ? 'bg-purple-600 border-purple-600' : 'border-zinc-600 hover:border-purple-500'}`}
+                            >
+                              {isSelected && (
+                                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 flex-1">
+                              {chat.sender?.avatar_url ? (
+                                <img src={chat.sender.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover opacity-50" />
+                              ) : (
+                                <div className="w-10 h-10 bg-zinc-700 rounded-full flex items-center justify-center flex-shrink-0">
+                                  <span className="text-zinc-500 font-medium">{senderName[0]?.toUpperCase()}</span>
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-zinc-400">{senderName}</p>
+                                <p className="text-xs text-zinc-600">{chat.duration_hours}jam • {chat.credits_paid} kredit</p>
                               </div>
-                            )}
-                            <div>
-                              <p className="font-medium text-zinc-400">{senderName}</p>
-                              <p className="text-xs text-zinc-600">{chat.duration_hours}jam • {chat.credits_paid} kredit</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Link href={`/chat/${chat.id}`} className="px-3 py-1.5 bg-zinc-700 hover:bg-zinc-600 text-white text-sm rounded-lg transition-colors">Lihat</Link>
+                              <button onClick={() => handleDeleteExpiredChat(chat.id)} className="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 text-sm rounded-lg transition-colors">Hapus</button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Link
-                              href={`/chat/${chat.id}`}
-                              className="px-3 py-1.5 bg-zinc-700 hover:bg-zinc-600 text-white text-sm rounded-lg transition-colors"
-                            >
-                              Lihat
-                            </Link>
-                            <button
-                              onClick={() => handleDeleteExpiredChat(chat.id)}
-                              className="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 text-sm rounded-lg transition-colors"
-                            >
-                              Hapus
-                            </button>
-                          </div>
                         </div>
-                      </div>
-                    )
-                  })}
-                </div>
+                      )
+                    })}
+                  </div>
+                </>
               )}
             </div>
           )}
@@ -1609,9 +1649,9 @@ export default function CreatorDashboard() {
               {pricing.length > 0 && (
                 <button
                   onClick={savePricing}
-                  className="w-full mt-4 py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-xl transition-colors"
+                  className="w-full mt-4 py-3 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl transition-colors"
                 >
-                  💾 Simpan Harga
+                  Simpan Harga
                 </button>
               )}
             </div>

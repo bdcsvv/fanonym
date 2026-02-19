@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import GalaxyBackground from '@/app/components/GalaxyBackground'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -132,77 +133,91 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-[#0c0a14] text-white flex">
+      {/* Galaxy background - full screen */}
+      <GalaxyBackground />
+
       {/* Left Side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0">
-          <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] rounded-full bg-purple-600/20 blur-[150px]" />
-          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-violet-500/20 blur-[120px]" />
+        {/* Extra glow for left panel */}
+        <div className="absolute inset-0 z-0">
+          <div className={`absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full blur-[160px] animate-pulse transition-colors duration-700 ${userType === 'sender' ? 'bg-purple-600/25' : 'bg-violet-600/25'}`} style={{animationDuration:'4s'}} />
+          <div className={`absolute bottom-1/4 right-0 w-[350px] h-[350px] rounded-full blur-[130px] animate-pulse transition-colors duration-700 ${userType === 'sender' ? 'bg-fuchsia-500/15' : 'bg-cyan-500/10'}`} style={{animationDuration:'6s', animationDelay:'2s'}} />
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.04)_1px,transparent_1px)] bg-[size:60px_60px]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,#0c0a14_85%)]" />
         </div>
 
-        {/* Content */}
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           {/* Logo */}
-          <Link href="/" className="font-black text-3xl bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">
+          <Link href="/" className={`font-black text-3xl bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(147,51,234,0.4)] transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
             fanonym
           </Link>
 
-          {/* Main content */}
+          {/* Main content - changes by role */}
           <div className="max-w-md">
-            <h1 className={`
-              text-5xl font-bold leading-tight mb-6
-              transition-all duration-1000 ease-out
-              ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
-            `}>
-              Mulai Perjalanan
-              <span className="block text-purple-400">Anonimmu</span>
-            </h1>
-            <p className={`
-              text-xl text-zinc-400 leading-relaxed
-              transition-all duration-1000 ease-out delay-150
-              ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
-            `}>
-              Daftar sekarang dan mulai kirim pesan anonim ke creator favoritmu.
+            {/* Badge - no emoji */}
+            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border mb-8 transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'} ${userType === 'sender' ? 'border-purple-500/25 bg-purple-500/10' : 'border-violet-500/25 bg-violet-500/10'}`}>
+              <div className={`w-1.5 h-1.5 rounded-full ${userType === 'sender' ? 'bg-purple-400' : 'bg-violet-400'}`} />
+              <span className={`text-xs font-medium ${userType === 'sender' ? 'text-purple-200' : 'text-violet-200'}`}>
+                {userType === 'sender' ? 'Daftar sebagai Sender' : 'Daftar sebagai Creator'}
+              </span>
+            </div>
+
+            {/* Heading - same structure for both roles */}
+            <div className="overflow-hidden mb-3">
+              <h1 className={`text-5xl xl:text-6xl font-bold leading-tight transition-all duration-700 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'}`}>
+                {userType === 'sender' ? 'Kirim Pesan,' : 'Monetisasi Konten,'}
+              </h1>
+            </div>
+            <div className="overflow-hidden mb-6">
+              <h1 className={`text-5xl xl:text-6xl font-bold leading-tight bg-clip-text text-transparent transition-all duration-700 delay-350 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'} ${userType === 'sender' ? 'bg-gradient-to-r from-purple-400 via-violet-400 to-fuchsia-400' : 'bg-gradient-to-r from-violet-400 via-cyan-400 to-violet-400'}`}>
+                {userType === 'sender' ? 'Tanpa Dikenal.' : 'Tanpa Batas.'}
+              </h1>
+            </div>
+
+            <p className={`text-lg text-zinc-400 leading-relaxed mb-8 transition-all duration-700 delay-400 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
+              {userType === 'sender'
+                ? 'Sampaikan rasa, pertanyaan, atau dukunganmu ke creator favoritmu — tanpa khawatir identitasmu terbuka.'
+                : 'Terima pesan berbayar dari fans, kelola sesi chat, dan cairkan penghasilanmu kapan saja dengan mudah.'}
             </p>
 
-            {/* Features */}
-            <div className={`
-              mt-8 space-y-4
-              transition-all duration-1000 ease-out delay-300
-              ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
-            `}>
-              {[
-                'Gratis untuk mendaftar',
-                'Identitas 100% terlindungi',
-                'Proses verifikasi cepat',
-              ].map((feature, i) => (
-                <div key={i} className="flex items-center gap-3 text-zinc-300">
-                  <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>{feature}</span>
+            {/* Benefits - no emoji, cleaner design */}
+            <div className={`space-y-3 transition-all duration-700 delay-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
+              {(userType === 'sender' ? [
+                { title: 'Identitas 100% Tersembunyi', desc: 'Tidak ada yang tahu siapa kamu, termasuk creator-nya' },
+                { title: 'Chat Langsung ke Creator', desc: 'Akses sesi chat eksklusif dengan durasi terbatas' },
+                { title: 'Enkripsi End-to-End', desc: 'Semua pesan terenkripsi dan terlindungi sepenuhnya' },
+                { title: 'Setup Kurang dari 1 Menit', desc: 'Daftar, beli kredit, langsung kirim pesan pertama' },
+              ] : [
+                { title: 'Hasilkan Pendapatan dari Fans', desc: 'Terima pembayaran kredit untuk setiap sesi chat' },
+                { title: 'Platform Fee Hanya 10%', desc: 'Kamu mendapat 90% dari setiap transaksi yang masuk' },
+                { title: 'Kendali Penuh di Tanganmu', desc: 'Setujui atau tolak permintaan chat sesukamu' },
+                { title: 'Dashboard Analytics Lengkap', desc: 'Pantau pendapatan dan aktivitas fans secara real-time' },
+              ]).map((benefit, i) => (
+                <div
+                  key={`${userType}-${i}`}
+                  className="flex items-start gap-3 p-3 rounded-2xl border border-white/[0.06] bg-white/[0.02]"
+                  style={{ transitionDelay: `${550 + i * 80}ms`, opacity: mounted ? 1 : 0, transform: mounted ? 'translateX(0)' : 'translateX(-16px)', transition: 'all 0.5s ease' }}
+                >
+                  <div className={`w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0 ${userType === 'sender' ? 'bg-purple-400' : 'bg-violet-400'}`} />
+                  <div>
+                    <div className="text-sm font-semibold text-white">{benefit.title}</div>
+                    <div className="text-xs text-zinc-500 mt-0.5">{benefit.desc}</div>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Bottom */}
-          <div className={`
-            text-zinc-500 text-sm
-            transition-all duration-1000 ease-out delay-500
-            ${mounted ? 'opacity-100' : 'opacity-0'}
-          `}>
+          <div className={`text-zinc-500 text-sm transition-all duration-700 delay-700 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
             Sudah punya akun?{' '}
-            <Link href="/auth/login" className="text-purple-400 hover:text-purple-300">Masuk di sini</Link>
+            <Link href="/auth/login" className="text-purple-400 hover:text-purple-300 transition-colors">Masuk di sini</Link>
           </div>
         </div>
 
-        {/* Decorative elements */}
-        <div className={`
-          absolute bottom-20 right-20 w-32 h-32 rounded-3xl rotate-12 border border-purple-500/20
-          transition-all duration-1000 ease-out delay-500
-          ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}
-        `} />
+        {/* Floating cards */}
+        <div className={`absolute bottom-24 right-16 w-28 h-28 rounded-3xl rotate-12 border border-purple-500/20 bg-purple-500/5 backdrop-blur-sm transition-all duration-1000 delay-600 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`} />
+        <div className={`absolute top-28 right-28 w-16 h-16 rounded-2xl -rotate-12 border border-violet-500/20 bg-violet-500/5 backdrop-blur-sm transition-all duration-1000 delay-800 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-12'}`} />
       </div>
 
       {/* Right Side - Form */}
@@ -214,7 +229,7 @@ export default function RegisterPage() {
         `}>
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-6">
-            <Link href="/" className="font-black text-3xl bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">
+            <Link href="/" className="font-black text-3xl bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(147,51,234,0.4)]">
               fanonym
             </Link>
           </div>

@@ -9,7 +9,7 @@ import Navbar from "@/app/components/Navbar";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#0c0a14] text-white overflow-x-hidden">
+    <div className="min-h-screen bg-[#0c0a14] text-white">
       {/* Floating Emojis Background Animation */}
       <FloatingEmojis />
 
@@ -163,12 +163,11 @@ export default function Home() {
         </div>
 
         <div className="relative z-10 mx-auto max-w-6xl">
-          {/* Section Header - Left aligned, modern */}
-          <div className="mb-16 max-w-xl">
-            <p className="text-purple-400 font-medium mb-3 tracking-wide uppercase text-sm">Mengapa Memilih Kami</p>
-            <h2 className="text-4xl sm:text-5xl font-bold leading-tight">
-              Kenapa
-              <span className="block bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">
+          {/* Section Header - Centered */}
+          <div className="mb-16 text-center">
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">
+              Kenapa{" "}
+              <span className="bg-gradient-to-r from-purple-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
                 Fanonym?
               </span>
             </h2>
@@ -190,7 +189,7 @@ export default function Home() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             {/* Logo & Description */}
             <div className="text-center md:text-left">
-              <Link href="/" className="font-black text-2xl bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600 bg-clip-text text-transparent">
+              <Link href="/" className="font-black text-2xl bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent">
                 fanonym
               </Link>
               <p className="text-zinc-500 text-sm mt-2 max-w-xs">

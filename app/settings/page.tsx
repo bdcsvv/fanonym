@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Logo from '@/app/components/Logo'
 import FanonymLoader from '@/app/components/FanonymLoader'
+import GalaxyBackground from '@/app/components/GalaxyBackground'
 import { sendEmail } from '@/app/lib/email'
 
 export default function SettingsPage() {
@@ -353,20 +354,20 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white relative page-transition">
-      {/* Background gradient orbs */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 h-[300px] w-[300px] rounded-full bg-violet-500/10 blur-[100px]" />
-      </div>
+      {/* Galaxy Background */}
+      <GalaxyBackground />
 
-      <nav className="p-4 relative z-10 bg-[#0c0a14]/80 backdrop-blur-xl">
+      <nav className="p-4 relative z-10 bg-[#0c0a14]/80 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-2xl mx-auto flex justify-between items-center">
           <Logo size="md" linkTo={profile?.user_type === 'creator' ? '/dashboard/creator' : '/dashboard/sender'} />
           <Link 
             href={profile?.user_type === 'creator' ? '/dashboard/creator' : '/dashboard/sender'} 
-            className="text-gray-400 hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] transition-all"
+            className="flex items-center gap-2 text-zinc-400 hover:text-white transition-all text-sm"
           >
-            ← Dashboard
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Dashboard
           </Link>
         </div>
       </nav>
@@ -374,7 +375,7 @@ export default function SettingsPage() {
       <main className="max-w-4xl mx-auto p-6 relative z-10">
         {/* Page Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-black mb-3 bg-gradient-to-r from-purple-400 via-pink-400 to-violet-400 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-black mb-3 bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(147,51,234,0.3)]">
             Pengaturan Akun
           </h1>
           <p className="text-zinc-400">Kelola profil, keamanan, dan preferensi kamu</p>
@@ -1018,7 +1019,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="mt-6 p-4 rounded-xl bg-purple-500/10 border border-purple-500/30">
-              <p className="text-purple-400 text-sm font-medium mb-2">📋 Syarat Password</p>
+              <p className="text-purple-400 text-sm font-medium mb-2">Syarat Password</p>
               <div className="space-y-1.5">
                 <p className={`text-sm flex items-center gap-2 ${newPassword.length >= 8 ? 'text-green-400' : 'text-gray-400'}`}>
                   {newPassword.length >= 8 ? '✅' : '○'} Minimal 8 karakter

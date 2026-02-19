@@ -18,6 +18,7 @@ export default function ChatRoom() {
   const sessionId = params.sessionId as string
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const currentUserRef = useRef<string | null>(null)
 
   const [session, setSession] = useState<any>(null)
   const [messages, setMessages] = useState<any[]>([])
@@ -54,6 +55,7 @@ export default function ChatRoom() {
         return
       }
       setCurrentUser(user)
+      currentUserRef.current = user.id
 
       const { data: profileData } = await supabase
         .from('profiles')
@@ -116,6 +118,20 @@ export default function ChatRoom() {
         .order('created_at', { ascending: true })
       setMessages(messagesData || [])
 
+      // Mark all unread messages from the OTHER user as read
+      await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('session_id', sessionId)
+        .neq('sender_id', user.id)
+        .eq('is_read', false)
+
+      // Also update local state so the SENDER sees ✓✓ immediately via realtime
+      // (Supabase realtime UPDATE may not fire without full replica identity)
+      setMessages(prev => prev.map(m => 
+        m.sender_id !== user.id ? { ...m, is_read: true } : m
+      ))
+
       // Check if sender already rated this session
       if (sessionData.sender_id === user.id) {
         const { data: existingRating } = await supabase
@@ -138,8 +154,17 @@ export default function ChatRoom() {
     const channel = supabase
       .channel(`chat-${sessionId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `session_id=eq.${sessionId}` },
-        (payload) => {
-          setMessages(prev => [...prev, payload.new])
+        async (payload) => {
+          const newMsg = payload.new
+          setMessages(prev => [...prev, newMsg])
+          // If the new message is from the OTHER user, mark it read immediately
+          // (we're currently viewing the chat)
+          if (newMsg.sender_id !== currentUserRef.current) {
+            await supabase
+              .from('messages')
+              .update({ is_read: true })
+              .eq('id', newMsg.id)
+          }
         }
       )
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `session_id=eq.${sessionId}` },
@@ -157,6 +182,37 @@ export default function ChatRoom() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // Keep a ref to latest messages to avoid stale closure in polling interval
+  const messagesRef = useRef<any[]>([])
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
+
+  // Poll is_read every 3s - updates ✓ → ✓✓ for the message sender
+  useEffect(() => {
+    if (!currentUser || !sessionId) return
+
+    const pollReadStatus = async () => {
+      const myUnreadSent = messagesRef.current.filter(m => m.sender_id === currentUser.id && !m.is_read)
+      if (myUnreadSent.length === 0) return
+
+      const ids = myUnreadSent.map(m => m.id)
+      const { data } = await supabase
+        .from('messages')
+        .select('id, is_read')
+        .in('id', ids)
+        .eq('is_read', true)
+
+      if (data && data.length > 0) {
+        const readIds = new Set(data.map((m: any) => m.id))
+        setMessages(prev => prev.map(m => readIds.has(m.id) ? { ...m, is_read: true } : m))
+      }
+    }
+
+    const interval = setInterval(pollReadStatus, 3000)
+    return () => clearInterval(interval)
+  }, [currentUser, sessionId]) // no messages dependency - uses ref instead
 
   useEffect(() => {
     if (!session || !session.expires_at) return
@@ -554,9 +610,16 @@ export default function ChatRoom() {
                 <img src={mediaData.url} alt="Media" className="max-w-full max-h-80 object-cover"/>
               </a>
             )}
-            <p className={`text-xs p-2 ${isFromMe ? 'text-purple-200' : 'text-zinc-500'}`}>
-              {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-            </p>
+            <div className={`flex items-center gap-1 p-2 ${isFromMe ? 'justify-end' : 'justify-start'}`}>
+              <p className={`text-xs ${isFromMe ? 'text-purple-200' : 'text-zinc-500'}`}>
+                {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+              </p>
+              {isFromMe && (
+                msg.is_read
+                  ? <svg className="w-3.5 h-3.5 text-blue-300" viewBox="0 0 16 11" fill="currentColor"><path d="M11.071.653a.75.75 0 0 1 .025 1.06L4.703 8.44 1.9 5.64a.75.75 0 0 0-1.06 1.06l3.33 3.33a.75.75 0 0 0 1.085-.025l6.916-7.327a.75.75 0 0 0-1.1-1.025z"/><path d="M14.571.653a.75.75 0 0 1 .025 1.06L8.203 8.44a.75.75 0 0 1-1.085.025L5.84 7.18a.75.75 0 0 1 1.06-1.06l.75.75 6.366-6.742a.75.75 0 0 1 1.555.525z" opacity="0.6"/></svg>
+                  : <svg className="w-3.5 h-3.5 text-purple-300" viewBox="0 0 12 11" fill="currentColor"><path d="M10.071.653a.75.75 0 0 1 .025 1.06L3.703 8.44.9 5.64a.75.75 0 0 0-1.06 1.06l3.33 3.33a.75.75 0 0 0 1.085-.025L10.17 2.678a.75.75 0 0 0-1.1-1.025z"/></svg>
+              )}
+            </div>
           </div>
         </div>
       )
@@ -587,9 +650,16 @@ export default function ChatRoom() {
             ) : (
               <div className="px-3 py-2 bg-yellow-500/30 rounded-lg text-yellow-300 text-center text-sm">⏳ Menunggu Pembayaran</div>
             )}
-            <p className="text-xs mt-2 text-purple-300">
-              {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-            </p>
+            <div className={`flex items-center gap-1 mt-2 ${isFromMe ? 'justify-end' : 'justify-start'}`}>
+              <p className="text-xs text-purple-300">
+                {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+              </p>
+              {isFromMe && (
+                msg.is_read
+                  ? <svg className="w-3.5 h-3.5 text-blue-300" viewBox="0 0 16 11" fill="currentColor"><path d="M11.071.653a.75.75 0 0 1 .025 1.06L4.703 8.44 1.9 5.64a.75.75 0 0 0-1.06 1.06l3.33 3.33a.75.75 0 0 0 1.085-.025l6.916-7.327a.75.75 0 0 0-1.1-1.025z"/><path d="M14.571.653a.75.75 0 0 1 .025 1.06L8.203 8.44a.75.75 0 0 1-1.085.025L5.84 7.18a.75.75 0 0 1 1.06-1.06l.75.75 6.366-6.742a.75.75 0 0 1 1.555.525z" opacity="0.6"/></svg>
+                  : <svg className="w-3.5 h-3.5 text-purple-300" viewBox="0 0 12 11" fill="currentColor"><path d="M10.071.653a.75.75 0 0 1 .025 1.06L3.703 8.44.9 5.64a.75.75 0 0 0-1.06 1.06l3.33 3.33a.75.75 0 0 0 1.085-.025L10.17 2.678a.75.75 0 0 0-1.1-1.025z"/></svg>
+              )}
+            </div>
           </div>
         </div>
       )
@@ -611,9 +681,28 @@ export default function ChatRoom() {
       >
         <div className={`max-w-[70%] px-4 py-3 rounded-2xl ${isFromMe ? 'bg-purple-600 rounded-tr-md' : 'bg-zinc-800 border border-zinc-700 rounded-tl-md'}`}>
           <p className="text-white">{msg.content}</p>
-          <p className={`text-xs mt-1 ${isFromMe ? 'text-purple-200' : 'text-zinc-500'}`}>
-            {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-          </p>
+          <div className={`flex items-center gap-1 mt-1 ${isFromMe ? 'justify-end' : 'justify-start'}`}>
+            <p className={`text-xs ${isFromMe ? 'text-purple-200' : 'text-zinc-500'}`}>
+              {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+            </p>
+            {/* Read receipt - only show on MY messages */}
+            {isFromMe && (
+              <div className="flex items-center">
+                {msg.is_read ? (
+                  // Double check = read (blue tint)
+                  <svg className="w-3.5 h-3.5 text-blue-300" viewBox="0 0 16 11" fill="currentColor">
+                    <path d="M11.071.653a.75.75 0 0 1 .025 1.06L4.703 8.44 1.9 5.64a.75.75 0 0 0-1.06 1.06l3.33 3.33a.75.75 0 0 0 1.085-.025l6.916-7.327a.75.75 0 0 0-1.1-1.025z"/>
+                    <path d="M14.571.653a.75.75 0 0 1 .025 1.06L8.203 8.44a.75.75 0 0 1-1.085.025L5.84 7.18a.75.75 0 0 1 1.06-1.06l.75.75 6.366-6.742a.75.75 0 0 1 1.555.525z" opacity="0.6"/>
+                  </svg>
+                ) : (
+                  // Single check = sent, not yet read
+                  <svg className="w-3.5 h-3.5 text-purple-300" viewBox="0 0 12 11" fill="currentColor">
+                    <path d="M10.071.653a.75.75 0 0 1 .025 1.06L3.703 8.44.9 5.64a.75.75 0 0 0-1.06 1.06l3.33 3.33a.75.75 0 0 0 1.085-.025L10.17 2.678a.75.75 0 0 0-1.1-1.025z"/>
+                  </svg>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     )
@@ -858,50 +947,61 @@ export default function ChatRoom() {
                 <p className="text-zinc-500 text-sm mt-1">Salah satu pihak telah memblokir. Pesan tidak bisa dikirim.</p>
               </div>
             ) : (
-            <form onSubmit={sendMessage} className="flex items-center gap-3 bg-zinc-900/50 border border-zinc-800 rounded-2xl px-4 py-2">
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileUpload} 
-                accept="image/*,video/mp4,video/quicktime" 
-                style={{ display: 'none' }}
-              />
-              <button 
-                type="button" 
-                onClick={() => fileInputRef.current?.click()} 
-                disabled={uploading} 
-                className="p-2 text-zinc-400 hover:text-purple-400 disabled:opacity-50 transition-colors"
-              >
-                {uploading ? (
-                  <svg className="w-6 h-6 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <div className="relative">
+              <form onSubmit={sendMessage} className="flex items-center gap-2 bg-zinc-900 border border-zinc-700/60 rounded-2xl px-3 py-2 shadow-lg shadow-black/20 focus-within:border-purple-500/50 focus-within:shadow-purple-500/10 transition-all duration-200">
+                {/* Hidden file input */}
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleFileUpload} 
+                  accept="image/*,video/mp4,video/quicktime" 
+                  style={{ display: 'none' }}
+                />
+                
+                {/* Attachment button */}
+                <button 
+                  type="button" 
+                  onClick={() => fileInputRef.current?.click()} 
+                  disabled={uploading} 
+                  className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-xl text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 disabled:opacity-40 transition-all duration-200"
+                >
+                  {uploading ? (
+                    <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                    </svg>
+                  )}
+                </button>
+                
+                {/* Text input */}
+                <input 
+                  type="text" 
+                  value={newMessage} 
+                  onChange={(e) => setNewMessage(e.target.value)} 
+                  placeholder="Ketik pesan anonim..." 
+                  className="flex-1 bg-transparent py-2 outline-none text-sm placeholder-zinc-600 text-white"
+                />
+                
+                {/* Send button - shows text + icon, highlighted when has content */}
+                <button 
+                  type="submit" 
+                  disabled={!newMessage.trim()} 
+                  className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                    newMessage.trim()
+                      ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/25'
+                      : 'text-zinc-600 cursor-not-allowed'
+                  }`}
+                >
+                  <span>Kirim</span>
+                  <svg className={`w-4 h-4 transition-transform duration-200 ${newMessage.trim() ? 'translate-x-0' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                   </svg>
-                ) : (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                  </svg>
-                )}
-              </button>
-              
-              <input 
-                type="text" 
-                value={newMessage} 
-                onChange={(e) => setNewMessage(e.target.value)} 
-                placeholder="Ketik pesan anonim..." 
-                className="flex-1 bg-transparent py-2 outline-none placeholder-zinc-500"
-              />
-              
-              <button 
-                type="submit" 
-                disabled={!newMessage.trim()} 
-                className="flex items-center gap-2 px-4 py-2 text-zinc-400 hover:text-purple-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <span className="text-sm font-medium">Kirim</span>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
-              </button>
-            </form>
+                </button>
+              </form>
+            </div>
             )}
 
             {/* Encryption Notice */}

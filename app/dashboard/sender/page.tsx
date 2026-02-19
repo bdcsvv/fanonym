@@ -31,6 +31,7 @@ export default function SenderDashboard() {
   const [searchError, setSearchError] = useState('')
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
+  const [selectedExpired, setSelectedExpired] = useState<string[]>([])
 
   useEffect(() => {
     const getProfile = async () => {
@@ -54,7 +55,7 @@ export default function SenderDashboard() {
 
       const { data: chatsData, error: chatsError } = await supabase
         .from('chat_sessions')
-        .select('*, creator:creator_id(id, username, full_name, avatar_url), messages(id, sender_id, created_at)')
+        .select('*, creator:creator_id(id, username, full_name, avatar_url), messages(id, sender_id, is_read, created_at)')
         .eq('sender_id', profileData?.id)
         .order('started_at', { ascending: false })
 
@@ -174,15 +175,10 @@ export default function SenderDashboard() {
   }
 
   // Check if chat has unread messages from creator
+  // True if there are messages from creator (not sender) that haven't been read
   const hasUnreadMessages = (chat: any) => {
     if (!chat.messages || chat.messages.length === 0) return false
-    // Get the latest message
-    const sortedMessages = [...chat.messages].sort((a, b) => 
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    )
-    const latestMessage = sortedMessages[0]
-    // If latest message is from creator (not sender), it's "unread"
-    return latestMessage.sender_id !== profile?.id
+    return chat.messages.some((m: any) => m.sender_id !== profile?.id && m.is_read === false)
   }
 
   // Count unread chats
@@ -230,7 +226,7 @@ export default function SenderDashboard() {
       <nav className="sticky top-0 z-50 bg-[#0c0a14]/80 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           {/* Logo */}
-          <Link href="/dashboard/sender" className="font-black text-2xl bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)] animate-fadeIn">
+          <Link href="/dashboard/sender" className="font-black text-2xl bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)] animate-fadeIn">
             fanonym
           </Link>
 
@@ -561,44 +557,95 @@ export default function SenderDashboard() {
                   />
                 </div>
               ) : (
-                expiredChats.map((chat, index) => (
-                  <div 
-                    key={chat.id} 
-                    className="flex items-center justify-between p-4 bg-zinc-900/50 border border-zinc-800 rounded-2xl opacity-60 animate-fadeIn"
-                    style={{ animationDelay: `${index * 0.05}s` }}
-                  >
-                    <Link href={`/chat/${chat.id}`} className="flex items-center gap-4 flex-1">
-                      {chat.creator?.avatar_url ? (
-                        <img src={chat.creator.avatar_url} alt="" className="w-14 h-14 rounded-full object-cover grayscale"/>
-                      ) : (
-                        <div className="w-14 h-14 bg-gradient-to-br from-zinc-600 to-zinc-700 rounded-full flex items-center justify-center font-bold text-lg">
-                          {chat.creator?.full_name?.[0] || '?'}
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-semibold text-lg">{chat.creator?.full_name || chat.creator?.username}</p>
-                        <p className="text-zinc-600 text-sm">Expired: {new Date(chat.expires_at).toLocaleDateString('id-ID')}</p>
-                      </div>
-                    </Link>
-                    <button
-                      onClick={() => handleDeleteChat(chat.id)}
-                      disabled={deleteLoading === chat.id}
-                      className="text-sm px-4 py-2 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                    >
-                      {deleteLoading === chat.id ? (
-                        <>
-                          <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                <>
+                  {/* Select All Bar */}
+                  <div className="flex items-center justify-between mb-4 p-3 bg-zinc-900/50 border border-zinc-800 rounded-2xl">
+                    <label className="flex items-center gap-3 cursor-pointer select-none">
+                      <div
+                        onClick={() => {
+                          const allIds = expiredChats.map(c => c.id)
+                          setSelectedExpired(prev => prev.length === allIds.length ? [] : allIds)
+                        }}
+                        className={`w-5 h-5 rounded flex items-center justify-center border-2 cursor-pointer transition-colors ${
+                          selectedExpired.length === expiredChats.length && expiredChats.length > 0
+                            ? 'bg-purple-600 border-purple-600'
+                            : 'border-zinc-600 hover:border-purple-500'
+                        }`}
+                      >
+                        {selectedExpired.length === expiredChats.length && expiredChats.length > 0 && (
+                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
-                          Hapus...
-                        </>
-                      ) : (
-                        'Hapus'
-                      )}
-                    </button>
+                        )}
+                      </div>
+                      <span className="text-sm text-zinc-400">
+                        {selectedExpired.length > 0 ? `${selectedExpired.length} dipilih` : `Pilih Semua (${expiredChats.length})`}
+                      </span>
+                    </label>
+                    {selectedExpired.length > 0 && (
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`Hapus ${selectedExpired.length} chat?`)) return
+                          await Promise.all(selectedExpired.map(id => supabase.from('chat_sessions').delete().eq('id', id)))
+                          setExpiredChats(prev => prev.filter(c => !selectedExpired.includes(c.id)))
+                          setSelectedExpired([])
+                          setToast({ message: `${selectedExpired.length} chat berhasil dihapus`, type: 'success' })
+                        }}
+                        className="px-4 py-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 text-sm font-medium rounded-xl transition-colors"
+                      >
+                        Hapus {selectedExpired.length} Chat
+                      </button>
+                    )}
                   </div>
-                ))
+
+                  {expiredChats.map((chat, index) => {
+                    const isSelected = selectedExpired.includes(chat.id)
+                    return (
+                      <div
+                        key={chat.id}
+                        className={`flex items-center gap-3 p-4 border rounded-2xl opacity-60 animate-fadeIn transition-colors ${isSelected ? 'bg-purple-600/5 border-purple-500/30' : 'bg-zinc-900/50 border-zinc-800'}`}
+                        style={{ animationDelay: `${index * 0.05}s` }}
+                      >
+                        {/* Checkbox */}
+                        <div
+                          onClick={() => setSelectedExpired(prev => isSelected ? prev.filter(id => id !== chat.id) : [...prev, chat.id])}
+                          className={`w-5 h-5 rounded flex items-center justify-center border-2 cursor-pointer flex-shrink-0 transition-colors ${isSelected ? 'bg-purple-600 border-purple-600' : 'border-zinc-600 hover:border-purple-500'}`}
+                        >
+                          {isSelected && (
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+                        <Link href={`/chat/${chat.id}`} className="flex items-center gap-4 flex-1">
+                          {chat.creator?.avatar_url ? (
+                            <img src={chat.creator.avatar_url} alt="" className="w-14 h-14 rounded-full object-cover grayscale"/>
+                          ) : (
+                            <div className="w-14 h-14 bg-gradient-to-br from-zinc-600 to-zinc-700 rounded-full flex items-center justify-center font-bold text-lg">
+                              {chat.creator?.full_name?.[0] || '?'}
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-semibold text-lg">{chat.creator?.full_name || chat.creator?.username}</p>
+                            <p className="text-zinc-600 text-sm">Expired: {new Date(chat.expires_at).toLocaleDateString('id-ID')}</p>
+                          </div>
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteChat(chat.id)}
+                          disabled={deleteLoading === chat.id}
+                          className="text-sm px-4 py-2 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50 flex items-center gap-2"
+                        >
+                          {deleteLoading === chat.id ? (
+                            <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                            </svg>
+                          ) : 'Hapus'}
+                        </button>
+                      </div>
+                    )
+                  })}
+                </>
               )}
             </>
           )}

@@ -5,14 +5,23 @@ import { supabase } from '@/app/lib/supabase'
 import Link from 'next/link'
 import Logo from '@/app/components/Logo'
 import FanonymLoader from '@/app/components/FanonymLoader'
+import { useRouter } from 'next/navigation'
 
 export default function ExplorePage() {
+  const router = useRouter()
   const [creators, setCreators] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
 
   useEffect(() => {
-    const fetchCreators = async () => {
+    const init = async () => {
+      // Auth guard - redirect to login if not authenticated
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.push('/auth/login')
+        return
+      }
+
       // Fetch all creators (both verified and unverified)
       const { data } = await supabase
         .from('profiles')
@@ -23,7 +32,7 @@ export default function ExplorePage() {
       setLoading(false)
     }
 
-    fetchCreators()
+    init()
   }, [])
 
   // Filter by search term - searches both username and full_name
