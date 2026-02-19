@@ -71,7 +71,7 @@ export default function KenapaFanonymCards() {
     return () => observer.disconnect()
   }, [])
 
-  const goTo = useCallback((index, dir) => {
+  const goTo = useCallback((index: number, dir: 'next' | 'prev') => {
     if (isAnimating) return
     setIsAnimating(true)
     setDirection(dir)
