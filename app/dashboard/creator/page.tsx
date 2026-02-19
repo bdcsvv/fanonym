@@ -63,7 +63,7 @@ export default function CreatorDashboard() {
   const [withdrawLoading, setWithdrawLoading] = useState(false)
 
   const KREDIT_TO_IDR = 10000
-  const PLATFORM_FEE = 0.2
+  const PLATFORM_FEE = 0.1
   const TRANSFER_FEE = 30000
   const FREE_TRANSFER_MIN = 1000000
   const MIN_WITHDRAW = 10
@@ -1057,7 +1057,7 @@ export default function CreatorDashboard() {
                         })}
                       </p>
                       <p className="text-zinc-400 text-sm">
-                        ≈ Rp {(w.amount * KREDIT_TO_IDR * (1 - PLATFORM_FEE)).toLocaleString('id-ID')} (setelah fee 20%)
+                        ≈ Rp {(w.amount * KREDIT_TO_IDR * (1 - PLATFORM_FEE)).toLocaleString('id-ID')} (setelah fee 10%)
                       </p>
                     </div>
                   </div>
@@ -1696,7 +1696,7 @@ export default function CreatorDashboard() {
                     <span>{withdrawAmount} Kredit</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-zinc-400">Platform fee (20%)</span>
+                    <span className="text-zinc-400">Platform fee (10%)</span>
                     <span className="text-red-400">- Rp {(parseFloat(withdrawAmount) * KREDIT_TO_IDR * PLATFORM_FEE).toLocaleString('id-ID')}</span>
                   </div>
                   {withdrawCalc.fee > 0 && (
