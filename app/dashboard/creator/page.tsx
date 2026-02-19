@@ -47,7 +47,13 @@ export default function CreatorDashboard() {
     todayChats: number
     weekChats: number
     monthChats: number
-  }>({ today: 0, week: 0, month: 0, todayChats: 0, weekChats: 0, monthChats: 0 })
+    todayPayments: number
+    weekPayments: number
+    monthPayments: number
+    topSenders: { name: string; avatar?: string; username: string; totalCredits: number; chatCount: number }[]
+    avgPerChat: number
+    acceptRate: number
+  }>({ today: 0, week: 0, month: 0, todayChats: 0, weekChats: 0, monthChats: 0, todayPayments: 0, weekPayments: 0, monthPayments: 0, topSenders: [], avgPerChat: 0, acceptRate: 0 })
   
   // Withdraw form
   const [withdrawAmount, setWithdrawAmount] = useState('')
@@ -239,13 +245,64 @@ export default function CreatorDashboard() {
       const weekEarnings = weekChats.reduce((sum: number, c: any) => sum + (c.credits_paid || 0), 0)
       const monthEarnings = monthChats.reduce((sum: number, c: any) => sum + (c.credits_paid || 0), 0)
 
+      // Calculate in-chat payment earnings from messages
+      let todayPayments = 0, weekPayments = 0, monthPayments = 0
+      acceptedChats.forEach((c: any) => {
+        (c.messages || []).forEach((m: any) => {
+          try {
+            const parsed = JSON.parse(m.content)
+            if (parsed.type === 'payment_request' && parsed.status === 'paid') {
+              const msgDate = new Date(m.created_at)
+              const amount = parsed.amount || 0
+              if (msgDate >= todayStart) todayPayments += amount
+              if (msgDate >= weekStart) weekPayments += amount
+              if (msgDate >= monthStart) monthPayments += amount
+            }
+          } catch {}
+        })
+      })
+
+      // Top senders - aggregate by sender
+      const senderMap: Record<string, { name: string; avatar?: string; username: string; totalCredits: number; chatCount: number }> = {}
+      acceptedChats.forEach((c: any) => {
+        const sid = c.sender_id
+        if (!senderMap[sid]) {
+          senderMap[sid] = {
+            name: c.sender?.full_name || c.sender?.username || 'Anonim',
+            avatar: c.sender?.avatar_url,
+            username: c.sender?.username || '',
+            totalCredits: 0,
+            chatCount: 0,
+          }
+        }
+        senderMap[sid].totalCredits += (c.credits_paid || 0)
+        senderMap[sid].chatCount += 1
+      })
+      const topSenders = Object.values(senderMap)
+        .sort((a, b) => b.totalCredits - a.totalCredits)
+        .slice(0, 5)
+
+      // Accept rate
+      const totalRequests = (chatsData || []).filter((c: any) => c.credits_paid > 0).length
+      const acceptRate = totalRequests > 0 ? Math.round((acceptedChats.length / totalRequests) * 100) : 0
+
+      // Average per chat
+      const totalFromChats = acceptedChats.reduce((sum: number, c: any) => sum + (c.credits_paid || 0), 0)
+      const avgPerChat = acceptedChats.length > 0 ? Math.round(totalFromChats / acceptedChats.length) : 0
+
       setAnalyticsData({
-        today: todayEarnings,
-        week: weekEarnings,
-        month: monthEarnings,
+        today: todayEarnings + todayPayments,
+        week: weekEarnings + weekPayments,
+        month: monthEarnings + monthPayments,
         todayChats: todayChats.length,
         weekChats: weekChats.length,
-        monthChats: monthChats.length
+        monthChats: monthChats.length,
+        todayPayments,
+        weekPayments,
+        monthPayments,
+        topSenders,
+        avgPerChat,
+        acceptRate,
       })
 
       // Count unique senders
@@ -788,6 +845,9 @@ export default function CreatorDashboard() {
                 <p className="text-zinc-600 text-xs mt-2">≈ Rp {(analyticsData.today * KREDIT_TO_IDR).toLocaleString('id-ID')}</p>
                 <div className="mt-4 pt-4 border-t border-zinc-800">
                   <p className="text-zinc-500 text-sm">{analyticsData.todayChats} chat sessions</p>
+                  {analyticsData.todayPayments > 0 && (
+                    <p className="text-zinc-600 text-xs mt-1">💸 +{analyticsData.todayPayments} dari in-chat payments</p>
+                  )}
                 </div>
               </div>
 
@@ -806,6 +866,9 @@ export default function CreatorDashboard() {
                 <p className="text-zinc-600 text-xs mt-2">≈ Rp {(analyticsData.week * KREDIT_TO_IDR).toLocaleString('id-ID')}</p>
                 <div className="mt-4 pt-4 border-t border-zinc-800">
                   <p className="text-zinc-500 text-sm">{analyticsData.weekChats} chat sessions</p>
+                  {analyticsData.weekPayments > 0 && (
+                    <p className="text-zinc-600 text-xs mt-1">💸 +{analyticsData.weekPayments} dari in-chat payments</p>
+                  )}
                 </div>
               </div>
 
@@ -824,12 +887,15 @@ export default function CreatorDashboard() {
                 <p className="text-zinc-600 text-xs mt-2">≈ Rp {(analyticsData.month * KREDIT_TO_IDR).toLocaleString('id-ID')}</p>
                 <div className="mt-4 pt-4 border-t border-zinc-800">
                   <p className="text-zinc-500 text-sm">{analyticsData.monthChats} chat sessions</p>
+                  {analyticsData.monthPayments > 0 && (
+                    <p className="text-zinc-600 text-xs mt-1">💸 +{analyticsData.monthPayments} dari in-chat payments</p>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Summary Card */}
-            <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 mb-8">
               <h3 className="font-semibold mb-4">💰 Ringkasan</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-zinc-800/50 rounded-xl p-4 text-center">
@@ -853,6 +919,81 @@ export default function CreatorDashboard() {
                   <p className="text-zinc-600 text-xs">Senders</p>
                 </div>
               </div>
+            </div>
+
+            {/* Extra Stats Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                    <span className="text-lg">📈</span>
+                  </div>
+                  <div>
+                    <p className="text-zinc-400 text-xs">Accept Rate</p>
+                    <p className="text-2xl font-bold text-blue-400">{analyticsData.acceptRate}%</p>
+                  </div>
+                </div>
+                <p className="text-zinc-600 text-xs">Persentase chat request yang diterima</p>
+              </div>
+              <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-orange-500/20 rounded-xl flex items-center justify-center">
+                    <span className="text-lg">💎</span>
+                  </div>
+                  <div>
+                    <p className="text-zinc-400 text-xs">Rata-rata per Chat</p>
+                    <p className="text-2xl font-bold text-orange-400">{analyticsData.avgPerChat}</p>
+                  </div>
+                </div>
+                <p className="text-zinc-600 text-xs">Kredit rata-rata dari unlock chat</p>
+              </div>
+              <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-pink-500/20 rounded-xl flex items-center justify-center">
+                    <span className="text-lg">💸</span>
+                  </div>
+                  <div>
+                    <p className="text-zinc-400 text-xs">In-Chat Payments (30h)</p>
+                    <p className="text-2xl font-bold text-pink-400">{analyticsData.monthPayments}</p>
+                  </div>
+                </div>
+                <p className="text-zinc-600 text-xs">Kredit dari payment request di chat</p>
+              </div>
+            </div>
+
+            {/* Top Senders */}
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
+              <h3 className="font-semibold mb-4">🏆 Top Senders</h3>
+              {analyticsData.topSenders.length === 0 ? (
+                <p className="text-zinc-500 text-sm text-center py-6">Belum ada data sender</p>
+              ) : (
+                <div className="space-y-3">
+                  {analyticsData.topSenders.map((sender, idx) => (
+                    <div key={idx} className="flex items-center gap-4 p-3 bg-zinc-800/30 rounded-xl hover:bg-zinc-800/50 transition-colors">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-purple-500/20 to-violet-500/20 text-sm font-bold text-purple-400 flex-shrink-0">
+                        {idx + 1}
+                      </div>
+                      <div className="flex-shrink-0">
+                        {sender.avatar ? (
+                          <img src={sender.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-10 h-10 bg-purple-600/20 rounded-full flex items-center justify-center text-purple-400 font-medium">
+                            {sender.name[0]?.toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{sender.name}</p>
+                        <p className="text-zinc-500 text-xs">@{sender.username} • {sender.chatCount} chat{sender.chatCount > 1 ? 's' : ''}</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="font-bold text-green-400">{sender.totalCredits}</p>
+                        <p className="text-zinc-600 text-xs">Kredit</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
