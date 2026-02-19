@@ -142,6 +142,11 @@ export default function ChatRoom() {
           setMessages(prev => [...prev, payload.new])
         }
       )
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `session_id=eq.${sessionId}` },
+        (payload) => {
+          setMessages(prev => prev.map(m => m.id === payload.new.id ? payload.new : m))
+        }
+      )
       .subscribe()
 
     return () => {

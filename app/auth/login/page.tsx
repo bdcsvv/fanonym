@@ -109,13 +109,14 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       })
-      if (error) throw error
+      // Always show success - don't reveal if email exists or not
       setForgotSent(true)
     } catch (err: any) {
-      setError(err.message)
+      // Still show success for security
+      setForgotSent(true)
     } finally {
       setLoading(false)
     }
@@ -155,9 +156,9 @@ export default function LoginPage() {
               </div>
               <h2 className="text-xl font-semibold text-white mb-2">Cek Email Anda</h2>
               <p className="text-gray-400 mb-6">
-                Link reset password telah dikirim ke{' '}
-                <span className="text-purple-400">{email}</span>
+                Jika akun dengan email <span className="text-purple-400">{email}</span> terdaftar, Anda akan menerima link untuk reset password.
               </p>
+              <p className="text-gray-500 text-xs mb-6">Cek juga folder spam jika tidak muncul di inbox.</p>
               <button
                 onClick={() => {
                   setForgotMode(false)
