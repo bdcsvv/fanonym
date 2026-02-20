@@ -35,7 +35,6 @@ export default function CreatorDashboard() {
   const [filteredEarnings, setFilteredEarnings] = useState(0)
   const [copied, setCopied] = useState(false)
   const [acceptingChatId, setAcceptingChatId] = useState<string | null>(null)
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
   
   // Notifications
   const [notifications, setNotifications] = useState<any[]>([])
@@ -416,7 +415,7 @@ export default function CreatorDashboard() {
       if (chatCheckError) throw chatCheckError
 
       if (existingChat.is_accepted || existingChat.credits_transferred) {
-        setToast({ message: 'Chat ini sudah di-accept sebelumnya!', type: 'error' })
+        toast.error('Chat ini sudah di-accept sebelumnya!')
         // Refresh data
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
@@ -442,7 +441,7 @@ export default function CreatorDashboard() {
       if (creditsCheckError) throw creditsCheckError
 
       if (!senderCredits || senderCredits.balance < creditsPaid) {
-        setToast({ message: 'Error: Sender tidak memiliki cukup kredit!', type: 'error' })
+        toast.error('Error: Sender tidak memiliki cukup kredit!')
         return
       }
 
@@ -520,7 +519,7 @@ export default function CreatorDashboard() {
         throw new Error('Gagal update chat session')
       }
 
-      setToast({ message: 'Chat diterima! Kredit sudah ditransfer.', type: 'success' })
+      toast.success('Chat diterima! Kredit sudah ditransfer.')
 
       // Notify sender that chat was accepted
       await sendNotification({
@@ -557,7 +556,7 @@ export default function CreatorDashboard() {
       
     } catch (err: any) {
       const appError = handleError(err)
-      setToast({ message: appError.userMessage, type: 'error' })
+      toast.error(appError.userMessage)
     } finally {
       setAcceptingChatId(null)
     }
@@ -1803,13 +1802,6 @@ export default function CreatorDashboard() {
       <HelpButton subject="Butuh Bantuan - Creator Dashboard" />
       
       {/* Toast Notification */}
-      {toast && (
-        <Toast 
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
     </div>
   )
 }

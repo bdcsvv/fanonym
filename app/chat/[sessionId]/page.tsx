@@ -39,7 +39,6 @@ export default function ChatRoom() {
   const [extendLoading, setExtendLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
   const [isBlockedChat, setIsBlockedChat] = useState(false)
   const [showRating, setShowRating] = useState(false)
   const [ratingScore, setRatingScore] = useState(0)
@@ -227,7 +226,7 @@ export default function ChatRoom() {
       
       if (expired) {
         // Optionally reload or show expired UI
-        setToast({ message: 'Chat session telah expired', type: 'info' })
+        toast.info('Chat session telah expired')
       }
     }
 
@@ -256,7 +255,7 @@ export default function ChatRoom() {
       if (error) throw error
       setRatingSubmitted(true)
       setShowRating(false)
-      setToast({ message: '⭐ Rating berhasil dikirim!', type: 'success' })
+      toast.success('⭐ Rating berhasil dikirim!')
 
       // Notify creator about new rating
       await sendNotification({
@@ -267,7 +266,7 @@ export default function ChatRoom() {
         link: `/profile/${session.creator?.username || ''}`,
       })
     } catch (err: any) {
-      setToast({ message: 'Gagal mengirim rating: ' + err.message, type: 'error' })
+      toast.error('Gagal mengirim rating: ' + err.message)
     } finally {
       setRatingLoading(false)
     }
@@ -280,7 +279,7 @@ export default function ChatRoom() {
     // Validate message
     const validation = validateMessage(newMessage)
     if (!validation.isValid) {
-      setToast({ message: Object.values(validation.errors)[0], type: 'error' })
+      toast.error(Object.values(validation.errors)[0])
       return
     }
 
@@ -297,7 +296,7 @@ export default function ChatRoom() {
       setNewMessage('')
     } catch (error) {
       const appError = handleError(error)
-      setToast({ message: appError.userMessage, type: 'error' })
+      toast.error(appError.userMessage)
     }
   }
 
@@ -308,7 +307,7 @@ export default function ChatRoom() {
     // Validate file
     const validation = validateImage(file, 'message')
     if (!validation.isValid) {
-      setToast({ message: Object.values(validation.errors)[0], type: 'error' })
+      toast.error(Object.values(validation.errors)[0])
       return
     }
 
@@ -397,7 +396,7 @@ export default function ChatRoom() {
       if (msgCheck) {
         const checkContent = JSON.parse(msgCheck.content)
         if (checkContent.status === 'paid') {
-          setToast({ message: 'Pembayaran sudah dilakukan sebelumnya', type: 'info' })
+          toast.info('Pembayaran sudah dilakukan sebelumnya')
           // Update local state
           setMessages(prev => prev.map(m => {
             if (m.id === messageId) {
@@ -482,7 +481,7 @@ export default function ChatRoom() {
         return m
       }))
 
-      setToast({ message: '✅ Pembayaran berhasil!', type: 'success' })
+      toast.success('✅ Pembayaran berhasil!')
 
       // Notify creator about payment received
       await sendNotification({
@@ -493,7 +492,7 @@ export default function ChatRoom() {
         link: `/chat/${sessionId}`,
       })
     } catch (err: any) {
-      setToast({ message: 'Gagal bayar: ' + err.message, type: 'error' })
+      toast.error('Gagal bayar: ' + err.message)
     } finally {
       setPayingMessageId(null)
     }
@@ -1106,13 +1105,6 @@ export default function ChatRoom() {
       />
       
       {/* Toast Notification */}
-      {toast && (
-        <Toast 
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
     </div>
   )
 }
