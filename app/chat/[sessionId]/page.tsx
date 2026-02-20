@@ -11,7 +11,6 @@ import { validateImage, validateMessage } from '@/app/lib/validation'
 import { sendNotification } from '@/app/lib/notifications'
 import { compressImage } from '@/app/lib/mobileUtils'
 import { handleError } from '@/app/lib/errorHandler'
-import GalaxyBackground from '@/app/components/GalaxyBackground'
 
 export default function ChatRoom() {
   const params = useParams()
@@ -728,64 +727,16 @@ export default function ChatRoom() {
 
   if (isPending && !isCreator) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
-        {/* Galaxy Background */}
-        <GalaxyBackground />
-        
-        <div className="relative z-10 flex flex-col items-center gap-6 max-w-md w-full px-6 text-center">
-          {/* Glowing ring behind icon */}
-          <div className="relative w-40 h-40 flex items-center justify-center">
-            <div className="absolute inset-0 rounded-full border-2 border-purple-500/30 animate-loader-ring-1" />
-            <div className="absolute inset-2 rounded-full border-2 border-purple-400/20 animate-loader-ring-2" />
-            <div className="absolute inset-4 rounded-full border border-purple-300/10 animate-loader-ring-3" />
-            
-            {/* Hourglass icon in center */}
-            <div className="relative z-10 w-16 h-16 rounded-full bg-yellow-500/15 border border-yellow-500/25 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full blur-xl bg-yellow-500/15 animate-pulse-slow" />
-              <svg className="w-7 h-7 text-yellow-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-
-          {/* Logo */}
-          <div className="relative">
-            <div className="absolute inset-0 blur-xl bg-purple-600/30 animate-pulse-slow" />
-            <h1 className="text-3xl font-black bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-shift drop-shadow-[0_0_30px_rgba(103,0,232,0.5)] relative z-10">
-              fanonym
-            </h1>
-          </div>
-
-          {/* Loading bar */}
-          <div className="w-48 h-1 bg-zinc-800 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-purple-600 via-purple-400 to-purple-600 bg-[length:200%_100%] animate-loading-bar rounded-full" />
-          </div>
-
-          {/* Loading dots */}
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-purple-500 animate-loader-dot-1" />
-            <div className="w-2 h-2 rounded-full bg-purple-400 animate-loader-dot-2" />
-            <div className="w-2 h-2 rounded-full bg-purple-300 animate-loader-dot-3" />
-          </div>
-
-          {/* Text */}
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-white">Menunggu Creator Accept</h2>
-            <p className="text-zinc-400 text-sm leading-relaxed">
-              Chat kamu sudah dibayar! Menunggu {session?.creator?.full_name || 'creator'} untuk accept chat. 
-              Waktu akan mulai dihitung setelah creator accept.
-            </p>
-          </div>
-
-          {/* CTA */}
-          <button 
-            onClick={() => router.back()} 
-            className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-500 rounded-xl font-semibold transition-all hover:shadow-lg hover:shadow-purple-500/25"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Kembali ke Dashboard
+      <div className="min-h-screen bg-[#0c0a14] flex items-center justify-center p-4">
+        <div className="text-center max-w-md animate-fadeIn">
+          <div className="text-6xl mb-4">⏳</div>
+          <h2 className="text-2xl font-bold text-white mb-2">Menunggu Creator Accept</h2>
+          <p className="text-zinc-400 mb-4">
+            Chat kamu sudah dibayar! Menunggu {session?.creator?.full_name || 'creator'} untuk accept chat. 
+            Waktu akan mulai dihitung setelah creator accept.
+          </p>
+          <button onClick={() => router.back()} className="px-6 py-3 bg-purple-600 hover:bg-purple-500 rounded-xl font-semibold transition-colors">
+            ← Kembali ke Dashboard
           </button>
         </div>
       </div>
