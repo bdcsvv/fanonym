@@ -173,6 +173,24 @@ export default function TopupPage() {
     }
 
     setStep('done')
+
+    // Notify admin via email
+    try {
+      const { data: profile } = await supabase.from('profiles').select('username').eq('id', user.id).single()
+      await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'rizkinurulloh1124@gmail.com',
+          type: 'admin_topup_alert',
+          data: {
+            username: profile?.username || user.email,
+            amount: selectedOption?.credits,
+            time: new Date().toLocaleString('id-ID')
+          }
+        })
+      })
+    } catch (e) { /* silent fail */ }
     setUploading(false)
     
     // Refresh history

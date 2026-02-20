@@ -56,6 +56,36 @@ export default function RegisterPage() {
       return
     }
 
+    // Username validation
+    if (username.length < 3) {
+      setError('Username minimal 3 karakter')
+      setLoading(false)
+      return
+    }
+
+    if (username.length > 30) {
+      setError('Username maksimal 30 karakter')
+      setLoading(false)
+      return
+    }
+
+    // Block SARA, vulgar, and inappropriate usernames
+    const blockedWords = [
+      'anjing', 'bangsat', 'kontol', 'memek', 'ngentot', 'jancok', 'bajingan',
+      'pepek', 'cibai', 'babi', 'goblok', 'tolol', 'idiot', 'bodoh',
+      'kafir', 'murtad', 'israel', 'yahudi', 'cina', 'negro', 'nigger',
+      'fuck', 'shit', 'ass', 'dick', 'pussy', 'cock', 'porn', 'sex', 'nude',
+      'admin', 'fanonym', 'support', 'official', 'root', 'system'
+    ]
+
+    const usernameLower = username.toLowerCase()
+    const hasBlockedWord = blockedWords.some(word => usernameLower.includes(word))
+    if (hasBlockedWord) {
+      setError('Username mengandung kata yang tidak diperbolehkan')
+      setLoading(false)
+      return
+    }
+
     try {
       const { data: existingEmail } = await supabase
         .from('profiles')

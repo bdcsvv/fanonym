@@ -739,6 +739,24 @@ export default function CreatorDashboard() {
     setAccountName('')
     setWithdrawLoading(false)
 
+    // Notify admin via email
+    try {
+      await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'rizkinurulloh1124@gmail.com',
+          type: 'admin_withdraw_alert',
+          data: {
+            username: profile?.username,
+            amount: amount,
+            bank: bankName,
+            time: new Date().toLocaleString('id-ID')
+          }
+        })
+      })
+    } catch (e) { /* silent fail */ }
+
     alert(`Request withdraw berhasil!\n\nJumlah: ${amount} Kredit\nDiterima: Rp ${netAmount.toLocaleString('id-ID')}${fee > 0 ? `\n(Fee transfer: Rp ${fee.toLocaleString('id-ID')})` : ' (FREE transfer)'}\n\nAkan diproses dalam 1-3 hari kerja.`)
   }
 
