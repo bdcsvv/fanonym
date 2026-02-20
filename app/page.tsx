@@ -1,3 +1,8 @@
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/app/lib/supabase'
 import Link from "next/link";
 import FloatingEmojis from "@/app/components/FloatingEmojis";
 import AnimatedStats from "@/app/components/AnimatedStats";
@@ -8,6 +13,24 @@ import KenapaFanonymCards from "@/app/components/KenapaFanonymCards";
 import Navbar from "@/app/components/Navbar";
 
 export default function Home() {
+  const router = useRouter()
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_type')
+          .eq('id', session.user.id)
+          .single()
+        if (profile?.user_type) {
+          router.replace(`/dashboard/${profile.user_type}`)
+        }
+      }
+    }
+    checkSession()
+  }, [])
   return (
     <div className="min-h-screen bg-[#0c0a14] text-white">
       {/* Floating Emojis Background Animation */}

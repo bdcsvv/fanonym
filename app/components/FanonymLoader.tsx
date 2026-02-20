@@ -40,7 +40,7 @@ export default function FanonymLoader({
             
             {/* Logo */}
             <h1 className={`
-              ${sizeClasses[size]} font-black 
+              ${sizeClasses[size]} font-black italic italic
               bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] 
               bg-clip-text text-transparent 
               bg-[length:200%_100%] animate-gradient-shift
@@ -78,7 +78,7 @@ export default function FanonymLoader({
       <div className="relative">
         <div className="absolute inset-0 blur-lg bg-purple-600/20 animate-pulse-slow" />
         <h1 className={`
-          ${sizeClasses[size]} font-black 
+          ${sizeClasses[size]} font-black italic italic
           bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] 
           bg-clip-text text-transparent 
           bg-[length:200%_100%] animate-gradient-shift

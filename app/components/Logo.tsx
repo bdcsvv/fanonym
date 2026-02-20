@@ -47,7 +47,7 @@ export default function Logo({ size = 'md', linkTo, className = '' }: LogoProps)
   return (
     <Link 
       href={href} 
-      className={`font-black bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(147,51,234,0.4)] ${sizes[size]} ${className}`}
+      className={`font-black italic bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(147,51,234,0.4)] ${sizes[size]} ${className}`}
     >
       fanonym
     </Link>

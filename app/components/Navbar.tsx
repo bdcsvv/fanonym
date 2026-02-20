@@ -53,7 +53,7 @@ export default function Navbar() {
           <Link 
             href="/" 
             className={`
-              font-black text-2xl bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(147,51,234,0.4)]
+              font-black italic text-2xl bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(147,51,234,0.4)]
               transition-all duration-300 hover:scale-105
             `}
           >

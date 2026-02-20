@@ -13,40 +13,40 @@ interface ToastItem {
 
 const configs = {
   success: {
-    bg: 'bg-[#071a09]',
-    border: 'border-green-500/25',
-    iconBg: 'bg-green-500/15',
-    iconColor: 'text-green-400',
-    titleColor: 'text-green-300',
-    bar: 'bg-green-500',
-    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>,
+    bg: '#071a09',
+    border: 'rgba(74,222,128,0.2)',
+    iconBg: 'rgba(74,222,128,0.12)',
+    iconColor: '#4ade80',
+    titleColor: '#86efac',
+    barColor: '#4ade80',
+    icon: '✓',
   },
   error: {
-    bg: 'bg-[#1a0707]',
-    border: 'border-red-500/25',
-    iconBg: 'bg-red-500/15',
-    iconColor: 'text-red-400',
-    titleColor: 'text-red-300',
-    bar: 'bg-red-500',
-    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>,
+    bg: '#1a0707',
+    border: 'rgba(248,113,113,0.2)',
+    iconBg: 'rgba(248,113,113,0.12)',
+    iconColor: '#f87171',
+    titleColor: '#fca5a5',
+    barColor: '#f87171',
+    icon: '✕',
   },
   warning: {
-    bg: 'bg-[#1a1207]',
-    border: 'border-yellow-500/25',
-    iconBg: 'bg-yellow-500/15',
-    iconColor: 'text-yellow-400',
-    titleColor: 'text-yellow-300',
-    bar: 'bg-yellow-500',
-    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>,
+    bg: '#1a1207',
+    border: 'rgba(251,191,36,0.2)',
+    iconBg: 'rgba(251,191,36,0.12)',
+    iconColor: '#fbbf24',
+    titleColor: '#fde68a',
+    barColor: '#fbbf24',
+    icon: '!',
   },
   info: {
-    bg: 'bg-[#07091a]',
-    border: 'border-purple-500/25',
-    iconBg: 'bg-purple-500/15',
-    iconColor: 'text-purple-400',
-    titleColor: 'text-purple-300',
-    bar: 'bg-purple-500',
-    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+    bg: '#07091a',
+    border: 'rgba(167,139,250,0.2)',
+    iconBg: 'rgba(167,139,250,0.12)',
+    iconColor: '#a78bfa',
+    titleColor: '#c4b5fd',
+    barColor: '#6700e8',
+    icon: 'i',
   },
 }
 
@@ -70,31 +70,84 @@ function ToastCard({ toast, onRemove }: { toast: ToastItem; onRemove: () => void
   }
 
   return (
-    <div className={`
-      relative overflow-hidden rounded-2xl border ${c.bg} ${c.border}
-      shadow-2xl shadow-black/60 backdrop-blur-md
-      min-w-[300px] max-w-[360px] w-full
-      transform transition-all duration-350 ease-out
-      ${visible && !leaving ? 'translate-x-0 opacity-100 scale-100' : 'translate-x-8 opacity-0 scale-95'}
-    `}>
-      {/* animated progress bar */}
-      <div className={`absolute top-0 left-0 h-[2px] ${c.bar} opacity-70`}
-        style={{ animation: 'toast-shrink 4.5s linear forwards' }} />
+    <div
+      style={{
+        background: c.bg,
+        border: `1px solid ${c.border}`,
+        borderRadius: '16px',
+        minWidth: '300px',
+        maxWidth: '360px',
+        overflow: 'hidden',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+        transform: visible && !leaving ? 'translateX(0) scale(1)' : 'translateX(20px) scale(0.97)',
+        opacity: visible && !leaving ? 1 : 0,
+        transition: 'all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
+      }}
+    >
+      {/* Progress bar */}
+      <div style={{
+        height: '2px',
+        background: c.barColor,
+        opacity: 0.7,
+        animation: 'toast-shrink 4.5s linear forwards',
+      }} />
 
-      <div className="flex items-start gap-3 p-4">
-        <div className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center ${c.iconBg} ${c.iconColor}`}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px 16px' }}>
+        {/* Icon */}
+        <div style={{
+          flexShrink: 0,
+          width: '32px',
+          height: '32px',
+          borderRadius: '10px',
+          background: c.iconBg,
+          color: c.iconColor,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '14px',
+          fontWeight: '900',
+          fontStyle: toast.type === 'info' ? 'italic' : 'normal',
+        }}>
           {c.icon}
         </div>
-        <div className="flex-1 min-w-0 pt-0.5">
-          {toast.title && <p className={`font-bold text-sm mb-0.5 ${c.titleColor}`}>{toast.title}</p>}
-          <p className="text-zinc-300 text-sm leading-snug">{toast.message}</p>
+
+        {/* Content */}
+        <div style={{ flex: 1, minWidth: 0, paddingTop: '2px' }}>
+          {toast.title && (
+            <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: '700', color: c.titleColor }}>
+              {toast.title}
+            </p>
+          )}
+          <p style={{ margin: 0, fontSize: '13px', color: '#9898b8', lineHeight: '1.5' }}>
+            {toast.message}
+          </p>
         </div>
-        <button onClick={close} className="text-zinc-600 hover:text-zinc-300 transition-colors flex-shrink-0 mt-0.5">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
+
+        {/* Close */}
+        <button
+          onClick={close}
+          style={{
+            flexShrink: 0,
+            background: 'none',
+            border: 'none',
+            color: '#3a3a5a',
+            cursor: 'pointer',
+            padding: '2px',
+            fontSize: '16px',
+            lineHeight: 1,
+            marginTop: '2px',
+          }}
+        >
+          ×
         </button>
       </div>
+
+      <style>{`
+        @keyframes toast-shrink {
+          from { width: 100%; }
+          to { width: 0%; }
+        }
+      `}</style>
     </div>
   )
 }
@@ -119,15 +172,18 @@ export function useToast() {
   }
 
   const ToastContainer = () => (
-    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
-      <style>{`
-        @keyframes toast-shrink {
-          from { width: 100%; }
-          to { width: 0%; }
-        }
-      `}</style>
+    <div style={{
+      position: 'fixed',
+      top: '16px',
+      right: '16px',
+      zIndex: 9999,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px',
+      pointerEvents: 'none',
+    }}>
       {toasts.map(t => (
-        <div key={t.id} className="pointer-events-auto">
+        <div key={t.id} style={{ pointerEvents: 'auto' }}>
           <ToastCard toast={t} onRemove={() => removeToast(t.id)} />
         </div>
       ))}
@@ -137,8 +193,13 @@ export function useToast() {
   return { toast, ToastContainer }
 }
 
-// Legacy default export for backward compat
-export default function Toast({ message, type = 'info', onClose }: { message: string; type?: ToastType; duration?: number; onClose?: () => void }) {
+// Legacy default export
+export default function Toast({ message, type = 'info', onClose }: {
+  message: string
+  type?: ToastType
+  duration?: number
+  onClose?: () => void
+}) {
   const c = configs[type]
   const [visible, setVisible] = useState(true)
 
@@ -147,10 +208,25 @@ export default function Toast({ message, type = 'info', onClose }: { message: st
     return () => clearTimeout(t)
   }, [])
 
-  return visible ? (
-    <div className={`fixed bottom-6 right-6 z-[9999] flex items-center gap-3 ${c.bg} border ${c.border} px-5 py-4 rounded-2xl shadow-2xl`}>
-      <div className={`${c.iconBg} ${c.iconColor} w-8 h-8 rounded-xl flex items-center justify-center`}>{c.icon}</div>
-      <p className="text-white text-sm font-medium">{message}</p>
+  if (!visible) return null
+
+  return (
+    <div style={{
+      position: 'fixed',
+      bottom: '24px',
+      right: '24px',
+      zIndex: 9999,
+      background: c.bg,
+      border: `1px solid ${c.border}`,
+      borderRadius: '14px',
+      padding: '12px 16px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+    }}>
+      <span style={{ color: c.iconColor, fontWeight: 900, fontSize: '14px' }}>{c.icon}</span>
+      <p style={{ margin: 0, color: '#e0e0f0', fontSize: '14px' }}>{message}</p>
     </div>
-  ) : null
+  )
 }

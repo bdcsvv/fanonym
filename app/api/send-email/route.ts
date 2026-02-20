@@ -35,7 +35,7 @@ const baseEmail = (content: string, accentFrom = '#6700e8', accentTo = '#9333ea'
     <table cellpadding="0" cellspacing="0" border="0">
       <tr>
         <td style="background:linear-gradient(135deg,${accentFrom},${accentTo});border-radius:12px;padding:10px 20px;">
-          <span style="font-size:20px;font-weight:900;letter-spacing:-0.5px;color:#ffffff;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">fanonym</span>
+          <span style="font-size:20px;font-weight:900;font-style:italic;letter-spacing:-0.5px;color:#ffffff;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">fanonym</span>
         </td>
       </tr>
     </table>
