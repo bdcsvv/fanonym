@@ -138,21 +138,52 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-[#0c0a14] flex items-center justify-center p-6">
-        <div className="max-w-md w-full text-center">
-          <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+      <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
+        {/* Galaxy Background */}
+        <GalaxyBackground />
+        
+        <div className="relative z-10 flex flex-col items-center gap-6 max-w-md w-full px-6 text-center">
+          {/* Glowing ring behind icon */}
+          <div className="relative w-40 h-40 flex items-center justify-center">
+            <div className="absolute inset-0 rounded-full border-2 border-purple-500/30 animate-loader-ring-1" />
+            <div className="absolute inset-2 rounded-full border-2 border-purple-400/20 animate-loader-ring-2" />
+            <div className="absolute inset-4 rounded-full border border-purple-300/10 animate-loader-ring-3" />
+            
+            {/* Check icon in center */}
+            <div className="relative z-10 w-16 h-16 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full blur-xl bg-green-500/20 animate-pulse-slow" />
+              <svg className="w-8 h-8 text-green-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
           </div>
-          <h2 className="text-2xl font-bold text-white mb-3">Cek Email Kamu!</h2>
-          <p className="text-zinc-400 mb-8">
-            Kami sudah mengirim link verifikasi ke <span className="text-purple-400">{email}</span>. 
-            Klik link tersebut untuk mengaktifkan akun.
-          </p>
+
+          {/* Logo */}
+          <div className="relative">
+            <div className="absolute inset-0 blur-xl bg-purple-600/30 animate-pulse-slow" />
+            <h1 className="text-3xl font-black bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-shift drop-shadow-[0_0_30px_rgba(103,0,232,0.5)] relative z-10">
+              fanonym
+            </h1>
+          </div>
+
+          {/* Loading bar */}
+          <div className="w-48 h-1 bg-zinc-800 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-green-600 via-green-400 to-green-600 bg-[length:200%_100%] animate-loading-bar rounded-full" />
+          </div>
+
+          {/* Text */}
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-white">Cek Email Kamu!</h2>
+            <p className="text-zinc-400 text-sm leading-relaxed">
+              Kami sudah mengirim link verifikasi ke <span className="text-purple-400 font-medium">{email}</span>. 
+              Klik link tersebut untuk mengaktifkan akun.
+            </p>
+          </div>
+
+          {/* CTA */}
           <Link
             href="/auth/login"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 font-medium transition-all"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 font-semibold transition-all hover:shadow-lg hover:shadow-purple-500/25"
           >
             Kembali ke Login
           </Link>
