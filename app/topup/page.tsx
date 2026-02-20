@@ -5,6 +5,7 @@ import { supabase } from '@/app/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import FanonymLoader from '@/app/components/FanonymLoader'
+import { useToast } from '@/app/components/Toast'
 
 const TOPUP_OPTIONS = [
   { credits: 5, price: 50000 },
@@ -18,6 +19,7 @@ const KREDIT_TO_IDR = 10000
 
 export default function TopupPage() {
   const router = useRouter()
+  const { toast, ToastContainer } = useToast()
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [credits, setCredits] = useState<number>(0)
@@ -101,7 +103,7 @@ export default function TopupPage() {
       .single()
 
     if (error) {
-      alert('Gagal membuat request topup: ' + error.message)
+      toast.error('Gagal membuat request topup', error.message)
       setProcessing(false)
       return
     }
@@ -146,7 +148,7 @@ export default function TopupPage() {
         .upload(fileName, proofFile)
       
       if (fallbackError) {
-        alert('Gagal upload bukti: ' + fallbackError.message + '\n\nPastikan bucket storage "payment-proofs" sudah dibuat di Supabase.')
+        toast.error('Gagal upload bukti pembayaran', 'Pastikan bucket storage sudah dibuat di Supabase')
         setUploading(false)
         return
       }
@@ -167,7 +169,7 @@ export default function TopupPage() {
       .eq('id', currentTopup.id)
 
     if (updateError) {
-      alert('Gagal update status: ' + updateError.message)
+      toast.error('Gagal update status topup')
       setUploading(false)
       return
     }
@@ -234,6 +236,7 @@ export default function TopupPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white relative page-transition">
+      <ToastContainer />
       {/* Background gradient orbs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[120px]" />
@@ -391,10 +394,12 @@ export default function TopupPage() {
               <div className="mb-6">
                 {proofPreview ? (
                   <div className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
                       src={proofPreview} 
                       alt="Bukti Transfer" 
-                      className="w-full rounded-xl border border-zinc-700"
+                      className="w-full rounded-xl border border-zinc-700 max-h-80 object-contain bg-zinc-900"
+                      onError={(e) => { e.currentTarget.style.display = 'none' }}
                     />
                     <button
                       onClick={() => {

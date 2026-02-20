@@ -8,10 +8,12 @@ import FanonymLoader from '@/app/components/FanonymLoader'
 import GalaxyBackground from '@/app/components/GalaxyBackground'
 import { sendNotification } from '@/app/lib/notifications'
 import { sendEmail } from '@/app/lib/email'
+import { useToast } from '@/app/components/Toast'
 
 export default function CreatorProfilePage() {
   const params = useParams()
   const router = useRouter()
+  const { toast, ToastContainer } = useToast()
   const username = params.username as string
 
   const [creator, setCreator] = useState<any>(null)
@@ -132,14 +134,14 @@ export default function CreatorProfilePage() {
     }
 
     if (isBlockedByCreator || iBlockedCreator) {
-      alert('Tidak bisa unlock chat — salah satu pihak telah memblokir.')
+      toast.error('Tidak bisa unlock chat', 'Salah satu pihak telah memblokir')
       return
     }
 
     const creditsCost = priceOption.price_credits ?? priceOption.credits ?? priceOption.price ?? 0
-    if (creditsCost <= 0) { alert('Error: Harga tidak valid'); return }
+    if (creditsCost <= 0) { toast.error('Harga tidak valid'); return }
     if (credits < creditsCost) {
-      alert(`Kredit tidak cukup! Kamu butuh ${creditsCost} kredit, saldo kamu ${credits} kredit.`)
+      toast.warning('Kredit tidak cukup', `Butuh ${creditsCost} kredit, saldo kamu ${credits} kredit`)
       router.push('/topup')
       return
     }
@@ -183,10 +185,10 @@ export default function CreatorProfilePage() {
         })
       }
 
-      alert('Chat request dikirim! Menunggu creator accept. Kredit akan dipotong setelah creator menerima.')
+      toast.success('Chat request terkirim!', 'Menunggu creator accept')
       router.push(`/chat/${session.id}`)
     } catch (err: any) {
-      alert('Error: ' + err.message)
+      toast.error('Terjadi kesalahan')
       setUnlocking(false)
     }
   }
@@ -197,7 +199,7 @@ export default function CreatorProfilePage() {
     setUnblocking(true)
     const { error } = await supabase.from('blocks').delete().eq('id', myBlockId)
     if (error) {
-      alert('Gagal membuka blokir: ' + error.message)
+      toast.error('Gagal membuka blokir')
     } else {
       setIBlockedCreator(false)
       setMyBlockId(null)
@@ -275,6 +277,7 @@ export default function CreatorProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#0c0a14] text-white relative">
+      <ToastContainer />
       <GalaxyBackground />
 
       {/* Navbar */}

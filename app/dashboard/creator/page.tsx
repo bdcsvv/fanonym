@@ -7,7 +7,7 @@ import Link from 'next/link'
 import FanonymLoader from '@/app/components/FanonymLoader'
 import HelpButton from '@/app/components/HelpButton'
 import GalaxyBackground from '@/app/components/GalaxyBackground'
-import Toast from '@/app/components/Toast'
+import Toast, { useToast } from '@/app/components/Toast'
 import NotificationBadge from '@/app/components/NotificationBadge'
 import NotificationBell from '@/app/components/NotificationBell'
 import { handleError } from '@/app/lib/errorHandler'
@@ -16,6 +16,7 @@ import { sendEmail } from '@/app/lib/email'
 
 export default function CreatorDashboard() {
   const router = useRouter()
+  const { toast, ToastContainer } = useToast()
   const [profile, setProfile] = useState<any>(null)
   const [earnings, setEarnings] = useState<any>(null)
   const [pricing, setPricing] = useState<any[]>([])
@@ -590,9 +591,9 @@ export default function CreatorDashboard() {
           .eq('id', p.id)
         if (error) throw error
       }
-      alert('Harga berhasil disimpan!')
+      toast.success('Harga berhasil disimpan')
     } catch (err: any) {
-      alert('Gagal menyimpan: ' + err.message)
+      toast.error('Gagal menyimpan harga')
     }
   }
 
@@ -601,7 +602,7 @@ export default function CreatorDashboard() {
     const price = parseInt(newPrice)
     
     if (!duration || !price) {
-      alert('Isi durasi dan harga!')
+      toast.warning('Isi durasi dan harga terlebih dahulu')
       return
     }
 
@@ -665,7 +666,7 @@ export default function CreatorDashboard() {
     setSpamMessages(spamMessages.filter(m => m.id !== messageId))
 
     if (action === 'accept') {
-      alert('Pesan diterima! Chat 10 menit telah dibuat.')
+      toast.success('Pesan diterima!', 'Chat 10 menit telah dibuat')
       window.location.reload()
     }
   }
@@ -680,25 +681,25 @@ export default function CreatorDashboard() {
   const handleWithdraw = async () => {
     // Check if creator is verified
     if (!profile?.is_verified) {
-      alert('⚠️ Anda harus verifikasi KTP dan selfie terlebih dahulu sebelum bisa withdraw. Silakan verifikasi di menu Settings → Keamanan.')
+      toast.warning('Verifikasi diperlukan', 'Verifikasi KTP dan selfie di menu Settings → Keamanan')
       return
     }
 
     const amount = parseFloat(withdrawAmount)
     
     if (!amount || amount < MIN_WITHDRAW) {
-      alert(`Minimal withdraw ${MIN_WITHDRAW} kredit!`)
+      toast.warning(`Minimal withdraw ${MIN_WITHDRAW} kredit`)
       return
     }
 
     if (!bankName || !accountNumber || !accountName) {
-      alert('Lengkapi semua data rekening!')
+      toast.warning('Lengkapi semua data rekening')
       return
     }
 
     const availableBalance = earnings?.available_balance || 0
     if (amount > availableBalance) {
-      alert('Saldo tidak cukup!')
+      toast.warning('Saldo tidak cukup')
       return
     }
 
@@ -720,7 +721,7 @@ export default function CreatorDashboard() {
       .single()
 
     if (withdrawError) {
-      alert('Gagal membuat request withdraw!')
+      toast.error('Gagal membuat request withdraw')
       setWithdrawLoading(false)
       return
     }
@@ -757,7 +758,7 @@ export default function CreatorDashboard() {
       })
     } catch (e) { /* silent fail */ }
 
-    alert(`Request withdraw berhasil!\n\nJumlah: ${amount} Kredit\nDiterima: Rp ${netAmount.toLocaleString('id-ID')}${fee > 0 ? `\n(Fee transfer: Rp ${fee.toLocaleString('id-ID')})` : ' (FREE transfer)'}\n\nAkan diproses dalam 1-3 hari kerja.`)
+    toast.success('Withdraw Berhasil!', `Rp ${netAmount.toLocaleString('id-ID')} akan diproses 1-3 hari kerja`)
   }
 
   const handleDeleteExpiredChat = async (chatId: string) => {
@@ -794,6 +795,7 @@ export default function CreatorDashboard() {
 
   return (
     <div className="min-h-screen bg-[#0c0a14] text-white relative">
+      <ToastContainer />
       {/* Galaxy Background */}
       <GalaxyBackground />
 

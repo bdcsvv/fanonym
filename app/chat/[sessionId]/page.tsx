@@ -5,7 +5,7 @@ import { supabase } from '@/app/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 import ReportBlockModal from '@/app/components/ReportBlockModal'
 import FanonymLoader from '@/app/components/FanonymLoader'
-import Toast from '@/app/components/Toast'
+import Toast, { useToast } from '@/app/components/Toast'
 import { calculateTimeLeft, getTimeWarningLevel, getTimeColorClass } from '@/app/lib/timerUtils'
 import { validateImage, validateMessage } from '@/app/lib/validation'
 import { sendNotification } from '@/app/lib/notifications'
@@ -15,6 +15,7 @@ import { handleError } from '@/app/lib/errorHandler'
 export default function ChatRoom() {
   const params = useParams()
   const router = useRouter()
+  const { toast, ToastContainer } = useToast()
   const sessionId = params.sessionId as string
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -71,13 +72,13 @@ export default function ChatRoom() {
         .single()
 
       if (error || !sessionData) {
-        alert('Chat session tidak ditemukan')
+        toast.error('Chat session tidak ditemukan')
         router.back()
         return
       }
 
       if (sessionData.sender_id !== user.id && sessionData.creator_id !== user.id) {
-        alert('Anda tidak memiliki akses ke chat ini')
+        toast.error('Kamu tidak punya akses ke chat ini')
         router.back()
         return
       }
@@ -345,7 +346,7 @@ export default function ChatRoom() {
       })
     } catch (error) {
       console.error('Upload error:', error)
-      alert('Gagal upload file')
+      toast.error('Gagal upload file')
     }
 
     setUploading(false)
@@ -355,7 +356,7 @@ export default function ChatRoom() {
   const sendPaymentRequest = async () => {
     const amount = parseInt(paymentAmount)
     if (!amount || amount < 1) {
-      alert('Masukkan jumlah kredit yang valid')
+      toast.warning('Masukkan jumlah kredit yang valid')
       return
     }
 
@@ -418,7 +419,7 @@ export default function ChatRoom() {
         .single()
 
       if (!credits || credits.balance < amount) {
-        alert('Kredit tidak cukup! Silakan top up dulu.')
+        toast.warning('Kredit tidak cukup', 'Silakan top up dulu')
         setPayingMessageId(null)
         return
       }
@@ -508,7 +509,7 @@ export default function ChatRoom() {
       .single()
 
     if (!credits || credits.balance < pricingOption.price_credits) {
-      alert('Kredit tidak cukup! Silakan top up dulu.')
+      toast.warning('Kredit tidak cukup', 'Silakan top up dulu')
       setExtendLoading(false)
       return
     }
@@ -570,7 +571,7 @@ export default function ChatRoom() {
 
     setExtendLoading(false)
     setShowExtendModal(false)
-    alert('Chat berhasil diperpanjang!')
+    toast.success('Chat berhasil diperpanjang!')
   }
 
   const renderMessage = (msg: any, index: number) => {
@@ -745,6 +746,7 @@ export default function ChatRoom() {
 
   return (
     <div className="min-h-screen bg-[#0c0a14] text-white flex flex-col relative">
+      <ToastContainer />
       {/* Background decorations */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <svg className="absolute left-8 top-1/3 w-8 h-8 text-purple-500/20 animate-pulse" fill="currentColor" viewBox="0 0 24 24">
