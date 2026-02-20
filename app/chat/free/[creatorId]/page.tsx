@@ -151,7 +151,7 @@ export default function FreeMessagePage() {
       <nav className="border-b border-purple-500/20 bg-[#0a0a0f]/95 backdrop-blur-md p-4">
         <div className="max-w-2xl mx-auto flex justify-between items-center">
           <Link href={`/creator/${creator?.username}`} className="text-zinc-400 hover:text-white transition-colors">← Kembali</Link>
-          <span className="text-xl font-bold bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent">fanonym</span>
+          <span className="text-xl font-bold italic bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent">fanonym</span>
           <div></div>
         </div>
       </nav>

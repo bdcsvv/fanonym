@@ -226,7 +226,7 @@ export default function SenderDashboard() {
       <nav className="sticky top-0 z-50 bg-[#0c0a14]/80 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           {/* Logo */}
-          <Link href="/dashboard/sender" className="font-black text-2xl bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)] animate-fadeIn">
+          <Link href="/dashboard/sender" className="font-black italic text-2xl bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)] animate-fadeIn">
             fanonym
           </Link>
 

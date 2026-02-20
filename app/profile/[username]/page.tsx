@@ -247,7 +247,7 @@ export default function CreatorProfilePage() {
         <GalaxyBackground />
         <nav className="sticky top-0 z-50 bg-[#0c0a14]/80 backdrop-blur-xl border-b border-white/5">
           <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-            <Link href="/" className="font-black text-2xl bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(147,51,234,0.4)]">fanonym</Link>
+            <Link href="/" className="font-black italic text-2xl bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(147,51,234,0.4)]">fanonym</Link>
           </div>
         </nav>
         <main className="max-w-4xl mx-auto px-6 py-24 relative z-10 text-center">
@@ -283,7 +283,7 @@ export default function CreatorProfilePage() {
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-[#0c0a14]/80 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="font-black text-2xl bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(147,51,234,0.4)]">
+          <Link href="/" className="font-black italic text-2xl bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(147,51,234,0.4)]">
             fanonym
           </Link>
           <div className="flex items-center gap-3">

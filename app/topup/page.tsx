@@ -245,7 +245,7 @@ export default function TopupPage() {
 
       <nav className="border-b border-purple-500/20 p-4 relative z-10 bg-[#0a0a0f]/80 backdrop-blur-md">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <Link href={dashboardUrl} className="text-2xl font-black bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)]">
+          <Link href={dashboardUrl} className="text-2xl font-black italic bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)]">
             fanonym
           </Link>
           <Link href={dashboardUrl} className="text-gray-400 hover:text-white transition-colors">← Dashboard</Link>

@@ -212,7 +212,7 @@ export default function Home() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             {/* Logo & Description */}
             <div className="text-center md:text-left">
-              <Link href="/" className="font-black text-2xl bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent">
+              <Link href="/" className="font-black italic text-2xl bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent">
                 fanonym
               </Link>
               <p className="text-zinc-500 text-sm mt-2 max-w-xs">

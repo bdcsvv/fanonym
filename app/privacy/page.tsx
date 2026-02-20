@@ -50,7 +50,7 @@ export default function PrivacyPolicy() {
       {/* Navbar */}
       <nav className="sticky top-0 border-b border-zinc-800/50 p-4 relative z-50 bg-[#0c0a14]/80 backdrop-blur-xl">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-2xl font-black bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent">
+          <Link href="/" className="text-2xl font-black italic bg-gradient-to-r from-[#6700e8] via-[#471c70] to-[#36244d] bg-clip-text text-transparent">
             fanonym
           </Link>
           <Link href="/" className="text-zinc-400 hover:text-white transition-colors flex items-center gap-2 text-sm">
