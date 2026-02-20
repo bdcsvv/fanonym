@@ -206,7 +206,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Fanonym <onboarding@resend.dev>',
+        from: 'Fanonym <noreply@fanonym.id>',
         to: [to],
         subject: template.subject,
         html: template.body(data || {}),
