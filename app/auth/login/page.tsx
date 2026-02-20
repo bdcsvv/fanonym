@@ -44,7 +44,9 @@ export default function LoginPage() {
       if (!profile) {
         const meta = data.user.user_metadata
         if (!meta?.username || !meta?.user_type) {
-          throw new Error('Data registrasi tidak ditemukan. Silakan daftar ulang.')
+          // Profile missing and no metadata - just redirect to register
+          await supabase.auth.signOut()
+          throw new Error('Data registrasi tidak lengkap. Silakan daftar ulang.')
         }
 
         const { data: usernameTaken } = await supabase
@@ -53,8 +55,8 @@ export default function LoginPage() {
           .eq('username', meta.username)
           .single()
 
-        if (usernameTaken) {
-          throw new Error(`Username @${meta.username} sudah dipakai. Silakan daftar ulang.`)
+        if (usernameTaken && usernameTaken.id !== data.user.id) {
+          throw new Error(`Username @${meta.username} sudah dipakai. Silakan daftar dengan username lain.`)
         }
 
         const { error: createErr } = await supabase.from('profiles').insert({
@@ -62,12 +64,24 @@ export default function LoginPage() {
           email: data.user.email,
           username: meta.username,
           user_type: meta.user_type,
-          display_name: meta.display_name || meta.username,
+          full_name: meta.display_name || meta.username,
           credits: 0,
           is_verified: false,
         })
 
-        if (createErr) throw createErr
+        if (createErr) {
+          // Profile might already exist (race condition), try fetching again
+          const { data: retryProfile } = await supabase
+            .from('profiles')
+            .select('user_type')
+            .eq('id', data.user.id)
+            .single()
+          if (retryProfile) {
+            router.push(`/dashboard/${retryProfile.user_type}`)
+            return
+          }
+          throw createErr
+        }
 
         router.push(`/dashboard/${meta.user_type}`)
       } else {
