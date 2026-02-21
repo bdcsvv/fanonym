@@ -32,6 +32,20 @@ export default function AdminPanel() {
   })
 
   const ADMIN_EMAILS = [process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'rizkinurulloh1124@gmail.com']
+  const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN || '909024'
+  const [pinVerified, setPinVerified] = useState(false)
+  const [pinInput, setPinInput] = useState('')
+  const [pinError, setPinError] = useState(false)
+
+  const handlePinSubmit = () => {
+    if (pinInput === ADMIN_PIN) {
+      setPinVerified(true)
+      setPinError(false)
+    } else {
+      setPinError(true)
+      setPinInput('')
+    }
+  }
 
   useEffect(() => {
     const checkAdmin = async () => {

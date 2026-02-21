@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { checkRateLimit, getRateLimitKey } from '@/app/lib/rateLimit'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 
@@ -324,6 +325,14 @@ export async function POST(req: NextRequest) {
   }
   try {
     const { to, type, data } = await req.json()
+
+    // Rate limit: max 10 emails per email address per hour
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+    const key = getRateLimitKey(to || ip, 'email')
+    const { allowed } = checkRateLimit(key, 10, 3600000)
+    if (!allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+    }
     if (!to || !type || !EMAIL_TEMPLATES[type as EmailType]) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
     }
