@@ -12,6 +12,30 @@ import { sendNotification } from '@/app/lib/notifications'
 import { compressImage } from '@/app/lib/mobileUtils'
 import { handleError } from '@/app/lib/errorHandler'
 
+// Standalone component for payment countdown timer
+function PaymentCountdown({ expiresAt }: { expiresAt: string }) {
+  const [timeLeft, setTimeLeft] = useState('')
+  useEffect(() => {
+    const update = () => {
+      const diff = new Date(expiresAt).getTime() - Date.now()
+      if (diff <= 0) { setTimeLeft(''); return }
+      const m = Math.floor(diff / 60000)
+      const s = Math.floor((diff % 60000) / 1000)
+      setTimeLeft(`${m}:${s.toString().padStart(2,'0')}`)
+    }
+    update()
+    const iv = setInterval(update, 1000)
+    return () => clearInterval(iv)
+  }, [expiresAt])
+  if (!timeLeft) return null
+  return (
+    <div className="flex items-center gap-1.5 mb-2">
+      <svg className="w-3 h-3 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span className="text-xs text-yellow-400 font-mono font-semibold">Expires in {timeLeft}</span>
+    </div>
+  )
+}
+
 export default function ChatRoom() {
   const params = useParams()
   const router = useRouter()
@@ -590,26 +614,6 @@ export default function ChatRoom() {
   }
 
 
-  // Payment request countdown timer
-  const usePaymentTimer = (expiresAt: string | undefined) => {
-    const [timeLeft, setTimeLeft] = useState('')
-    const [isExpired, setIsExpired] = useState(false)
-    useEffect(() => {
-      if (!expiresAt) return
-      const update = () => {
-        const diff = new Date(expiresAt).getTime() - Date.now()
-        if (diff <= 0) { setIsExpired(true); setTimeLeft(''); return }
-        const m = Math.floor(diff / 60000)
-        const s = Math.floor((diff % 60000) / 1000)
-        setTimeLeft(`${m}:${s.toString().padStart(2,'0')}`)
-      }
-      update()
-      const iv = setInterval(update, 1000)
-      return () => clearInterval(iv)
-    }, [expiresAt])
-    return { timeLeft, isExpired }
-  }
-
   const renderMessage = (msg: any, index: number) => {
     let isPaymentRequest = false
     let isMedia = false
@@ -664,8 +668,7 @@ export default function ChatRoom() {
 
     if (isPaymentRequest && paymentData) {
       const isPaid = paymentData.status === 'paid'
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const { timeLeft, isExpired: isExpiredPayment } = usePaymentTimer(paymentData.expires_at)
+      const isExpiredPayment = paymentData.expires_at && new Date(paymentData.expires_at) < new Date()
       return (
         <div 
           key={msg.id} 
@@ -676,11 +679,8 @@ export default function ChatRoom() {
             <p className="text-xs text-purple-300 mb-1">💰 Payment Request</p>
             <p className="text-2xl font-bold text-white">{paymentData.amount} Kredit</p>
             <p className="text-sm text-purple-200 mb-2">{paymentData.description}</p>
-            {!isPaid && !isExpiredPayment && timeLeft && (
-              <div className="flex items-center gap-1.5 mb-2">
-                <svg className="w-3 h-3 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <span className="text-xs text-yellow-400 font-mono font-semibold">Expires in {timeLeft}</span>
-              </div>
+            {!isPaid && !isExpiredPayment && paymentData.expires_at && (
+              <PaymentCountdown expiresAt={paymentData.expires_at} />
             )}
             {isPaid ? (
               <div className="px-3 py-2 bg-purple-500/30 rounded-lg text-purple-200 text-center text-sm">✓ Sudah Dibayar</div>
