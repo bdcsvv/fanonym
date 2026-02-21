@@ -45,6 +45,7 @@ export default function ChatRoom() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const currentUserRef = useRef<string | null>(null)
   const toastShownRef = useRef<Record<string, number>>({})
+  const processedPaymentsRef = useRef<Set<string>>(new Set())
 
   const [session, setSession] = useState<any>(null)
   const [messages, setMessages] = useState<any[]>([])
@@ -413,6 +414,8 @@ export default function ChatRoom() {
   const handlePayment = async (messageId: string, amount: number) => {
     // Prevent double click
     if (payingMessageId) return
+    if (processedPaymentsRef.current.has(messageId + '_processing')) return
+    processedPaymentsRef.current.add(messageId + '_processing')
     setPayingMessageId(messageId)
 
     try {
@@ -524,9 +527,8 @@ export default function ChatRoom() {
         return m
       }))
 
-      const now = Date.now()
-      if (!toastShownRef.current['paySuccess'] || now - toastShownRef.current['paySuccess'] > 5000) {
-        toastShownRef.current['paySuccess'] = now
+      if (!processedPaymentsRef.current.has(messageId + '_success')) {
+        processedPaymentsRef.current.add(messageId + '_success')
         toast.success('✅ Pembayaran berhasil!')
       }
 
@@ -539,13 +541,15 @@ export default function ChatRoom() {
         link: `/chat/${sessionId}`,
       })
     } catch (err: any) {
-      const now2 = Date.now()
-      if (!toastShownRef.current['payFail'] || now2 - toastShownRef.current['payFail'] > 5000) {
-        toastShownRef.current['payFail'] = now2
+      if (!processedPaymentsRef.current.has(messageId + '_fail')) {
+        processedPaymentsRef.current.add(messageId + '_fail')
         toast.error('Gagal bayar: ' + err.message)
+        // allow retry after 5s
+        setTimeout(() => processedPaymentsRef.current.delete(messageId + '_fail'), 5000)
       }
     } finally {
       setPayingMessageId(null)
+      processedPaymentsRef.current.delete(messageId + '_processing')
     }
   }
 
