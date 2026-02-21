@@ -20,6 +20,7 @@ export default function ChatRoom() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const currentUserRef = useRef<string | null>(null)
+  const toastShownRef = useRef<Record<string, number>>({})
 
   const [session, setSession] = useState<any>(null)
   const [messages, setMessages] = useState<any[]>([])
@@ -412,7 +413,11 @@ export default function ChatRoom() {
         }
         // Check if expired
         if (checkContent.expires_at && new Date(checkContent.expires_at) < new Date()) {
-          toast.error('Payment request sudah expired', 'Minta creator kirim request baru')
+          const now = Date.now()
+          if (!toastShownRef.current['expired'] || now - toastShownRef.current['expired'] > 5000) {
+            toastShownRef.current['expired'] = now
+            toast.error('Payment request sudah expired', 'Minta creator kirim request baru')
+          }
           setPayingMessageId(null)
           return
         }
@@ -425,7 +430,11 @@ export default function ChatRoom() {
         .single()
 
       if (!credits || credits.balance < amount) {
-        toast.warning('Kredit tidak cukup', 'Silakan top up dulu')
+        const now = Date.now()
+        if (!toastShownRef.current['kredit'] || now - toastShownRef.current['kredit'] > 5000) {
+          toastShownRef.current['kredit'] = now
+          toast.warning('Kredit tidak cukup', 'Silakan top up dulu')
+        }
         setPayingMessageId(null)
         return
       }
@@ -580,6 +589,27 @@ export default function ChatRoom() {
     toast.success('Chat berhasil diperpanjang!')
   }
 
+
+  // Payment request countdown timer
+  const usePaymentTimer = (expiresAt: string | undefined) => {
+    const [timeLeft, setTimeLeft] = useState('')
+    const [isExpired, setIsExpired] = useState(false)
+    useEffect(() => {
+      if (!expiresAt) return
+      const update = () => {
+        const diff = new Date(expiresAt).getTime() - Date.now()
+        if (diff <= 0) { setIsExpired(true); setTimeLeft(''); return }
+        const m = Math.floor(diff / 60000)
+        const s = Math.floor((diff % 60000) / 1000)
+        setTimeLeft(`${m}:${s.toString().padStart(2,'0')}`)
+      }
+      update()
+      const iv = setInterval(update, 1000)
+      return () => clearInterval(iv)
+    }, [expiresAt])
+    return { timeLeft, isExpired }
+  }
+
   const renderMessage = (msg: any, index: number) => {
     let isPaymentRequest = false
     let isMedia = false
@@ -634,7 +664,8 @@ export default function ChatRoom() {
 
     if (isPaymentRequest && paymentData) {
       const isPaid = paymentData.status === 'paid'
-      const isExpiredPayment = paymentData.expires_at && new Date(paymentData.expires_at) < new Date()
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      const { timeLeft, isExpired: isExpiredPayment } = usePaymentTimer(paymentData.expires_at)
       return (
         <div 
           key={msg.id} 
@@ -645,6 +676,12 @@ export default function ChatRoom() {
             <p className="text-xs text-purple-300 mb-1">💰 Payment Request</p>
             <p className="text-2xl font-bold text-white">{paymentData.amount} Kredit</p>
             <p className="text-sm text-purple-200 mb-2">{paymentData.description}</p>
+            {!isPaid && !isExpiredPayment && timeLeft && (
+              <div className="flex items-center gap-1.5 mb-2">
+                <svg className="w-3 h-3 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span className="text-xs text-yellow-400 font-mono font-semibold">Expires in {timeLeft}</span>
+              </div>
+            )}
             {isPaid ? (
               <div className="px-3 py-2 bg-purple-500/30 rounded-lg text-purple-200 text-center text-sm">✓ Sudah Dibayar</div>
             ) : isExpiredPayment ? (
