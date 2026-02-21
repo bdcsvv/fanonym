@@ -104,8 +104,8 @@ export default function AnimatedCTA() {
           transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] delay-300
           ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
         `}>
-          Bergabung dengan ribuan fans yang sudah menggunakan Fanonym untuk
-          <span className="text-zinc-300"> berkomunikasi secara aman</span> dengan creator favorit mereka.
+          Gabung dengan ribuan fans yang sudah menggunakan Fanonym untuk
+          <span className="text-zinc-300"> berkomunikasi secara aman</span> dengan creator favoritnya.
         </p>
 
         {/* CTA Buttons */}

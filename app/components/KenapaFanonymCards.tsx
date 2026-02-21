@@ -38,7 +38,7 @@ const features = [
   {
     id: 'mudah',
     title: 'Mudah',
-    description: 'Proses simpel dan cepat. Daftar, beli kredit, langsung kirim pesan pertamamu dalam hitungan detik.',
+    description: 'Proses cepat dan praktis. Daftar, top up kredit, dan kirim pesan pertamamu dalam hitungan detik.',
     highlight: '< 1 Menit Setup',
     number: '03',
     icon: (
@@ -53,7 +53,7 @@ const features = [
   },
 ]
 
-export default function KenapaFanonymCards() {
+export default function KenapaFanonymCards({ onActiveChange }: { onActiveChange?: (accent: string) => void }) {
   const [active, setActive] = useState(0)
   const [isVisible, setIsVisible] = useState(false)
   const [isAnimating, setIsAnimating] = useState(false)
@@ -99,6 +99,11 @@ export default function KenapaFanonymCards() {
   }
 
   const cur = features[active]
+
+  useEffect(() => {
+    if (onActiveChange) onActiveChange(cur.accent)
+  }, [active, onActiveChange, cur.accent])
+
   const prevF = features[(active - 1 + features.length) % features.length]
   const nextF = features[(active + 1) % features.length]
 

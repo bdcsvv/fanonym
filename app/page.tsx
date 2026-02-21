@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/app/lib/supabase'
 import Link from "next/link";
@@ -14,6 +14,7 @@ import Navbar from "@/app/components/Navbar";
 
 export default function Home() {
   const router = useRouter()
+  const [kenapaAccent, setKenapaAccent] = useState('#8b5cf6')
 
   useEffect(() => {
     const checkSession = async () => {
@@ -87,8 +88,8 @@ export default function Home() {
               
               {/* Description */}
               <p className="text-xl text-zinc-400 max-w-lg leading-relaxed">
-                Sampaikan pesan, pertanyaan, atau dukunganmu secara anonim. 
-                <span className="text-zinc-300"> Identitasmu 100% terlindungi.</span>
+                Sampaikan pesan dan dukunganmu secara anonim. 
+                <span className="text-zinc-300"> Identitasmu 100% aman.</span>
               </p>
               
               {/* CTA Buttons */}
@@ -190,13 +191,13 @@ export default function Home() {
           <div className="mb-16 text-center">
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">
               Kenapa{" "}
-              <span className="bg-gradient-to-r from-purple-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
+              <span className="bg-clip-text text-transparent transition-all duration-700" style={{ backgroundImage: `linear-gradient(to right, ${kenapaAccent}, ${kenapaAccent}cc, ${kenapaAccent}88)` }}>
                 Fanonym?
               </span>
             </h2>
           </div>
 
-          <KenapaFanonymCards />
+          <KenapaFanonymCards onActiveChange={setKenapaAccent} />
         </div>
       </section>
 
