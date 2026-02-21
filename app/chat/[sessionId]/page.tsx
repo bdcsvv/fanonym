@@ -250,8 +250,11 @@ export default function ChatRoom() {
       setTimeWarningLevel(warningLevel)
       
       if (expired) {
-        // Optionally reload or show expired UI
-        toast.info('Chat session telah expired')
+        const now = Date.now()
+        if (!toastShownRef.current['sessionExpired'] || now - toastShownRef.current['sessionExpired'] > 10000) {
+          toastShownRef.current['sessionExpired'] = now
+          toast.info('Chat session telah expired')
+        }
       }
     }
 
@@ -521,7 +524,11 @@ export default function ChatRoom() {
         return m
       }))
 
-      toast.success('✅ Pembayaran berhasil!')
+      const now = Date.now()
+      if (!toastShownRef.current['paySuccess'] || now - toastShownRef.current['paySuccess'] > 5000) {
+        toastShownRef.current['paySuccess'] = now
+        toast.success('✅ Pembayaran berhasil!')
+      }
 
       // Notify creator about payment received
       await sendNotification({
@@ -532,7 +539,11 @@ export default function ChatRoom() {
         link: `/chat/${sessionId}`,
       })
     } catch (err: any) {
-      toast.error('Gagal bayar: ' + err.message)
+      const now2 = Date.now()
+      if (!toastShownRef.current['payFail'] || now2 - toastShownRef.current['payFail'] > 5000) {
+        toastShownRef.current['payFail'] = now2
+        toast.error('Gagal bayar: ' + err.message)
+      }
     } finally {
       setPayingMessageId(null)
     }
