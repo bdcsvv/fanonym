@@ -146,8 +146,6 @@ const EMAIL_TEMPLATES: Record<EmailType, { subject: string; body: (data: any) =>
         ${bodyText('Request withdraw kamu telah diproses. Dana akan masuk ke rekening dalam <strong style="color:#c4b5fd;">1–3 hari kerja</strong>.')}
         ${infoTable([
           { label: 'Jumlah', value: `${d.amount} Kredit`, accent: true },
-          { label: 'Bank', value: d.bank || '-' },
-          { label: 'No. Rekening', value: d.account_number || '-' },
           { label: 'Status', value: '✓ Diproses', accent: true },
         ])}
       </div>
