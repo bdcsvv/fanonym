@@ -611,6 +611,38 @@ export default function AdminPanel() {
     return null
   }
 
+  if (!pinVerified) {
+    return (
+      <div className="min-h-screen bg-[#0c0a14] flex items-center justify-center p-6">
+        <div className="bg-white/[0.04] border border-purple-500/20 rounded-3xl p-10 w-full max-w-sm text-center">
+          <div className="w-16 h-16 rounded-full bg-purple-600/20 border border-purple-500/30 flex items-center justify-center mx-auto mb-6">
+            <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">Admin PIN</h2>
+          <p className="text-zinc-500 text-sm mb-8">Masukkan PIN untuk akses admin panel</p>
+          <input
+            type="password"
+            value={pinInput}
+            onChange={e => { setPinInput(e.target.value); setPinError(false) }}
+            onKeyDown={e => e.key === 'Enter' && handlePinSubmit()}
+            placeholder="••••••••"
+            maxLength={20}
+            className="w-full bg-white/[0.05] border border-purple-500/20 rounded-xl px-4 py-3 text-white text-center text-2xl tracking-widest mb-4 focus:outline-none focus:border-purple-500/50"
+          />
+          {pinError && <p className="text-red-400 text-sm mb-4">PIN salah, coba lagi</p>}
+          <button
+            onClick={handlePinSubmit}
+            className="w-full bg-gradient-to-r from-[#6700e8] to-[#9333ea] hover:opacity-90 text-white font-bold py-3 rounded-xl transition-all"
+          >
+            Masuk
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white page-transition">
       <nav className="border-b border-gray-800 p-4">
