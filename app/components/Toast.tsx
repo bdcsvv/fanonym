@@ -156,8 +156,13 @@ export function useToast() {
   const [toasts, setToasts] = useState<ToastItem[]>([])
 
   const showToast = (message: string, type: ToastType = 'info', title?: string) => {
-    const id = Date.now()
-    setToasts(prev => [...prev, { id, message, type, title }])
+    setToasts(prev => {
+      // Dedup: don't add if same message+type already visible
+      const alreadyShowing = prev.some(t => t.message === message && t.type === type)
+      if (alreadyShowing) return prev
+      const id = Date.now()
+      return [...prev, { id, message, type, title }]
+    })
   }
 
   const removeToast = (id: number) => {
