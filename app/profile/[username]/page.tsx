@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -15,6 +15,7 @@ export default function CreatorProfilePage() {
   const router = useRouter()
   const { toast, ToastContainer } = useToast()
   const username = params.username as string
+  const toastShownRef = useRef(false)
 
   const [creator, setCreator] = useState<any>(null)
   const [totalAnons, setTotalAnons] = useState(0)
@@ -141,7 +142,11 @@ export default function CreatorProfilePage() {
     const creditsCost = priceOption.price_credits ?? priceOption.credits ?? priceOption.price ?? 0
     if (creditsCost <= 0) { toast.error('Harga tidak valid'); return }
     if (credits < creditsCost) {
-      toast.warning('Kredit tidak cukup', `Butuh ${creditsCost} kredit, saldo kamu ${credits} kredit`)
+      if (!toastShownRef.current) {
+        toastShownRef.current = true
+        toast.warning('Kredit tidak cukup', `Butuh ${creditsCost} kredit, saldo kamu ${credits} kredit`)
+        setTimeout(() => { toastShownRef.current = false }, 5000)
+      }
       router.push('/topup')
       return
     }

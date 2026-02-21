@@ -138,24 +138,52 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-[#0c0a14] flex items-center justify-center p-6">
-        <div className="max-w-md w-full text-center">
-          <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+      <div className="min-h-screen bg-[#0c0a14] flex items-center justify-center p-6 relative overflow-hidden">
+        {/* Galaxy background */}
+        <GalaxyBackground />
+        {/* Glow orbs */}
+        <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] rounded-full bg-purple-600/20 blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-[350px] h-[350px] rounded-full bg-violet-500/15 blur-[100px] pointer-events-none" />
+
+        <div className="relative z-10 max-w-md w-full">
+          {/* Logo */}
+          <div className="text-center mb-8">
+            <Link href="/" className="font-black italic text-3xl bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(147,51,234,0.4)]">
+              fanonym
+            </Link>
           </div>
-          <h2 className="text-2xl font-bold text-white mb-3">Cek Email Kamu!</h2>
-          <p className="text-zinc-400 mb-8">
-            Kami sudah mengirim link verifikasi ke <span className="text-purple-400">{email}</span>. 
-            Klik link tersebut untuk mengaktifkan akun.
-          </p>
-          <Link
-            href="/auth/login"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 font-medium transition-all"
-          >
-            Kembali ke Login
-          </Link>
+
+          {/* Card */}
+          <div className="bg-white/[0.04] backdrop-blur-xl border border-purple-500/20 rounded-3xl p-10 text-center">
+            {/* Icon */}
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-600/30 to-violet-600/20 border border-purple-500/30 flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+
+            <h2 className="text-3xl font-bold text-white mb-2">Cek Email Kamu!</h2>
+            <p className="text-purple-300/60 text-sm mb-6">Link verifikasi sudah dikirim</p>
+
+            <div className="h-px bg-gradient-to-r from-transparent via-purple-500/30 to-transparent mb-6" />
+
+            <p className="text-zinc-400 text-sm leading-relaxed mb-3">
+              Kami sudah mengirim link verifikasi ke
+            </p>
+            <p className="text-purple-400 font-semibold mb-6 break-all">{email}</p>
+            <p className="text-zinc-500 text-xs leading-relaxed mb-8">
+              Klik link tersebut untuk mengaktifkan akun kamu. Link berlaku selama <span className="text-purple-400">1 jam</span>.
+            </p>
+
+            <Link
+              href="/auth/login"
+              className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#6700e8] to-[#9333ea] hover:opacity-90 font-semibold transition-all text-white shadow-[0_4px_20px_rgba(103,0,232,0.4)]"
+            >
+              Kembali ke Login
+            </Link>
+
+            <p className="text-zinc-600 text-xs mt-4">Tidak menerima email? Cek folder spam kamu</p>
+          </div>
         </div>
       </div>
     )

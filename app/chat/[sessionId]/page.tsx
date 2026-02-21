@@ -359,11 +359,13 @@ export default function ChatRoom() {
       return
     }
 
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString() // 5 menit
     const content = JSON.stringify({
       type: 'payment_request',
       amount: amount,
       description: paymentDesc || 'Payment request',
-      status: 'pending'
+      status: 'pending',
+      expires_at: expiresAt
     })
 
     await supabase.from('messages').insert({
@@ -397,7 +399,6 @@ export default function ChatRoom() {
         const checkContent = JSON.parse(msgCheck.content)
         if (checkContent.status === 'paid') {
           toast.info('Pembayaran sudah dilakukan sebelumnya')
-          // Update local state
           setMessages(prev => prev.map(m => {
             if (m.id === messageId) {
               const content = JSON.parse(m.content)
@@ -406,6 +407,12 @@ export default function ChatRoom() {
             }
             return m
           }))
+          setPayingMessageId(null)
+          return
+        }
+        // Check if expired
+        if (checkContent.expires_at && new Date(checkContent.expires_at) < new Date()) {
+          toast.error('Payment request sudah expired', 'Minta creator kirim request baru')
           setPayingMessageId(null)
           return
         }
@@ -627,6 +634,7 @@ export default function ChatRoom() {
 
     if (isPaymentRequest && paymentData) {
       const isPaid = paymentData.status === 'paid'
+      const isExpiredPayment = paymentData.expires_at && new Date(paymentData.expires_at) < new Date()
       return (
         <div 
           key={msg.id} 
@@ -638,7 +646,9 @@ export default function ChatRoom() {
             <p className="text-2xl font-bold text-white">{paymentData.amount} Kredit</p>
             <p className="text-sm text-purple-200 mb-2">{paymentData.description}</p>
             {isPaid ? (
-              <div className="px-3 py-2 bg-green-500/30 rounded-lg text-green-300 text-center text-sm">✅ Sudah Dibayar</div>
+              <div className="px-3 py-2 bg-purple-500/30 rounded-lg text-purple-200 text-center text-sm">✓ Sudah Dibayar</div>
+            ) : isExpiredPayment ? (
+              <div className="px-3 py-2 bg-zinc-800/80 rounded-lg text-zinc-400 text-center text-sm">⏱ Request Expired</div>
             ) : !isFromMe ? (
               <button 
                 onClick={() => handlePayment(msg.id, paymentData.amount)} 
@@ -648,7 +658,7 @@ export default function ChatRoom() {
                 {payingMessageId === msg.id ? '⏳ Memproses...' : 'Bayar Sekarang'}
               </button>
             ) : (
-              <div className="px-3 py-2 bg-yellow-500/30 rounded-lg text-yellow-300 text-center text-sm">⏳ Menunggu Pembayaran</div>
+              <div className="px-3 py-2 bg-purple-800/50 rounded-lg text-purple-300 text-center text-sm">⏳ Menunggu Pembayaran</div>
             )}
             <div className={`flex items-center gap-1 mt-2 ${isFromMe ? 'justify-end' : 'justify-start'}`}>
               <p className="text-xs text-purple-300">
