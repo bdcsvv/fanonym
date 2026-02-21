@@ -11,6 +11,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Fanonym - Kirim Pesan Anonim ke Creator Favoritmu",
   description: "Platform pesan anonim yang menghubungkan fans dengan creator favorit mereka. Aman, anonim, dan mudah digunakan.",
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
