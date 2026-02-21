@@ -89,13 +89,13 @@ export default function AnimatedStats() {
           </h2>
         </div>
 
-        {/* Stats - original style, no boxes */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
+        {/* Stats - centered and clean */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8">
           {stats.map((stat, index) => (
             <div
               key={index}
               className={`
-                relative group
+                relative group text-center
                 transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)]
                 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'}
               `}
@@ -103,7 +103,7 @@ export default function AnimatedStats() {
             >
               {/* Glowing dot */}
               <div className={`
-                absolute -top-2 left-0 w-2 h-2 rounded-full
+                absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full
                 transition-all duration-700
                 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}
                 ${index === 0 ? 'bg-purple-400' : index === 1 ? 'bg-violet-400' : index === 2 ? 'bg-fuchsia-400' : 'bg-pink-400'}
@@ -112,7 +112,7 @@ export default function AnimatedStats() {
               </div>
 
               {/* Number */}
-              <div className="relative">
+              <div className="relative inline-block">
                 <span className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white group-hover:text-purple-200 transition-colors duration-300">
                   {stat.numericValue % 1 !== 0 ? counts[index].toFixed(1) : counts[index]}
                 </span>
@@ -122,7 +122,7 @@ export default function AnimatedStats() {
               </div>
 
               {/* Label */}
-              <p className="text-sm text-zinc-500 mt-1 group-hover:text-zinc-400 transition-colors">
+              <p className="text-sm text-zinc-500 mt-2 group-hover:text-zinc-400 transition-colors">
                 {stat.label}
               </p>
             </div>

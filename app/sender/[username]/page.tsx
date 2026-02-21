@@ -270,12 +270,13 @@ export default function SenderProfilePage() {
                 {isOwnProfile && (
                   <Link 
                     href="/settings"
-                    className="flex items-center gap-2 px-4 py-2 bg-purple-600/20 text-purple-400 border border-purple-500/30 rounded-full text-sm hover:bg-purple-600/30 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-zinc-800/80 text-zinc-300 border border-zinc-700 rounded-full text-sm hover:bg-zinc-700/80 hover:text-white transition-colors"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    SECURE PROFILE
+                    Settings
                   </Link>
                 )}
               </>
@@ -396,13 +397,6 @@ export default function SenderProfilePage() {
             <p className="text-5xl font-bold text-white mb-2">{reviews.bad}</p>
             <p className="text-xs text-zinc-500 uppercase tracking-wider">Bad Reviews</p>
           </div>
-        </div>
-
-        {/* Ghost Decoration */}
-        <div className="flex justify-center mb-8">
-          <svg className="w-16 h-16 text-zinc-700 animate-float" viewBox="0 0 64 64" fill="currentColor">
-            <path d="M32 4C18.7 4 8 14.7 8 28v28c0 2.2 1.8 4 4 4 1.1 0 2.1-.4 2.8-1.2l4-4c.8-.8 2-1.2 3.2-.8s2 1.4 2 2.6V60c0 2.2 1.8 4 4 4s4-1.8 4-4v-3.4c0-1.2.8-2.2 2-2.6s2.4 0 3.2.8l4 4c.7.8 1.7 1.2 2.8 1.2 2.2 0 4-1.8 4-4V28C56 14.7 45.3 4 32 4zm-8 28c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4zm16 0c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4z"/>
-          </svg>
         </div>
 
         {/* Review Section - Only show if not own profile and is a creator */}
