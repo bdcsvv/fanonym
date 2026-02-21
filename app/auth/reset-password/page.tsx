@@ -12,16 +12,37 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  // ready and invalidLink declared in useEffect below
+
+  const [ready, setReady] = useState(false)
+  const [invalidLink, setInvalidLink] = useState(false)
 
   useEffect(() => {
-    // Check if user came from email link
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
-        // User is in password recovery mode
+        setReady(true)
+      } else if (event === 'SIGNED_IN' && session) {
+        setReady(true)
       }
     })
 
-    return () => subscription.unsubscribe()
+    // Also check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setReady(true)
+    })
+
+    // Timeout - if no recovery event after 5s, link is invalid
+    const timeout = setTimeout(() => {
+      setReady(prev => {
+        if (!prev) setInvalidLink(true)
+        return prev
+      })
+    }, 5000)
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeout)
+    }
   }, [])
 
   const handleResetPassword = async (e: React.FormEvent) => {
@@ -51,6 +72,17 @@ export default function ResetPasswordPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (invalidLink) {
+    return (
+      <div className="min-h-screen bg-[#0c0a14] flex items-center justify-center p-4">
+        <div className="text-center">
+          <p className="text-red-400 mb-4">Link reset password tidak valid atau sudah expired.</p>
+          <a href="/auth/login" className="text-purple-400 hover:text-purple-300">Kembali ke Login</a>
+        </div>
+      </div>
+    )
   }
 
   return (

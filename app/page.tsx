@@ -18,8 +18,19 @@ export default function Home() {
 
   useEffect(() => {
     const checkSession = async () => {
+      // Don't redirect if this is a password recovery flow
+      const hash = window.location.hash
+      const params = new URLSearchParams(window.location.search)
+      if (hash.includes('type=recovery') || params.get('type') === 'recovery') {
+        router.replace('/auth/reset-password' + window.location.hash)
+        return
+      }
+
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
+        // Also check if session is recovery type
+        if ((session as any).user?.aud === 'recovery') return
+
         const { data: profile } = await supabase
           .from('profiles')
           .select('user_type')
