@@ -563,7 +563,11 @@ export default function ChatRoom() {
       .single()
 
     if (!credits || credits.balance < pricingOption.price_credits) {
-      toast.warning('Kredit tidak cukup', 'Silakan top up dulu')
+      const now = Date.now()
+      if (!toastShownRef.current['kredit_extend'] || now - toastShownRef.current['kredit_extend'] > 5000) {
+        toastShownRef.current['kredit_extend'] = now
+        toast.warning('Kredit tidak cukup', 'Silakan top up dulu')
+      }
       setExtendLoading(false)
       return
     }

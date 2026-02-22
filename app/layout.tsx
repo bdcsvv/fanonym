@@ -16,6 +16,28 @@ export const metadata: Metadata = {
     shortcut: '/favicon.svg',
     apple: '/favicon.svg',
   },
+  openGraph: {
+    title: "Fanonym - Kirim Pesan Anonim ke Creator Favoritmu",
+    description: "Platform pesan anonim yang menghubungkan fans dengan creator favorit mereka. Aman, anonim, dan mudah digunakan.",
+    url: "https://fanonym.id",
+    siteName: "Fanonym",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Fanonym - Kirim Pesan Anonim ke Creator Favoritmu",
+      },
+    ],
+    locale: "id_ID",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Fanonym - Kirim Pesan Anonim ke Creator Favoritmu",
+    description: "Platform pesan anonim yang menghubungkan fans dengan creator favorit mereka. Aman, anonim, dan mudah digunakan.",
+    images: ["/og-image.png"],
+  },
 };
 
 export const viewport: Viewport = {

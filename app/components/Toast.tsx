@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
 
@@ -154,29 +154,34 @@ function ToastCard({ toast, onRemove }: { toast: ToastItem; onRemove: () => void
 
 export function useToast() {
   const [toasts, setToasts] = useState<ToastItem[]>([])
+  // Track active toast keys to prevent spam across re-renders
+  const activeToastKeys = useRef<Set<string>>(new Set())
 
-  const showToast = (message: string, type: ToastType = 'info', title?: string) => {
-    setToasts(prev => {
-      // Dedup: don't add if same message+type already visible
-      const alreadyShowing = prev.some(t => t.message === message && t.type === type)
-      if (alreadyShowing) return prev
-      const id = Date.now()
-      return [...prev, { id, message, type, title }]
-    })
-  }
+  const showToast = useCallback((message: string, type: ToastType = 'info', title?: string) => {
+    const key = `${type}:${message}`
+    // If this exact toast is already showing, skip
+    if (activeToastKeys.current.has(key)) return
+    activeToastKeys.current.add(key)
+    const id = Date.now()
+    setToasts(prev => [...prev, { id, message, type, title }])
+    // Remove key after toast disappears (4.5s display + 350ms animation)
+    setTimeout(() => {
+      activeToastKeys.current.delete(key)
+    }, 5000)
+  }, [])
 
-  const removeToast = (id: number) => {
+  const removeToast = useCallback((id: number) => {
     setToasts(prev => prev.filter(t => t.id !== id))
-  }
+  }, [])
 
-  const toast = {
+  const toast = useMemo(() => ({
     success: (message: string, title?: string) => showToast(message, 'success', title),
     error: (message: string, title?: string) => showToast(message, 'error', title),
     warning: (message: string, title?: string) => showToast(message, 'warning', title),
     info: (message: string, title?: string) => showToast(message, 'info', title),
-  }
+  }), [showToast])
 
-  const ToastContainer = () => (
+  const ToastContainer = useMemo(() => () => (
     <div style={{
       position: 'fixed',
       top: '16px',
@@ -193,7 +198,7 @@ export function useToast() {
         </div>
       ))}
     </div>
-  )
+  ), [toasts, removeToast])
 
   return { toast, ToastContainer }
 }
