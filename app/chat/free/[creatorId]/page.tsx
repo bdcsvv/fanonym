@@ -158,8 +158,14 @@ export default function FreeMessagePage() {
 
       <main className="max-w-2xl mx-auto p-6">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-violet-600 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold">
-            {creator?.full_name?.[0] || creator?.username?.[0] || '?'}
+          <div className="w-16 h-16 rounded-full mx-auto mb-4 overflow-hidden border-2 border-purple-500/30">
+            {creator?.avatar_url ? (
+              <img src={creator.avatar_url} alt={creator.username} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-purple-600 to-violet-600 flex items-center justify-center text-2xl font-bold text-white">
+                {creator?.full_name?.[0] || creator?.username?.[0] || '?'}
+              </div>
+            )}
           </div>
           <h1 className="text-xl font-bold">Kirim Pesan Gratis ke {creator?.full_name || creator?.username}</h1>
           <p className="text-zinc-400 text-sm mt-2">Pesan akan masuk ke folder spam. Creator bisa memilih untuk membalas atau tidak.</p>

@@ -6,7 +6,8 @@ export default function HelpButton() {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-4 pointer-events-none">
+      <div className="pointer-events-auto relative">
       {/* Popup menu */}
       {isOpen && (
         <div className="absolute bottom-16 right-0 bg-[#1a1528] border border-purple-500/20 rounded-2xl p-3 shadow-xl shadow-black/50 min-w-[200px] animate-fadeIn">
@@ -57,6 +58,7 @@ export default function HelpButton() {
         </svg>
         <span className="font-medium text-sm">Butuh Bantuan?</span>
       </button>
+      </div>
     </div>
   )
 }

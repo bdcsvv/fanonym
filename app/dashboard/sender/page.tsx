@@ -135,7 +135,10 @@ export default function SenderDashboard() {
     }
   }, [router])
 
+  const [loggingOut, setLoggingOut] = useState(false)
+
   const handleLogout = async () => {
+    setLoggingOut(true)
     await supabase.auth.signOut()
     router.push('/auth/login')
   }
@@ -253,7 +256,8 @@ export default function SenderDashboard() {
               Settings
             </Link>
             <button 
-              onClick={handleLogout} 
+              onClick={handleLogout}
+              disabled={loggingOut} 
               className="flex items-center gap-2 text-zinc-400 hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] transition-all"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

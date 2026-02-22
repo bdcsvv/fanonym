@@ -562,7 +562,10 @@ export default function CreatorDashboard() {
     }
   }
 
+  const [loggingOut, setLoggingOut] = useState(false)
+
   const handleLogout = async () => {
+    setLoggingOut(true)
     await supabase.auth.signOut()
     router.push('/auth/login')
   }
@@ -1154,6 +1157,7 @@ export default function CreatorDashboard() {
             </Link>
             <button 
               onClick={handleLogout}
+              disabled={loggingOut}
               className="p-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-colors border border-zinc-700"
             >
               <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1583,24 +1587,38 @@ export default function CreatorDashboard() {
           {/* Spam Tab */}
           {activeTab === 'spam' && (
             <div>
-              <h3 className="text-lg font-semibold mb-4">Pesan Spam (Gratis)</h3>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-9 h-9 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+                  <span className="text-lg">📨</span>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white">Pesan Gratis</h3>
+                  <p className="text-xs text-zinc-500">Pesan tanpa bayar dari fans</p>
+                </div>
+              </div>
               {spamMessages.length === 0 ? (
-                <p className="text-zinc-500 text-center py-8">Tidak ada pesan spam</p>
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="w-16 h-16 rounded-full bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center mb-4">
+                    <span className="text-2xl">📭</span>
+                  </div>
+                  <p className="text-zinc-400 font-medium mb-1">Belum ada pesan gratis</p>
+                  <p className="text-zinc-600 text-sm">Pesan dari fans yang dikirim tanpa kredit akan muncul di sini</p>
+                </div>
               ) : (
                 <div className="space-y-3">
                   {spamMessages.map((msg) => (
-                    <div key={msg.id} className="bg-zinc-800/50 border border-zinc-700 rounded-xl p-4">
-                      <p className="text-sm mb-3">{msg.content}</p>
+                    <div key={msg.id} className="bg-white/[0.03] border border-white/8 rounded-2xl p-4 hover:border-purple-500/20 transition-colors">
+                      <p className="text-sm text-zinc-300 mb-4 leading-relaxed">{msg.content}</p>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleSpamAction(msg.id, msg.sender_id, 'accept')}
-                          className="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-medium rounded-lg transition-colors"
+                          className="px-4 py-2 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-300 text-xs font-semibold rounded-xl transition-colors"
                         >
-                          ✓ Terima (Chat 10 menit)
+                          ✓ Terima
                         </button>
                         <button
                           onClick={() => handleSpamAction(msg.id, msg.sender_id, 'reject')}
-                          className="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 text-xs font-medium rounded-lg transition-colors"
+                          className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-semibold rounded-xl transition-colors"
                         >
                           ✕ Tolak
                         </button>
