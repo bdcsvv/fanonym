@@ -16,6 +16,9 @@ export const metadata: Metadata = {
     shortcut: '/favicon.svg',
     apple: '/favicon.svg',
   },
+  verification: {
+    google: "Hgj3eMEQoRmMdyGQ3DsAs0B10b6gOelZqh-8c0cT41A",
+  },
   openGraph: {
     title: "Fanonym - Kirim Pesan Anonim ke Creator Favoritmu",
     description: "Platform pesan anonim yang menghubungkan fans dengan creator favorit mereka. Aman, anonim, dan mudah digunakan.",
