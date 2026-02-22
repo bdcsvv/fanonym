@@ -1,14 +1,28 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function HelpButton() {
   const [isOpen, setIsOpen] = useState(false)
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrolled = window.scrollY + window.innerHeight
+      const total = document.documentElement.scrollHeight
+      // Show when user is within 100px of bottom
+      setVisible(scrolled >= total - 100)
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    handleScroll() // check on mount
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  if (!visible) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-4 pointer-events-none">
-      <div className="pointer-events-auto relative">
-      {/* Popup menu */}
+    <div className="fixed bottom-6 right-6 z-50">
       {isOpen && (
         <div className="absolute bottom-16 right-0 bg-[#1a1528] border border-purple-500/20 rounded-2xl p-3 shadow-xl shadow-black/50 min-w-[200px] animate-fadeIn">
           <p className="text-xs text-zinc-500 px-2 pb-2 font-medium">Hubungi Kami</p>
@@ -58,7 +72,6 @@ export default function HelpButton() {
         </svg>
         <span className="font-medium text-sm">Butuh Bantuan?</span>
       </button>
-      </div>
     </div>
   )
 }
