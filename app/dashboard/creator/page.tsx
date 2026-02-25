@@ -64,9 +64,8 @@ export default function CreatorDashboard() {
   const [selectedExpired, setSelectedExpired] = useState<string[]>([])
 
   const KREDIT_TO_IDR = 10000
-  const PLATFORM_FEE = 0.1
-  const TRANSFER_FEE = 30000
-  const FREE_TRANSFER_MIN = 1000000
+  const PLATFORM_FEE = 0.04
+  const TRANSFER_FEE = 3500
   const MIN_WITHDRAW = 10
 
   useEffect(() => {
@@ -675,7 +674,7 @@ export default function CreatorDashboard() {
 
   const calculateWithdraw = (kredits: number) => {
     const grossAmount = kredits * KREDIT_TO_IDR * (1 - PLATFORM_FEE)
-    const fee = grossAmount < FREE_TRANSFER_MIN ? TRANSFER_FEE : 0
+    const fee = TRANSFER_FEE
     const netAmount = grossAmount - fee
     return { grossAmount, fee, netAmount }
   }
@@ -1077,7 +1076,7 @@ export default function CreatorDashboard() {
                         })}
                       </p>
                       <p className="text-zinc-400 text-sm">
-                        ≈ Rp {(w.amount * KREDIT_TO_IDR * (1 - PLATFORM_FEE)).toLocaleString('id-ID')} (setelah fee 10%)
+                        ≈ Rp {(w.amount * KREDIT_TO_IDR * (1 - PLATFORM_FEE)).toLocaleString('id-ID')} (setelah fee 4%)
                       </p>
                     </div>
                   </div>

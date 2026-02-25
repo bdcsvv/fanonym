@@ -174,7 +174,7 @@ export default function TermsOfService() {
               </li>
               <li className="flex items-start gap-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 flex-shrink-0" />
-                <span>Platform memotong <strong className="text-zinc-300">10% dari setiap transaksi</strong> sebagai biaya layanan</span>
+                <span>Platform memotong <strong className="text-zinc-300">4% dari setiap transaksi</strong> sebagai biaya layanan</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 flex-shrink-0" />
@@ -182,7 +182,7 @@ export default function TermsOfService() {
               </li>
               <li className="flex items-start gap-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 flex-shrink-0" />
-                <span>Biaya transfer Rp 30.000 untuk penarikan di bawah Rp 1.000.000</span>
+                <span>Biaya transfer Rp 3.500 untuk setiap penarikan</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 flex-shrink-0" />

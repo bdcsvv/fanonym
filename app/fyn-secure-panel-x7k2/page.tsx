@@ -177,7 +177,7 @@ export default function AdminPanel() {
       .eq('status', 'completed')
     const totalWithdrawn = (completedWithdraws || []).reduce((sum, w) => sum + (w.amount || 0), 0)
 
-    // Platform fees (10% of total earnings)
+    // Platform fees (4% of total earnings)
     const platformFees = Math.round(totalEarnings * 0.1)
 
     setRevenue({
@@ -592,13 +592,12 @@ export default function AdminPanel() {
   }
 
   const KREDIT_TO_IDR = 10000
-  const PLATFORM_FEE = 0.1
-  const TRANSFER_FEE = 30000
-  const FREE_TRANSFER_MIN = 1000000
+  const PLATFORM_FEE = 0.04
+  const TRANSFER_FEE = 3500
 
   const calculateWithdraw = (kredits: number) => {
     const grossAmount = kredits * KREDIT_TO_IDR * (1 - PLATFORM_FEE)
-    const fee = grossAmount < FREE_TRANSFER_MIN ? TRANSFER_FEE : 0
+    const fee = TRANSFER_FEE
     const netAmount = grossAmount - fee
     return { grossAmount, fee, netAmount }
   }
@@ -776,7 +775,7 @@ export default function AdminPanel() {
                   <p className="text-purple-400/70 text-sm">≈ Rp {(revenue.totalEarnings * KREDIT_TO_IDR).toLocaleString('id-ID')}</p>
                 </div>
                 <div className="bg-gradient-to-br from-yellow-500/20 to-yellow-600/10 border border-yellow-500/30 rounded-xl p-5">
-                  <p className="text-yellow-400 text-sm mb-1">Platform Fee (10%)</p>
+                  <p className="text-yellow-400 text-sm mb-1">Platform Fee (4%)</p>
                   <p className="text-3xl font-bold text-white">{revenue.platformFees}</p>
                   <p className="text-yellow-400/70 text-sm">≈ Rp {(revenue.platformFees * KREDIT_TO_IDR).toLocaleString('id-ID')}</p>
                 </div>
