@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import Navbar from '@/app/components/Navbar'
+import GalaxyBackground from '@/app/components/GalaxyBackground'
 import { useState } from 'react'
 
 const TOPUP_OPTIONS = [
@@ -19,15 +20,8 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-[#0c0a14] text-white">
+      <GalaxyBackground />
       <Navbar />
-
-      {/* Background Effects */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 h-[800px] w-[800px] rounded-full bg-purple-600/15 blur-[180px]" />
-        <div className="absolute bottom-0 right-0 h-[500px] w-[500px] rounded-full bg-violet-600/10 blur-[150px]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:60px_60px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,#0c0a14_70%)]" />
-      </div>
 
       <main className="relative z-10 pt-32 pb-20 px-6">
         <div className="mx-auto max-w-5xl">
@@ -35,7 +29,6 @@ export default function PricingPage() {
           {/* Header */}
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/20 bg-purple-500/10 backdrop-blur-sm px-5 py-2.5 mb-8">
-              <span className="text-2xl">💎</span>
               <span className="text-sm font-medium text-purple-200">Harga Kredit Fanonym</span>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
@@ -58,7 +51,7 @@ export default function PricingPage() {
                 onMouseEnter={() => setHoveredIndex(index)}
                 onMouseLeave={() => setHoveredIndex(null)}
                 className={`
-                  relative rounded-2xl border p-6 transition-all duration-300 cursor-pointer
+                  relative rounded-2xl border p-6 transition-all duration-300 cursor-pointer backdrop-blur-sm
                   ${option.popular 
                     ? 'border-purple-500/50 bg-purple-500/10 shadow-lg shadow-purple-500/10' 
                     : 'border-white/10 bg-white/[0.03] hover:border-purple-500/30 hover:bg-purple-500/5'
@@ -109,7 +102,7 @@ export default function PricingPage() {
                 onMouseEnter={() => setHoveredIndex(index + 3)}
                 onMouseLeave={() => setHoveredIndex(null)}
                 className={`
-                  relative rounded-2xl border p-6 transition-all duration-300 cursor-pointer
+                  relative rounded-2xl border p-6 transition-all duration-300 cursor-pointer backdrop-blur-sm
                   border-white/10 bg-white/[0.03] hover:border-purple-500/30 hover:bg-purple-500/5
                   ${hoveredIndex === index + 3 ? 'scale-[1.02]' : ''}
                 `}
@@ -139,28 +132,28 @@ export default function PricingPage() {
           </div>
 
           {/* How it works */}
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-8 mb-16">
+          <div className="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-2xl p-8 mb-16">
             <h2 className="text-2xl font-bold text-center mb-8">Cara Kerja Kredit</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="text-center">
                 <div className="w-14 h-14 rounded-2xl bg-purple-500/15 border border-purple-500/20 flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">🛒</span>
+                  <span className="text-lg font-bold text-purple-400">1</span>
                 </div>
-                <h3 className="font-semibold mb-2">1. Beli Kredit</h3>
+                <h3 className="font-semibold mb-2">Beli Kredit</h3>
                 <p className="text-zinc-400 text-sm">Pilih paket kredit sesuai kebutuhanmu dan lakukan pembayaran.</p>
               </div>
               <div className="text-center">
                 <div className="w-14 h-14 rounded-2xl bg-purple-500/15 border border-purple-500/20 flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">✉️</span>
+                  <span className="text-lg font-bold text-purple-400">2</span>
                 </div>
-                <h3 className="font-semibold mb-2">2. Kirim Pesan</h3>
+                <h3 className="font-semibold mb-2">Kirim Pesan</h3>
                 <p className="text-zinc-400 text-sm">Gunakan kredit untuk mengirim pesan anonim ke creator favoritmu.</p>
               </div>
               <div className="text-center">
                 <div className="w-14 h-14 rounded-2xl bg-purple-500/15 border border-purple-500/20 flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">💬</span>
+                  <span className="text-lg font-bold text-purple-400">3</span>
                 </div>
-                <h3 className="font-semibold mb-2">3. Dapat Balasan</h3>
+                <h3 className="font-semibold mb-2">Dapat Balasan</h3>
                 <p className="text-zinc-400 text-sm">Creator membalas pesanmu melalui sesi chat dengan waktu terbatas.</p>
               </div>
             </div>
@@ -188,7 +181,7 @@ export default function PricingPage() {
                   a: 'Jumlah kredit per pesan ditentukan oleh masing-masing creator. Biasanya berkisar antara 1-5 kredit per pesan.'
                 },
               ].map((faq, i) => (
-                <div key={i} className="bg-white/[0.03] border border-white/10 rounded-xl p-5">
+                <div key={i} className="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-xl p-5">
                   <h3 className="font-semibold text-white mb-2">{faq.q}</h3>
                   <p className="text-zinc-400 text-sm leading-relaxed">{faq.a}</p>
                 </div>
@@ -198,7 +191,7 @@ export default function PricingPage() {
 
           {/* CTA */}
           <div className="text-center">
-            <div className="bg-gradient-to-r from-purple-600/20 to-violet-600/20 border border-purple-500/20 rounded-2xl p-10">
+            <div className="bg-gradient-to-r from-purple-600/20 to-violet-600/20 backdrop-blur-sm border border-purple-500/20 rounded-2xl p-10">
               <h2 className="text-3xl font-bold mb-4">Siap Kirim Pesan?</h2>
               <p className="text-zinc-400 mb-8 max-w-lg mx-auto">
                 Daftar sekarang dan mulai kirim pesan anonim ke creator favoritmu. Gratis untuk memulai!

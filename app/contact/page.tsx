@@ -2,19 +2,13 @@
 
 import Link from 'next/link'
 import Navbar from '@/app/components/Navbar'
+import GalaxyBackground from '@/app/components/GalaxyBackground'
 
 export default function ContactPage() {
   return (
     <div className="min-h-screen bg-[#0c0a14] text-white">
+      <GalaxyBackground />
       <Navbar />
-
-      {/* Background Effects */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 h-[800px] w-[800px] rounded-full bg-purple-600/15 blur-[180px]" />
-        <div className="absolute bottom-0 left-0 h-[500px] w-[500px] rounded-full bg-violet-600/10 blur-[150px]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:60px_60px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,#0c0a14_70%)]" />
-      </div>
 
       <main className="relative z-10 pt-32 pb-20 px-6">
         <div className="mx-auto max-w-4xl">
@@ -22,7 +16,6 @@ export default function ContactPage() {
           {/* Header */}
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/20 bg-purple-500/10 backdrop-blur-sm px-5 py-2.5 mb-8">
-              <span className="text-2xl">📞</span>
               <span className="text-sm font-medium text-purple-200">Hubungi Kami</span>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
@@ -32,48 +25,29 @@ export default function ContactPage() {
               </span>
             </h1>
             <p className="text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-              Tim Fanonym siap membantu kamu. Hubungi kami melalui salah satu kanal di bawah ini.
+              Tim Fanonym siap membantu kamu. Hubungi kami melalui email di bawah ini.
             </p>
           </div>
 
-          {/* Contact Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-2xl mx-auto mb-16">
-            {/* Email */}
+          {/* Email Card */}
+          <div className="max-w-md mx-auto mb-16">
             <a
               href="mailto:admin@fanonym.id"
-              className="group rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-center transition-all duration-300 hover:border-purple-500/30 hover:bg-purple-500/5 hover:scale-[1.02]"
+              className="group block rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-8 text-center transition-all duration-300 hover:border-purple-500/30 hover:bg-purple-500/5 hover:scale-[1.02]"
             >
               <div className="w-14 h-14 rounded-2xl bg-purple-500/15 border border-purple-500/20 flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-500/25 transition-colors">
                 <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                 </svg>
               </div>
-              <h3 className="font-semibold mb-1">Email</h3>
-              <p className="text-purple-400 text-sm font-medium">admin@fanonym.id</p>
+              <h3 className="font-semibold text-lg mb-1">Email</h3>
+              <p className="text-purple-400 font-medium">admin@fanonym.id</p>
               <p className="text-zinc-500 text-xs mt-2">Respon dalam 1x24 jam</p>
-            </a>
-
-            {/* Address */}
-            <a
-              href="https://maps.google.com/?q=Madiun,+Jawa+Timur,+Indonesia"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-center transition-all duration-300 hover:border-purple-500/30 hover:bg-purple-500/5 hover:scale-[1.02]"
-            >
-              <div className="w-14 h-14 rounded-2xl bg-purple-500/15 border border-purple-500/20 flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-500/25 transition-colors">
-                <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                </svg>
-              </div>
-              <h3 className="font-semibold mb-1">Alamat</h3>
-              <p className="text-zinc-300 text-sm">Madiun, Jawa Timur</p>
-              <p className="text-zinc-300 text-sm">Indonesia</p>
             </a>
           </div>
 
           {/* Social Media */}
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-8 mb-16">
+          <div className="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-2xl p-8 mb-16">
             <h2 className="text-2xl font-bold text-center mb-6">Ikuti Kami</h2>
             <div className="flex justify-center gap-4">
               <a
@@ -98,17 +72,6 @@ export default function ContactPage() {
                 </svg>
                 <span className="text-sm font-medium">@fanonym_id</span>
               </a>
-            </div>
-          </div>
-
-          {/* Business Info */}
-          <div className="bg-purple-600/10 border border-purple-500/20 rounded-2xl p-8 text-center">
-            <h2 className="text-xl font-bold mb-4">Informasi Usaha</h2>
-            <div className="space-y-2 text-sm text-zinc-400">
-              <p><span className="text-zinc-300 font-medium">Nama Usaha:</span> Fanonym</p>
-              <p><span className="text-zinc-300 font-medium">Email:</span> admin@fanonym.id</p>
-              <p><span className="text-zinc-300 font-medium">Alamat:</span> Madiun, Jawa Timur, Indonesia</p>
-              <p><span className="text-zinc-300 font-medium">Jam Operasional:</span> Senin - Jumat, 09:00 - 17:00 WIB</p>
             </div>
           </div>
 
