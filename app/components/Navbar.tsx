@@ -63,6 +63,30 @@ export default function Navbar() {
           {/* Nav Links */}
           <div className="flex items-center gap-2">
             <Link
+              href="/pricing"
+              className={`
+                px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-300
+                ${scrolled 
+                  ? 'text-zinc-300 hover:text-white hover:bg-white/5' 
+                  : 'text-zinc-300 hover:text-white'
+                }
+              `}
+            >
+              Harga
+            </Link>
+            <Link
+              href="/contact"
+              className={`
+                px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-300
+                ${scrolled 
+                  ? 'text-zinc-300 hover:text-white hover:bg-white/5' 
+                  : 'text-zinc-300 hover:text-white'
+                }
+              `}
+            >
+              Kontak
+            </Link>
+            <Link
               href="/auth/login"
               className={`
                 px-5 py-2.5 text-sm font-medium rounded-xl transition-all duration-300

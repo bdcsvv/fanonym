@@ -240,9 +240,12 @@ export default function Home() {
               <Link href="/privacy" className="text-zinc-400 hover:text-white transition-colors">
                 Kebijakan Privasi
               </Link>
-              <a href="mailto:support@fanonym.id" className="text-zinc-400 hover:text-white transition-colors">
+              <Link href="/pricing" className="text-zinc-400 hover:text-white transition-colors">
+                Harga
+              </Link>
+              <Link href="/contact" className="text-zinc-400 hover:text-white transition-colors">
                 Kontak
-              </a>
+              </Link>
             </div>
           </div>
           
