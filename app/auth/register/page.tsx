@@ -247,7 +247,7 @@ export default function RegisterPage() {
                 { title: 'Setup Kurang dari 1 Menit', desc: 'Daftar, beli kredit, langsung kirim pesan pertama' },
               ] : [
                 { title: 'Hasilkan Pendapatan dari Fans', desc: 'Terima pembayaran kredit untuk setiap sesi chat' },
-                { title: 'Platform Fee Hanya 10%', desc: 'Kamu mendapat 90% dari setiap transaksi yang masuk' },
+                { title: 'Platform Fee Hanya 4%', desc: 'Kamu mendapat 96% dari setiap transaksi yang masuk' },
                 { title: 'Kendali Penuh di Tanganmu', desc: 'Setujui atau tolak permintaan chat sesukamu' },
                 { title: 'Dashboard Analytics Lengkap', desc: 'Pantau pendapatan dan aktivitas fans secara real-time' },
               ]).map((benefit, i) => (

@@ -1772,7 +1772,7 @@ export default function CreatorDashboard() {
                     <span>{withdrawAmount} Kredit</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-zinc-400">Platform fee (10%)</span>
+                    <span className="text-zinc-400">Platform fee (4%)</span>
                     <span className="text-red-400">- Rp {(parseFloat(withdrawAmount) * KREDIT_TO_IDR * PLATFORM_FEE).toLocaleString('id-ID')}</span>
                   </div>
                   {withdrawCalc.fee > 0 && (
