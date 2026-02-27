@@ -11,6 +11,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Fanonym - Kirim Pesan Anonim ke Creator Favoritmu",
   description: "Platform pesan anonim yang menghubungkan fans dengan creator favorit mereka. Aman, anonim, dan mudah digunakan.",
+  metadataBase: new URL("https://www.fanonym.id"),
+  alternates: {
+    canonical: "/",
+  },
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',
@@ -22,7 +26,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Fanonym - Kirim Pesan Anonim ke Creator Favoritmu",
     description: "Platform pesan anonim yang menghubungkan fans dengan creator favorit mereka. Aman, anonim, dan mudah digunakan.",
-    url: "https://fanonym.id",
+    url: "https://www.fanonym.id",
     siteName: "Fanonym",
     images: [
       {
@@ -50,6 +54,49 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Fanonym",
+  "url": "https://www.fanonym.id",
+  "description": "Platform pesan anonim yang menghubungkan fans dengan creator favorit mereka. Aman, anonim, dan mudah digunakan.",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://www.fanonym.id/explore?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  },
+  "sameAs": [
+    "https://instagram.com/fanonym.id",
+    "https://twitter.com/fanonym_id"
+  ]
+};
+
+const orgJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Fanonym",
+  "url": "https://www.fanonym.id",
+  "logo": "https://www.fanonym.id/favicon.svg",
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "telephone": "+62-812-8295-5582",
+    "contactType": "customer service",
+    "email": "admin@fanonym.id",
+    "areaServed": "ID",
+    "availableLanguage": "Indonesian"
+  },
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Madiun",
+    "addressRegion": "Jawa Timur",
+    "addressCountry": "ID"
+  },
+  "sameAs": [
+    "https://instagram.com/fanonym.id",
+    "https://twitter.com/fanonym_id"
+  ]
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -57,6 +104,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+        />
+      </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         {children}
         <Analytics />
