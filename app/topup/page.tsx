@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -17,7 +17,7 @@ const TOPUP_OPTIONS = [
 
 const KREDIT_TO_IDR = 10000
 
-export default function TopupPage() {
+function TopupContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast, ToastContainer } = useToast()
@@ -544,5 +544,13 @@ export default function TopupPage() {
         )}
       </main>
     </div>
+  )
+}
+
+export default function TopupPage() {
+  return (
+    <Suspense>
+      <TopupContent />
+    </Suspense>
   )
 }
