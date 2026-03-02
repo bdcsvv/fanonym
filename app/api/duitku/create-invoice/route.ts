@@ -22,12 +22,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // POP API signature: SHA256(email + timestamp + merchantCode + apiKey)
+    // POP API signature: SHA256(merchantCode + timestamp + apiKey)
     const timestamp = Math.round(new Date().getTime())
-    const signatureRaw = `${email}${timestamp}${MERCHANT_CODE}${API_KEY}`
     const signature = crypto
       .createHash('sha256')
-      .update(signatureRaw)
+      .update(MERCHANT_CODE + timestamp + API_KEY)
       .digest('hex')
 
     const requestBody = {
@@ -60,7 +59,8 @@ export async function POST(req: NextRequest) {
 
     const apiUrl = `${DUITKU_BASE_URL}/api/merchant/createInvoice`
     console.log('Duitku POP request URL:', apiUrl)
-    console.log('Duitku POP request body:', JSON.stringify(requestBody))
+    console.log('Duitku POP timestamp:', timestamp)
+    console.log('Duitku POP signature:', signature)
 
     const response = await fetch(apiUrl, {
       method: 'POST',
