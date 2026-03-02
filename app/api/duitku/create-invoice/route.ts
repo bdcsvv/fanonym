@@ -22,34 +22,71 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Generate signature: MD5(merchantCode + merchantOrderId + paymentAmount + apiKey)
+    // POP API signature: SHA256(email + timestamp + merchantCode + apiKey)
+    const timestamp = Math.round(new Date().getTime())
+    const signatureRaw = `${email}${timestamp}${MERCHANT_CODE}${API_KEY}`
     const signature = crypto
-      .createHash('md5')
-      .update(MERCHANT_CODE + merchantOrderId + paymentAmount + API_KEY)
+      .createHash('sha256')
+      .update(signatureRaw)
       .digest('hex')
 
     const requestBody = {
       merchantCode: MERCHANT_CODE,
       paymentAmount: paymentAmount,
-      merchantOrderId: merchantOrderId,
+      merchantOrderId: String(merchantOrderId),
       productDetails: productDetails,
-      email: email,
+      additionalParam: '',
+      merchantUserInfo: '',
       customerVaName: customerVaName || 'Fanonym User',
+      email: email,
+      phoneNumber: '081282955582',
+      itemDetails: [
+        {
+          name: productDetails,
+          price: paymentAmount,
+          quantity: 1,
+        },
+      ],
+      customerDetail: {
+        firstName: customerVaName || 'Fanonym',
+        lastName: 'User',
+        email: email,
+        phoneNumber: '081282955582',
+      },
       callbackUrl: CALLBACK_URL,
       returnUrl: RETURN_URL,
-      signature: signature,
       expiryPeriod: 60,
     }
 
-    const response = await fetch(`${DUITKU_BASE_URL}/webapi/api/merchant/v2/inquiry`, {
+    const apiUrl = `${DUITKU_BASE_URL}/api/merchant/createInvoice`
+    console.log('Duitku POP request URL:', apiUrl)
+    console.log('Duitku POP request body:', JSON.stringify(requestBody))
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-duitku-signature': signature,
+        'x-duitku-timestamp': String(timestamp),
+        'x-duitku-merchantcode': MERCHANT_CODE,
       },
       body: JSON.stringify(requestBody),
     })
 
-    const data = await response.json()
+    const responseText = await response.text()
+    console.log('Duitku POP response status:', response.status)
+    console.log('Duitku POP response body:', responseText)
+
+    let data
+    try {
+      data = JSON.parse(responseText)
+    } catch {
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid response from Duitku',
+        rawResponse: responseText.substring(0, 500),
+      }, { status: 502 })
+    }
 
     if (data.statusCode === '00' || data.paymentUrl) {
       return NextResponse.json({
@@ -62,12 +99,12 @@ export async function POST(req: NextRequest) {
     } else {
       return NextResponse.json({
         success: false,
-        error: data.statusMessage || 'Failed to create invoice',
+        error: data.Message || data.statusMessage || 'Failed to create invoice',
         statusCode: data.statusCode,
       }, { status: 400 })
     }
   } catch (error: any) {
     console.error('Duitku create invoice error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
   }
 }
