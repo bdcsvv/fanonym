@@ -323,6 +323,18 @@ function TopupContent() {
           </div>
         </div>
 
+        {/* Temporary Banner - Remove when Duitku payment channels are active */}
+        <div className="bg-yellow-900/30 border border-yellow-500/40 rounded-2xl p-4 flex items-start gap-3">
+          <span className="text-yellow-400 text-xl">⚠️</span>
+          <div>
+            <p className="text-yellow-300 font-medium">Pembayaran otomatis sedang dalam proses aktivasi</p>
+            <p className="text-yellow-100/70 text-sm mt-1">
+              Untuk top up manual, silakan hubungi admin melalui{' '}
+              <a href="https://instagram.com/fanonym.id" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 underline">Instagram @fanonym.id</a>
+            </p>
+          </div>
+        </div>
+
         {/* Step 1: Select Amount */}
         {step === 'select' && (
           <div className="space-y-6">
