@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { supabase } from '@/app/lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import FanonymLoader from '@/app/components/FanonymLoader'
 import { useToast } from '@/app/components/Toast'
@@ -17,8 +17,9 @@ const TOPUP_OPTIONS = [
 
 const KREDIT_TO_IDR = 10000
 
-export default function TopupPage() {
+function TopupContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast, ToastContainer } = useToast()
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
@@ -67,6 +68,16 @@ export default function TopupPage() {
       setCredits(creditsData?.balance || 0)
       setTopupHistory(historyData || [])
       setLoading(false)
+
+      // Check if returning from Duitku payment
+      const status = searchParams.get('status')
+      if (status === 'success') {
+        toast.success('Pembayaran berhasil!', 'Kredit akan segera ditambahkan ke akunmu.')
+      } else if (status === 'pending') {
+        toast.info('Pembayaran sedang diproses', 'Mohon tunggu, kredit akan ditambahkan setelah pembayaran dikonfirmasi.')
+      } else if (status === 'failed') {
+        toast.error('Pembayaran gagal', 'Silakan coba lagi atau pilih metode pembayaran lain.')
+      }
     }
 
     getUser()
@@ -78,11 +89,58 @@ export default function TopupPage() {
     return basePrice + randomDigits
   }
 
-  const handleSelectOption = (option: typeof TOPUP_OPTIONS[0]) => {
+  const handleSelectOption = async (option: typeof TOPUP_OPTIONS[0]) => {
     setSelectedOption(option)
-    const unique = generateUniqueAmount(option.price)
-    setUniqueAmount(unique)
-    setStep('payment')
+    setProcessing(true)
+
+    try {
+      // Create topup request in database first
+      const { data: topupData, error: topupError } = await supabase
+        .from('topup_requests')
+        .insert({
+          user_id: user.id,
+          amount_rupiah: option.price,
+          amount_credits: option.credits,
+          payment_code: 'DUITKU',
+          status: 'pending'
+        })
+        .select()
+        .single()
+
+      if (topupError || !topupData) {
+        toast.error('Gagal membuat request topup', topupError?.message)
+        setProcessing(false)
+        return
+      }
+
+      // Create Duitku invoice
+      const response = await fetch('/api/duitku/create-invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          merchantOrderId: topupData.id,
+          paymentAmount: option.price,
+          productDetails: `Top Up ${option.credits} Kredit Fanonym`,
+          email: user.email,
+          customerVaName: profile?.display_name || profile?.username || 'Fanonym User',
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success && data.paymentUrl) {
+        // Redirect to Duitku payment page
+        window.location.href = data.paymentUrl
+      } else {
+        toast.error('Gagal membuat pembayaran', data.error || 'Silakan coba lagi')
+        // Rollback: delete the topup request
+        await supabase.from('topup_requests').delete().eq('id', topupData.id)
+        setProcessing(false)
+      }
+    } catch (error: any) {
+      toast.error('Terjadi kesalahan', error.message || 'Silakan coba lagi')
+      setProcessing(false)
+    }
   }
 
   const handleCreateTopup = async () => {
@@ -486,5 +544,13 @@ export default function TopupPage() {
         )}
       </main>
     </div>
+  )
+}
+
+export default function TopupPage() {
+  return (
+    <Suspense>
+      <TopupContent />
+    </Suspense>
   )
 }
