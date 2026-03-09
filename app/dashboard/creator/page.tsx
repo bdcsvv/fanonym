@@ -794,220 +794,56 @@ export default function CreatorDashboard() {
 
   const withdrawCalc = withdrawAmount ? calculateWithdraw(parseFloat(withdrawAmount)) : null
 
-  // Combine navTab and activeTab into single menu system
-  const [menuItem, setMenuItem] = useState<string>('pending')
-
-  // Map old tabs to new menu
-  const handleMenuClick = (item: string) => {
-    setMenuItem(item)
-    // Keep backward compat with existing tab logic
-    if (['pending', 'inbox', 'expired', 'spam', 'pricing', 'withdraw'].includes(item)) {
-      setActiveTab(item as any)
-      setNavTab('dashboard')
-    } else if (item === 'analytics') {
-      setNavTab('analytics')
-    } else if (item === 'history') {
-      setNavTab('history')
-    }
-  }
-
-  // Mobile sidebar toggle
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-
   return (
     <div className="min-h-screen bg-[#0c0a14] text-white relative">
       <ToastContainer />
+      {/* Galaxy Background */}
       <GalaxyBackground />
 
-      <div className="flex relative z-10">
-        {/* Sidebar */}
-        <aside className={`fixed md:sticky top-0 left-0 z-50 h-screen w-64 bg-[#0e0c18]/95 backdrop-blur-xl border-r border-zinc-800/60 flex flex-col transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+      {/* Navbar */}
+      <nav className="sticky top-0 z-50 bg-[#0c0a14]/80 backdrop-blur-xl">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           {/* Logo */}
-          <div className="p-5 border-b border-zinc-800/60">
-            <Link href="/dashboard/creator" className="font-black italic text-2xl bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)]">
-              fanonym
-            </Link>
-          </div>
+          <Link href="/dashboard/creator" className="font-black italic text-2xl bg-gradient-to-r from-[#6700e8] via-[#9333ea] to-[#6700e8] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(103,0,232,0.5)]">
+            fanonym
+          </Link>
 
-          {/* Profile Mini */}
-          <div className="p-4 border-b border-zinc-800/60">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} alt="Avatar" className="w-10 h-10 rounded-full object-cover border-2 border-purple-500/50" />
-                ) : (
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center text-sm font-bold">
-                    {profile?.full_name?.[0] || profile?.username?.[0] || '?'}
-                  </div>
-                )}
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[#0e0c18]"></span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate">{profile?.full_name || profile?.username}</p>
-                <p className="text-xs text-zinc-500 truncate">@{profile?.username}</p>
-              </div>
-              {profile?.is_verified && (
-                <svg className="w-4 h-4 text-purple-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              )}
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-            <p className="text-[10px] uppercase tracking-widest text-zinc-600 font-semibold px-3 pt-2 pb-1">Pesan</p>
-            
-            <button onClick={() => { handleMenuClick('pending'); setSidebarOpen(false) }} className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all ${menuItem === 'pending' ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}>
-              <div className="flex items-center gap-3">
-                <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <span>Pending</span>
-              </div>
-              {pendingChats.length > 0 && <span className="min-w-[20px] h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center px-1.5">{pendingChats.length}</span>}
-            </button>
-
-            <button onClick={() => { handleMenuClick('inbox'); setSidebarOpen(false) }} className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all ${menuItem === 'inbox' ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}>
-              <div className="flex items-center gap-3">
-                <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
-                <span>Inbox</span>
-              </div>
-              {unreadInboxCount > 0 && <span className="min-w-[20px] h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center px-1.5">{unreadInboxCount}</span>}
-            </button>
-
-            <button onClick={() => { handleMenuClick('expired'); setSidebarOpen(false) }} className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all ${menuItem === 'expired' ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}>
-              <div className="flex items-center gap-3">
-                <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                <span>Expired</span>
-              </div>
-              {expiredChats.length > 0 && <span className="text-xs text-zinc-500">{expiredChats.length}</span>}
-            </button>
-
-            <button onClick={() => { handleMenuClick('spam'); setSidebarOpen(false) }} className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all ${menuItem === 'spam' ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}>
-              <div className="flex items-center gap-3">
-                <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
-                <span>Spam</span>
-              </div>
-              {spamMessages.length > 0 && <span className="text-xs text-zinc-500">{spamMessages.length}</span>}
-            </button>
-
-            <p className="text-[10px] uppercase tracking-widest text-zinc-600 font-semibold px-3 pt-4 pb-1">Keuangan</p>
-
-            <button onClick={() => { handleMenuClick('pricing'); setSidebarOpen(false) }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${menuItem === 'pricing' ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}>
-              <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
-              <span>Set Harga</span>
-            </button>
-
-            <button onClick={() => { handleMenuClick('withdraw'); setSidebarOpen(false) }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${menuItem === 'withdraw' ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}>
-              <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-              <span>Withdraw</span>
-            </button>
-
-            <button onClick={() => { handleMenuClick('history'); setSidebarOpen(false) }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${menuItem === 'history' ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}>
-              <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              <span>Riwayat</span>
-            </button>
-
-            <p className="text-[10px] uppercase tracking-widest text-zinc-600 font-semibold px-3 pt-4 pb-1">Lainnya</p>
-
-            <button onClick={() => { handleMenuClick('analytics'); setSidebarOpen(false) }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${menuItem === 'analytics' ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}>
-              <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-              <span>Analytics</span>
-            </button>
-
-            <Link href={`/profile/${profile?.username}`} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-all">
-              <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-              <span>Profil Saya</span>
-            </Link>
-
-            <Link href="/settings" className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-all">
-              <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-              <span>Settings</span>
-            </Link>
-          </nav>
-
-          {/* Sidebar Footer */}
-          <div className="p-3 border-t border-zinc-800/60">
+          {/* Center Tabs */}
+          <div className="hidden md:flex items-center bg-zinc-900/40 backdrop-blur-sm border border-zinc-800/50 rounded-full p-1">
             <button 
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-all"
+              onClick={() => setNavTab('dashboard')}
+              className={`px-5 py-2 text-sm font-medium rounded-full transition-all ${
+                navTab === 'dashboard' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
+              }`}
             >
-              <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-              <span>{loggingOut ? 'Logging out...' : 'Logout'}</span>
+              Dashboard
+            </button>
+            <button 
+              onClick={() => setNavTab('analytics')}
+              className={`px-5 py-2 text-sm font-medium rounded-full transition-all ${
+                navTab === 'analytics' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
+              }`}
+            >
+              Analytics
+            </button>
+            <button 
+              onClick={() => setNavTab('history')}
+              className={`px-5 py-2 text-sm font-medium rounded-full transition-all ${
+                navTab === 'history' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
+              }`}
+            >
+              History
             </button>
           </div>
-        </aside>
 
-        {/* Mobile overlay */}
-        {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-40 md:hidden" onClick={() => setSidebarOpen(false)} />}
+          {/* Right - Notification */}
+          <NotificationBell userId={profile?.id} />
+        </div>
+      </nav>
 
-        {/* Main Content */}
-        <main className="flex-1 min-h-screen md:ml-0">
-          {/* Top Bar */}
-          <div className="sticky top-0 z-30 bg-[#0c0a14]/80 backdrop-blur-xl border-b border-zinc-800/60 px-6 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden p-2 hover:bg-zinc-800 rounded-lg">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-              </button>
-              <h1 className="text-lg font-semibold capitalize">
-                {menuItem === 'pricing' ? 'Set Harga' : menuItem === 'withdraw' ? 'Withdraw' : menuItem === 'history' ? 'Riwayat' : menuItem}
-              </h1>
-            </div>
-            <div className="flex items-center gap-3">
-              {/* Profile Link Copy */}
-              <button
-                onClick={copyProfileLink}
-                className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-300 rounded-lg border border-zinc-700 transition-colors"
-              >
-                <span className="text-purple-400 font-mono">fanonym.id/{profile?.username}</span>
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
-                {copied && <span className="text-green-400">Copied!</span>}
-              </button>
-              <NotificationBell userId={profile?.id} />
-            </div>
-          </div>
-
-          <div className="p-6 max-w-5xl">
-            {/* Stats Cards - Show on main pages */}
-            {['pending', 'inbox', 'expired', 'spam'].includes(menuItem) && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 relative overflow-hidden">
-                  <div className="absolute right-3 top-3 text-zinc-800">
-                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
-                  </div>
-                  <span className="text-[10px] text-zinc-400 uppercase tracking-wider">Total Pendapatan</span>
-                  <p className="text-2xl font-bold text-purple-400 mt-1">{filteredEarnings}</p>
-                  <p className="text-xs text-zinc-500">Kredit</p>
-                </div>
-                <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 relative overflow-hidden">
-                  <div className="absolute right-3 top-3 text-zinc-800">
-                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                  </div>
-                  <span className="text-[10px] text-zinc-400 uppercase tracking-wider">Saldo</span>
-                  <p className="text-2xl font-bold text-purple-400 mt-1">{earnings?.available_balance || 0}</p>
-                  <p className="text-xs text-zinc-500">≈ Rp {((earnings?.available_balance || 0) * KREDIT_TO_IDR).toLocaleString('id-ID')}</p>
-                </div>
-                <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 relative overflow-hidden">
-                  <div className="absolute right-3 top-3 text-zinc-800">
-                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                  </div>
-                  <span className="text-[10px] text-zinc-400 uppercase tracking-wider">Chat Aktif</span>
-                  <p className="text-2xl font-bold text-purple-400 mt-1">{activeChats.length}</p>
-                  <p className="text-xs text-zinc-500">Sessions</p>
-                </div>
-                <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 relative overflow-hidden">
-                  <div className="absolute right-3 top-3 text-zinc-800">
-                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                  </div>
-                  <span className="text-[10px] text-zinc-400 uppercase tracking-wider">Total Anon</span>
-                  <p className="text-2xl font-bold text-purple-400 mt-1">{totalAnons}</p>
-                  <p className="text-xs text-zinc-500">Unique senders</p>
-                </div>
-              </div>
-            )}
-
-            {/* Analytics Tab */}
-            {navTab === 'analytics' && (
+      <main className="max-w-6xl mx-auto px-6 py-8 relative z-10">
+        {/* Analytics Tab */}
+        {navTab === 'analytics' && (
           <div className="animate-fadeIn">
             <h2 className="text-2xl font-bold mb-6">📊 Analytics Pendapatan</h2>
             
@@ -1253,6 +1089,270 @@ export default function CreatorDashboard() {
         {/* Dashboard Tab */}
         {navTab === 'dashboard' && (
           <>
+        {/* Profile Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+          <div className="flex items-center gap-4">
+            {/* Avatar with online indicator */}
+            <div className="relative">
+              {profile?.avatar_url ? (
+                <img 
+                  src={profile.avatar_url} 
+                  alt="Avatar" 
+                  className="w-20 h-20 rounded-full object-cover border-2 border-purple-500/50"
+                />
+              ) : (
+                <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center text-2xl font-bold">
+                  {profile?.full_name?.[0] || profile?.username?.[0] || '?'}
+                </div>
+              )}
+              <span className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-[#0c0a14]"></span>
+            </div>
+
+            {/* Name & Info */}
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+                <span className="text-purple-400">Halo,</span> {profile?.full_name || profile?.username}!
+                {profile?.is_verified && (
+                  <svg className="w-6 h-6 text-purple-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+              </h1>
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <span className="text-zinc-400 text-sm">@{profile?.username}</span>
+                <span className="text-zinc-600">•</span>
+                {profile?.bio && (
+                  <span className="px-3 py-0.5 bg-zinc-800 text-zinc-300 rounded-full text-xs border border-zinc-700">
+                    {profile.bio}
+                  </span>
+                )}
+                {profile?.is_verified && (
+                  <span className="px-3 py-0.5 bg-green-500/20 text-green-400 rounded-full text-xs border border-green-500/30">
+                    VERIFIED CREATOR
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-3">
+            <Link 
+              href={`/profile/${profile?.username}`}
+              className="p-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-colors border border-zinc-700"
+            >
+              <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </Link>
+            <Link 
+              href="/settings"
+              className="p-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-colors border border-zinc-700"
+            >
+              <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </Link>
+            <button 
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="p-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-colors border border-zinc-700"
+            >
+              <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
+
+            {/* Creator Mode Toggle */}
+            <div className="hidden md:flex items-center gap-2 ml-4 pl-4 border-l border-zinc-700">
+              <div className="text-right">
+                <p className="text-sm font-medium">Creator Mode</p>
+                <p className="text-xs text-green-400">ACTIVE</p>
+              </div>
+              <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          {/* Total Pendapatan */}
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 relative overflow-hidden">
+            <div className="absolute right-4 top-4 text-zinc-800">
+              <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+              <span className="text-xs text-zinc-400 uppercase tracking-wider">Total Pendapatan</span>
+            </div>
+            <p className="text-3xl font-bold text-purple-400">{filteredEarnings}</p>
+            <p className="text-xs text-zinc-500 mt-1">Kredit</p>
+          </div>
+
+          {/* Saldo */}
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 relative overflow-hidden">
+            <div className="absolute right-4 top-4 text-zinc-800">
+              <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              <span className="text-xs text-zinc-400 uppercase tracking-wider">Saldo</span>
+            </div>
+            <p className="text-3xl font-bold text-purple-400">{earnings?.available_balance || 0}</p>
+            <p className="text-xs text-zinc-500 mt-1">≈ Rp {((earnings?.available_balance || 0) * KREDIT_TO_IDR).toLocaleString('id-ID')}</p>
+          </div>
+
+          {/* Chat Aktif */}
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 relative overflow-hidden">
+            <div className="absolute right-4 top-4 text-zinc-800">
+              <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              <span className="text-xs text-zinc-400 uppercase tracking-wider">Chat Aktif</span>
+            </div>
+            <p className="text-3xl font-bold text-purple-400">{activeChats.length}</p>
+            <p className="text-xs text-zinc-500 mt-1">Sessions</p>
+          </div>
+
+          {/* Total Anon */}
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 relative overflow-hidden">
+            <div className="absolute right-4 top-4 text-zinc-800">
+              <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <span className="text-xs text-zinc-400 uppercase tracking-wider">Total Anon</span>
+            </div>
+            <p className="text-3xl font-bold text-purple-400">{totalAnons}</p>
+            <p className="text-xs text-zinc-500 mt-1">Unique senders</p>
+          </div>
+        </div>
+
+        {/* Profile Link Card */}
+        <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-purple-600/20 rounded-xl flex items-center justify-center border border-purple-500/30">
+                <svg className="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold">Link Profil Kamu</h3>
+                <p className="text-sm text-zinc-400">Bagikan link ini ke fans untuk menerima pesan anonim & dukungan</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-purple-400 font-mono bg-zinc-800 px-4 py-2 rounded-lg border border-zinc-700">
+                fanonym.id/{profile?.username}
+              </span>
+              <button
+                onClick={copyProfileLink}
+                className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-medium transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                </svg>
+                {copied ? 'Copied!' : 'Copy Link'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+          <button
+            onClick={() => setActiveTab('pending')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+              activeTab === 'pending'
+                ? 'bg-purple-600 text-white'
+                : 'bg-zinc-800 text-zinc-400 hover:text-white'
+            }`}
+          >
+            Pending
+            {pendingChats.length > 0 && (
+              <span className="w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                {pendingChats.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('inbox')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+              activeTab === 'inbox'
+                ? 'bg-purple-600 text-white'
+                : 'bg-zinc-800 text-zinc-400 hover:text-white'
+            }`}
+          >
+            Inbox
+            {unreadInboxCount > 0 && (
+              <span className="w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                {unreadInboxCount}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('expired')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+              activeTab === 'expired'
+                ? 'bg-purple-600 text-white'
+                : 'bg-zinc-800 text-zinc-400 hover:text-white'
+            }`}
+          >
+            Expired
+            <span className="text-xs opacity-60">{expiredChats.length}</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('spam')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+              activeTab === 'spam'
+                ? 'bg-purple-600 text-white'
+                : 'bg-zinc-800 text-zinc-400 hover:text-white'
+            }`}
+          >
+            Spam
+            <span className="text-xs opacity-60">{spamMessages.length}</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('pricing')}
+            className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+              activeTab === 'pricing'
+                ? 'bg-purple-600 text-white'
+                : 'bg-zinc-800 text-zinc-400 hover:text-white'
+            }`}
+          >
+            Set Harga
+          </button>
+          <button
+            onClick={() => setActiveTab('withdraw')}
+            className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+              activeTab === 'withdraw'
+                ? 'bg-purple-600 text-white'
+                : 'bg-zinc-800 text-zinc-400 hover:text-white'
+            }`}
+          >
+            Withdraw
+          </button>
+        </div>
+
         {/* Tab Content */}
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
           {/* Pending Tab */}
@@ -1702,7 +1802,7 @@ export default function CreatorDashboard() {
               {/* Link to History */}
               {withdrawals.length > 0 && (
                 <button 
-                  onClick={() => { handleMenuClick('history') }}
+                  onClick={() => setNavTab('history')}
                   className="w-full mt-4 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1716,12 +1816,12 @@ export default function CreatorDashboard() {
         </div>
           </>
         )}
-          </div>
-        </main>
-      </div>
+      </main>
 
       {/* Help Button */}
       <HelpButton subject="Butuh Bantuan - Creator Dashboard" />
+      
+      {/* Toast Notification */}
     </div>
   )
 }
