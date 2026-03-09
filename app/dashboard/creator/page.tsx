@@ -1646,7 +1646,10 @@ export default function CreatorDashboard() {
                       onChange={(e) => updatePricing(p.id, parseInt(e.target.value) || 0)}
                       className="w-24 px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-center"
                     />
-                    <span className="text-zinc-400 text-sm">Kredit</span>
+                    <div className="text-right">
+                      <span className="text-zinc-400 text-sm">Kredit</span>
+                      <p className="text-zinc-500 text-xs">≈ Rp {(p.price_credits * KREDIT_TO_IDR).toLocaleString('id-ID')}</p>
+                    </div>
                     <button
                       onClick={() => deletePricing(p.id)}
                       className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
